@@ -29,8 +29,8 @@ const uint8_t LMP_C1 = 27; // Note C1, C2 not wired to microcontroller in BurkeL
 const uint8_t LMP_C2 = 39; // Note C1, C2 not wired in microcontroller in BurkeLab ESP32Stat Rev 3.5
 const uint8_t LMP = 35;    // ADC pin for Vout reading. Pin 35 on BurkeLab ESP32Stat Rev 3.5
 // calibration of ESP32 ADC (see calibration routine)
-float a_coeff;
-float b_coeff;
+float a_coeff =-135.19; // hard code coeffs but they can be updated with calibration routine
+float b_coeff=7.56;// hard code coeffs but they can be updated with calibration routine
 // For BurkeLab ESP32Stat Rev 3.5, LED "blinky" pin.
 int LEDPIN = 26;
 
@@ -328,8 +328,8 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   float a = a_coeff; // a is local copy of global a_coeff
   float b = b_coeff; // b is local copy of global a_coeff
   // temporary hard code cal coefficients for noise testing xxx
-  a = -121.34;
-  b = 7.67;
+  // a = -121.34;
+  // b = 7.67;
 
   float v1;
   v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
@@ -615,7 +615,7 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
   pStat.disableFET();
-  pStat.setGain(7); // TIA feedback resistor 350k
+  pStat.setGain(LMPgain); // TIA feedback resistor , global variable
   pStat.setRLoad(0);
   pStat.setExtRefSource();
   pStat.setIntZ(1);
