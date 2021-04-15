@@ -1,6 +1,11 @@
 
 bool userpause = false; // pauses for user to press input on serial between each point in npv
 
+int loop_count = 0;
+float adc_value = 0;
+float adc_avg = 0;
+float adc_std_dev = 0;
+float adc_sum = 0;
 //Standard Arduino Libraries
 #include <Wire.h>
 #include <WiFi.h>
@@ -159,6 +164,30 @@ inline uint16_t convertDACVoutToDACVal(uint16_t dacVout)
   return dacVout * ((float)dacResolution / opVolt);
 }
 
+inline float analog_read_avg(int num_points, int pin_num)
+{
+  float analogRead_result = 0;
+  // SerialDebugger.println("");
+  // SerialDebugger.println("=======================");
+
+  for (int16_t j = 0; j < num_points; j += 1)
+  {
+    analogRead_result += analogRead(pin_num);
+    //SerialDebugger.println(" x x x x x ");
+    // SerialDebugger.print("j=");
+    // SerialDebugger.print(F("\t"));
+    // SerialDebugger.print(j);
+    // SerialDebugger.print(F("\t"));
+    // SerialDebugger.print("analogRead_result=");
+    // SerialDebugger.print(F("\t"));
+    // SerialDebugger.println(analogRead_result);
+    // SerialDebugger.println(" x x x x x ");
+  }
+  //  SerialDebugger.println("=======================");
+
+  return analogRead_result / num_points;
+}
+
 inline void setVoltage(int16_t voltage)
 {
   // "voltage" is the desired cell voltage (RE minus WE)
@@ -258,12 +287,17 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   //  xxx calibrate adc test:
   float a = a_coeff;
   float b = b_coeff;
+  // temporary hard code cal coefficients for noise testing
+  a = -121.34;
+  b = 7.67;
+
   int adc_bits;
-  adc_bits = analogRead(LMP);
+  //adc_bits = analogRead(LMP);
+  adc_bits = analog_read_avg(1, LMP);
   float v1;
-  v1 = (3.3/255.0) * (1 / (2.0*b)) * (float)adc_bits - (a / (2.0*b)) * (3.3/255.0); // LMP is wired to Vout of the LMP91000
-  v1=v1*1000;
-  float v2 = dacVout * .5;                                                         //the zero of the internal transimpedance amplifier
+  v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
+  v1 = v1 * 1000;
+  float v2 = dacVout * .5; //the zero of the internal transimpedance amplifier
   //the zero of the internal transimpedance amplifier
   // XXX LMP_C1 is not wired up in BurkeLab version. v2 should be the set voltage.
   // which I think is the   dacVout*pStat.getIntZ; // always 50% this sketch i.e. 0.5
@@ -288,11 +322,11 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   SerialDebugger.print(F("\t"));
   SerialDebugger.print(adc_bits, 0); // adc_bits
   SerialDebugger.print(F("\t"));
-  SerialDebugger.print(v1, DEC); // Vout
+  SerialDebugger.print(v1, 1); // Vout
   SerialDebugger.print(F("\t"));
   SerialDebugger.print(v2, 0); // C1, should be the zero also....
   SerialDebugger.print(F("\t"));
-  SerialDebugger.print(current, 2);
+  SerialDebugger.print(current, 4);
   SerialDebugger.print(F("\t"));
 
   //update timestamp for the next measurement
@@ -555,7 +589,8 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   {
     // SerialDebugger.println(this_voltage);
     // SerialDebugger.println(delayTime_ms);
-    i_forward = biasAndSample(this_voltage, delayTime_ms);
+     i_forward = biasAndSample(this_voltage, delayTime_ms);
+    //i_forward = biasAndSample(startV, delayTime_ms);
     SerialDebugger.println("EOL");
     if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
     {
@@ -565,6 +600,68 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
     }
   }
   setOutputsToZero();
+}
+
+void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
+                           uint32_t delayTime_ms)
+{
+
+  float adc_bits_array[numPoints];
+  float adc_bits_array_sum = 0;
+  float adc_bits_array_avg = 0;
+  float adc_bits_array_std_dev = 0;
+  float adc_bits_minus_avg_squared_sum = 0;
+  int num_readings_to_average = 1;
+
+  float num_points_to_average[9]={1,5,10,50,100,500,1000,5000,10000};
+
+  //xxxxxxxxxxxxxxxxxxxxxxxxxx
+  initLMP(LMPgain);
+  setLMPBias(biasV);
+  setVoltage(biasV);
+  //xxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    SerialDebugger.print("num_rdgs");
+    SerialDebugger.print(F("\t"));
+
+    SerialDebugger.print("adc_avg");
+    SerialDebugger.print(F("\t"));
+
+    SerialDebugger.println("adc_std_dev");
+
+  for (int16_t i = 1; i < 1000; i += 1)
+  {
+    adc_bits_array_sum = 0;
+    adc_bits_array_avg = 0;
+    adc_bits_array_std_dev = 0;
+    adc_bits_minus_avg_squared_sum = 0;
+//    num_readings_to_average = num_points_to_average[i];
+    num_readings_to_average = i;
+    delay(delayTime_ms);
+    for (int16_t j = 0; j < numPoints; j += 1) // read the adc data
+    {
+      adc_bits_array[j] = analog_read_avg(num_readings_to_average, LMP);
+      //pulseLED_on_off(LEDPIN, 10);
+    }
+    for (int16_t j = 0; j < numPoints; j += 1) // calculate the average
+    {
+      adc_bits_array_sum += adc_bits_array[j];
+    }
+    adc_bits_array_avg = adc_bits_array_sum / numPoints;
+    for (int16_t j = 0; j < numPoints; j += 1) // calculate the std deviation
+    {
+      adc_bits_minus_avg_squared_sum += (adc_bits_array_avg - adc_bits_array[j]) * (adc_bits_array_avg - adc_bits_array[j]);
+    }
+    adc_bits_array_std_dev = sqrt(adc_bits_minus_avg_squared_sum / numPoints);
+
+    SerialDebugger.print(num_readings_to_average);
+    SerialDebugger.print(F("\t"));
+
+    SerialDebugger.print(adc_bits_array_avg);
+    SerialDebugger.print(F("\t"));
+
+    SerialDebugger.println(adc_bits_array_std_dev);
+  }
 }
 
 void testDACs(uint32_t delayTime_ms)
@@ -755,13 +852,150 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
   // so for calculation of actual voltage from adc, we can assume the calibration (taking dac as perfect)
   // dacvoltage = (dac/255)*3.3
   // adcvoltage = 0.5*dacvoltage
-  // adc = a + b * dac = a + b * dacvoltage * (255/3.3); here dac voltage is assumed correct 
+  // adc = a + b * dac = a + b * dacvoltage * (255/3.3); here dac voltage is assumed correct
   // so inverting, we get dacvoltage = (adc-a)*(3.3/255)*(1/b)
   // dacvoltage = ((3.3/255)*(1/b)) * adc + ((-a/b)*(3.3/255))
   // adcvoltage = ((3.3/255)*(1/2*b)) * adc + ((-a/2*b)*(3.3/255))
 
   a_coeff = a;
   b_coeff = b;
+}
+
+void testNOISE(int num_points)
+{
+  int timer_total;
+  int adc_array[num_points];
+  float time_microS_of_read_array[num_points];
+  float avg_of_adc_array = 0;
+  float std_dev_of_adc_array = 0;
+
+  float avg_of_adc_array_mV = 0;
+  float std_dev_of_adc_array_mV = 0;
+
+  float avg_of_time_microS_per_point = 0;
+  float std_dev_time_microS_per_point = 0;
+  float sum_of_adc_array = 0;
+  float sum_of_time_microS_of_read_array = 0;
+  float sum_of_adc_array_minus_avg_squared = 0;
+  float sum_of_time_microS_of_read_array_minus_avg_squared = 0;
+  int timer;
+  float total_measurement_time_micros = 0;
+  float total_function_time_micros = 0;
+
+  timer_total = micros();
+
+  for (int16_t j = 0; j <= num_points; j += 1)
+  {
+    timer = micros();
+    adc_array[j] = analogRead(LMP);
+    time_microS_of_read_array[j] = micros() - timer;
+  }
+
+  total_measurement_time_micros = micros() - timer_total;
+
+  for (int16_t j = 0; j <= num_points; j += 1)
+  {
+    sum_of_adc_array += adc_array[j];
+    sum_of_time_microS_of_read_array += time_microS_of_read_array[j];
+    //    SerialDebugger.print("j=");
+    //    SerialDebugger.print(F("\t"));
+    //    SerialDebugger.print(j);
+    //    SerialDebugger.print(F("\t"));
+    //    SerialDebugger.print("time_microS_of_read_array[j]=");
+    //    SerialDebugger.print(F("\t"));
+    //    SerialDebugger.print(time_microS_of_read_array[j]);
+    //    SerialDebugger.print(F("\t"));
+    //    SerialDebugger.print("sum_of_time_microS_of_read_array=");
+    //    SerialDebugger.print(F("\t"));
+    //   SerialDebugger.println(sum_of_time_microS_of_read_array);
+  }
+  avg_of_adc_array = sum_of_adc_array / num_points;
+  avg_of_time_microS_per_point = sum_of_time_microS_of_read_array / num_points;
+
+  for (int16_t j = 0; j <= num_points; j += 1)
+  {
+    sum_of_adc_array_minus_avg_squared = (avg_of_adc_array - adc_array[j]) * (avg_of_adc_array - adc_array[j]);
+    sum_of_time_microS_of_read_array_minus_avg_squared = (avg_of_time_microS_per_point - time_microS_of_read_array[j]) * (avg_of_time_microS_per_point - time_microS_of_read_array[j]);
+  }
+  std_dev_of_adc_array = sqrt(sum_of_adc_array_minus_avg_squared / num_points);
+  std_dev_time_microS_per_point = sqrt(sum_of_time_microS_of_read_array_minus_avg_squared / num_points);
+
+  avg_of_adc_array_mV = (3300.0 / 4095.0) * avg_of_adc_array;
+  std_dev_of_adc_array_mV = (3300.0 / 4095.0) * std_dev_of_adc_array;
+
+  total_function_time_micros = micros() - timer_total;
+
+  SerialDebugger.println("****************************************");
+
+  SerialDebugger.print("total_measurement_time_micros in milliseconds");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(total_measurement_time_micros / 1e3);
+
+  SerialDebugger.print("total_function_time_micros in milliseconds");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(total_function_time_micros / 1e3);
+
+  SerialDebugger.print("avg_of_adc_array_mV = ");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(avg_of_adc_array_mV);
+
+  SerialDebugger.print("std_dev_of_adc_array_mV = ");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(std_dev_of_adc_array_mV);
+
+  SerialDebugger.print("ADC average = ");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(avg_of_adc_array);
+
+  SerialDebugger.print("std_dev_of_adc_array = ");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(std_dev_of_adc_array);
+
+  SerialDebugger.print("avg_of_time_microS_per_point = ");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(avg_of_time_microS_per_point);
+
+  SerialDebugger.print("std_dev_time_microS_per_point = ");
+  SerialDebugger.print(F("\t"));
+  SerialDebugger.println(std_dev_time_microS_per_point);
+
+  SerialDebugger.println("****************************************");
+}
+
+int read_ADC_and_report_time(uint32_t delayTime_ms)
+{
+  /*
+  analogReadResolution(12);             // Sets the sample bits and read resolution, default is 12-bit (0 - 4095), range is 9 - 12 bits
+  analogSetWidth(12);                   // Sets the sample bits and read resolution, default is 12-bit (0 - 4095), range is 9 - 12 bits
+                                        //  9-bit gives an ADC range of 0-511
+                                        // 10-bit gives an ADC range of 0-1023
+                                        // 11-bit gives an ADC range of 0-2047
+                                        // 12-bit gives an ADC range of 0-4095
+  analogSetCycles(8);                   // Set number of cycles per sample, default is 8 and provides an optimal result, range is 1 - 255
+  analogSetSamples(1);                  // Set number of samples in the range, default is 1, it has an effect on sensitivity has been multiplied
+  analogSetClockDiv(1);                 // Set the divider for the ADC clock, default is 1, range is 1 - 255
+  analogSetAttenuation(ADC_11db);       // Sets the input attenuation for ALL ADC inputs, default is ADC_11db, range is ADC_0db, ADC_2_5db, ADC_6db, ADC_11db
+  analogSetPinAttenuation(VP,ADC_11db); // Sets the input attenuation, default is ADC_11db, range is ADC_0db, ADC_2_5db, ADC_6db, ADC_11db
+                                        // ADC_0db provides no attenuation so IN/OUT = 1 / 1 an input of 3 volts remains at 3 volts before ADC measurement
+                                        // ADC_2_5db provides an attenuation so that IN/OUT = 1 / 1.34 an input of 3 volts is reduced to 2.238 volts before ADC measurement
+                                        // ADC_6db provides an attenuation so that IN/OUT = 1 / 2 an input of 3 volts is reduced to 1.500 volts before ADC measurement
+                                        // ADC_11db provides an attenuation so that IN/OUT = 1 / 3.6 an input of 3 volts is reduced to 0.833 volts before ADC measurement
+  adcAttachPin(VP);                     // Attach a pin to ADC (also clears any other analog mode that could be on), returns TRUE/FALSE result 
+  adcStart(VP);                         // Starts an ADC conversion on attached pin's bus
+  adcBusy(VP);                          // Check if conversion on the pin's ADC bus is currently running, returns TRUE/FALSE result 
+  adcEnd(VP);                           // Get the result of the conversion (will wait if it have not finished), returns 16-bit integer result
+  */
+  analogSetClockDiv(255); // 1338mS
+
+  int analogRead_result;
+  int timer = micros();
+  analogRead_result = analogRead(LMP);
+  Serial.print(analogRead_result);
+  Serial.print("  ");
+  Serial.println(micros() - timer);
+  return analogRead_result;
+
+  // See: https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/esp32-hal-adc.h
 }
 
 void testLMP91000(uint32_t delayTime_ms, uint8_t bias_setting_local)
@@ -1535,6 +1769,7 @@ void setup()
 
   configureserver();
   //####################################################################################
+
 }
 
 void loop()
@@ -1548,12 +1783,15 @@ void loop()
   //    ;
   //  SerialDebugger.read();
 
-  delay(10);
+  delay(10); // 10 ms delay
 
   if (Sweep_Mode == NPV)
   {
     // runNPVandPrintToSerial(); // comment out to run testIV
-    testIV(-100, 100, 100, 50);
+    testIV(-200, 500, 100, 50);
+   // testNoiseAtABiasPoint(-100, 100, 50);
+
+    // testNOISE(100);
     // testDACs(50);
     // testDACandADCs(50);
     //testLMP91000(50, 1);
