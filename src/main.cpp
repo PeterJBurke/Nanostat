@@ -1,4 +1,4 @@
-bool userpause = false;             // pauses for user to press input on serial between each point in npv
+bool userpause = false;              // pauses for user to press input on serial between each point in npv
 bool print_output_to_serial = true; // pauses for user to press input on serial between each point in npv
 
 //Standard Arduino Libraries
@@ -966,7 +966,7 @@ inline void saveVoltammogram(float voltage, float current, bool debug)
     SerialDebugger.print(voltage);
     //SerialDebugger.print(F("\t"));
     SerialDebugger.print(F(","));
-    SerialDebugger.print(current,5);
+    SerialDebugger.print(current, 5);
     SerialDebugger.print(F(","));
     SerialDebugger.print(micros());
   }
@@ -1097,7 +1097,6 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
     SerialDebugger.println("(V2) Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
     SerialDebugger.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
 
-
     SerialDebugger.println("REVERSE BIAS:");
     SerialDebugger.println("T = time in ms");
     SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
@@ -1114,10 +1113,9 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
     SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
     SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
 
-
     SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f,T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_R,V,I,T");
 
-//    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
+    //    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
     //  SerialDebugger.println("T\tVc\tVdac\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
     //  SerialDebugger.println("T\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
     //  SerialDebugger.println("T\t\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
@@ -1436,6 +1434,58 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
   freq -= 1;
 
   saveQueues = true;
+  if (print_output_to_serial)
+  {
+
+    //Print column headers
+    //  String current = "";
+    //  if(range == 12) current = "Current(pA)";
+    //  else if(range == 9) current = "Current(nA)";
+    //  else if(range == 6) current = "Current(uA)";
+    //  else if(range == 3) current = "Current(mA)";
+    //  else current = "SOME ERROR";
+
+    // TIA_BIAS[bias_setting]
+    // dacVout*TIA_BIAS[bias_setting] is the exact voltage we will get
+
+    SerialDebugger.println("Column header meanings:");
+    SerialDebugger.println("FORWARD BIAS:");
+    SerialDebugger.println("T = time in ms");
+    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    SerialDebugger.println("adc_bits = TIA output in adc_bits;");
+    SerialDebugger.println("(V1) Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    SerialDebugger.println("(V2) Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    SerialDebugger.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+
+    SerialDebugger.println("REVERSE BIAS:");
+    SerialDebugger.println("T = time in ms");
+    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    SerialDebugger.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    SerialDebugger.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    SerialDebugger.println("i_R = reverse current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+
+    SerialDebugger.println("RESPONSE:");
+    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage FORWARD, should be FORWARD-REVERSE...)");
+    SerialDebugger.println("I = i_f - i_R in uA (internal variable name = i_forward - i_backward)");
+    SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
+    SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
+
+    SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f,T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_R,V,I,T");
+
+    //    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
+    //  SerialDebugger.println("T\tVc\tVdac\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  SerialDebugger.println("T\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  SerialDebugger.println("T\t\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  SerialDebugger.println("T(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_f\tT(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_R\tV(mV)\tI");
+    //  SerialDebugger.println(F("Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_forward,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
+    //  SerialDebugger.println(F("T(ms),Vcell(mV),Zero(mV),dacVout,TIA_BIAS,Vout(mV),VC1(mV),i_f,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
+  }
 
   //Reset Arrays
   for (uint16_t i = 0; i < arr_samples; i++)
@@ -1698,7 +1748,7 @@ void runSWVForwardandPrintToSerial()
 
 void runSWVReverseandPrintToSerial()
 // LEGACY FROM TESTING DO NOT USE
-// runCAandPrintToSerial (reverse) 
+// runCAandPrintToSerial (reverse)
 {
 
   //  ##############################SQUARE WAVE VOLTAMMETRY (Reverse -- Reduction)##############################
@@ -1774,6 +1824,7 @@ void configureserver()
     {
       Serial.println("Turn on LED3");
       digitalWrite(LEDPIN, HIGH);
+            Sweep_Mode = SQV;
     }
     else
     {
@@ -1891,6 +1942,11 @@ void loop()
     // testLMP91000(50, 1);
     // calibrateDACandADCs(50);
     runCV(LMPgain, 4, 0, 0, 450, -200, 5, 100, true);
+    Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == SQV)
+  {
+    runSWV(LMPgain, -200, 500, 25, 5, 10, true);
     Sweep_Mode = dormant;
   }
   else
