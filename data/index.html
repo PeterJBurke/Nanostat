@@ -1,8 +1,44 @@
 <html>
 
-<head> Hello World!!!</head>
+<head>
+  <title>ESP32Stat
+  </title>
+
+</head>
 
 <body>
+
+  <center>
+    <h2>BurkeLab ESP32 Stat</h2>
+    <p>Rev 3.5 @2021 BurkeLab </p>
+
+
+  </center>
+
+  <p><b>Please</b> <u>choose</u> from the following sweep <i>options</i>:</p>
+
+  <button onclick="toggleLED1()">NPV!</button>
+  <button onclick="toggleLED2()">CV!</button>
+  <button onclick="toggleLED3()">SWV!</button>
+  <button onclick="toggleLED4()">CA!</button>
+  <button onclick="toggleLED5()">DC!</button>
+  <button onclick="toggleLED6()">IV!</button>
+  <button onclick="toggleLED7()">Cal!</button>
+
+  <h3>Sweep modes:</h3>
+  <p>NPV = Normal pulsed voltammetry.<br>
+   CV = Cyclic voltammetry.<br>
+  SWV = Square wave voltammetry.<br>
+   CA = Chronoamperometry.<br>
+   DC = Fixed DC bias.<br>
+  IV = IV curve.<br>
+  Cal = calibrate ESP32Stat. </p>
+
+
+  <h3>Calibration instructions:</h3>
+  <p>To calibrate, run "Cal" with WE disconnected from RE/CE.</p>
+
+
   <script>
     let led1 = false;
 
@@ -22,6 +58,7 @@
       }
     }
   </script>
+
 
   <script>
     let led2 = false;
@@ -85,12 +122,66 @@
     }
   </script>
 
+  <script>
+    let led5 = false;
 
+    async function toggleLED5() {
+      led5 = !led5;
+      try {
+        const response = await fetch("http://ESP32stat.local/led5", {
+          method: "PUT",
+          body: JSON.stringify({ on: led5 }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        alert("Request failed - check the console");
+        console.error(error);
+      }
+    }
+  </script>
 
-  <button onclick="toggleLED1()">NPV!</button>
-  <button onclick="toggleLED2()">CV!</button>
-  <button onclick="toggleLED3()">SWV!</button>
-  <button onclick="toggleLED4()">CA!</button>
+  <script>
+    let led6 = false;
+
+    async function toggleLED6() {
+      led6 = !led6;
+      try {
+        const response = await fetch("http://ESP32stat.local/led6", {
+          method: "PUT",
+          body: JSON.stringify({ on: led4 }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        alert("Request failed - check the console");
+        console.error(error);
+      }
+    }
+  </script>
+
+  <script>
+    let led7 = false;
+
+    async function toggleLED7() {
+      led7 = !led7;
+      try {
+        const response = await fetch("http://ESP32stat.local/led7", {
+          method: "PUT",
+          body: JSON.stringify({ on: led4 }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        alert("Request failed - check the console");
+        console.error(error);
+      }
+    }
+  </script>
+
 
 
 </body>

@@ -1,5 +1,5 @@
 bool userpause = false;             // pauses for user to press input on serial between each point in npv
-bool print_output_to_serial = true; // pauses for user to press input on serial between each point in npv
+bool print_output_to_serial = false; // pauses for user to press input on serial between each point in npv
 
 //Standard Arduino Libraries
 #include <Wire.h>
@@ -29,19 +29,23 @@ const uint8_t LMP_C1 = 27; // Note C1, C2 not wired to microcontroller in BurkeL
 const uint8_t LMP_C2 = 39; // Note C1, C2 not wired in microcontroller in BurkeLab ESP32Stat Rev 3.5
 const uint8_t LMP = 35;    // ADC pin for Vout reading. Pin 35 on BurkeLab ESP32Stat Rev 3.5
 // calibration of ESP32 ADC (see calibration routine)
-float a_coeff = -135.19; // hard code coeffs but they can be updated with calibration routine
-float b_coeff = 7.56;    // hard code coeffs but they can be updated with calibration routine
+float a_coeff = -146.63; // hard code coeffs but they can be updated with calibration routine
+float b_coeff = 7.64;    // hard code coeffs but they can be updated with calibration routine
 // For BurkeLab ESP32Stat Rev 3.5, LED "blinky" pin.
 int LEDPIN = 26;
 
 // Global mode control (sweep type)
 enum Sweep_Mode_Type
 {
-  dormant,
-  NPV,
-  CV,
-  SQV,
-  CA
+  dormant,  // not sweeping
+  NPV,      // normal pulsed voltametry
+  CV,       // cyclic voltametry
+  SQV,      // square wave voltametry
+  CA,       // chronoamperometry
+  IV,       // IV curve
+  CAL,      // calibrate
+  DCBIAS,   // DC bias at a fixed point
+  MISC_MODE // miscellanous
 };
 Sweep_Mode_Type Sweep_Mode = dormant;
 
@@ -226,36 +230,59 @@ inline void setVoltage(int16_t voltage)
   dacVout = minDACVoltage; // global variable, initialized to a convenient value in this method, will be changed in iteration
   bias_setting = 0;        // global variable, initialized to a convenient value in this method, will be changed in iteration
 
-  if (abs(voltage) < 15)
-    voltage = 15 * (voltage / abs(voltage));
+  //if (abs(voltage) < 15)
+  //{
+  // voltage = 15 * (voltage / abs(voltage));
   //voltage cannot be set to less than 15mV because the LMP91000
   //accepts a minium of 1.5V at its VREF pin and has 1% as its
   //lowest bias option 1.5V*1% = 15mV
+  //}
 
   int16_t setV = dacVout * TIA_BIAS[bias_setting]; // "setV" is the exact cell voltage we will get, try to get it close to "voltage"
   voltage = abs(voltage);                          // (sign handled elsewhere in the code...)
 
-  while (setV > voltage * (1 + v_tolerance) || setV < voltage * (1 - v_tolerance)) // iterate to find
-  // bias_setting (integer), dacVout (in mV) which goes to LMP91000 and ESP32
-  // so that setV = dacVout * TIA_BIAS[bias_setting] is within v_tolerance of voltage (desired by user)
+
+  if (abs(voltage) < 15)
   {
-    if (bias_setting == 0)
-      bias_setting = 1;
-
-    dacVout = voltage / TIA_BIAS[bias_setting];
-
-    if (dacVout > opVolt)
+    // make executive decision
+    if (abs(voltage) > 7.5)
     {
-      bias_setting++;
-      dacVout = 1500;
-
-      if (bias_setting > NUM_TIA_BIAS)
-        bias_setting = 0;
+      //    make it 15 mV
+      voltage = 15 * (voltage / abs(voltage));
     }
-
-    setV = dacVout * TIA_BIAS[bias_setting];
+    else if (abs(voltage) <= 7.5)
+    {
+      // make it zero
+      bias_setting = 0;
+      setV = 0;
+      dacVout = 1500;
+    }
   }
 
+  if (abs(voltage) >= 15)
+  {
+    // iterate
+    while (setV > voltage * (1 + v_tolerance) || setV < voltage * (1 - v_tolerance)) // iterate to find
+    // bias_setting (integer), dacVout (in mV) which goes to LMP91000 and ESP32
+    // so that setV = dacVout * TIA_BIAS[bias_setting] is within v_tolerance of voltage (desired by user)
+    {
+      if (bias_setting == 0)
+        bias_setting = 1;
+
+      dacVout = voltage / TIA_BIAS[bias_setting];
+
+      if (dacVout > opVolt)
+      {
+        bias_setting++;
+        dacVout = 1500;
+
+        if (bias_setting > NUM_TIA_BIAS)
+          bias_setting = 0;
+      }
+
+      setV = dacVout * TIA_BIAS[bias_setting];
+    }
+  }
   pStat.setBias(bias_setting); // sets percentage voltage divider in LMP910000
   // dacwrite is ESP32 version of analogWrite
   dacWrite(dac, convertDACVoutToDACVal(dacVout)); // sets ESP32 DAC bits
@@ -298,9 +325,9 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   // dacVout: desired output of the DAC in mV
   // bias_setting: determines percentage of VREF applied to CE opamp, from 1% to 24%
 
-  pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
   setLMPBias(voltage);         // Sets the LMP91000's bias to positive or negative // voltage is cell voltage
   setVoltage(voltage);         // Sets the DAC voltage, LMP91000 bias percentage, and LMP91000 bias sign, to get the desired cell "voltage".
+  pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
 
   //delay sampling to set scan rate
   while (millis() - lastTime < rate)
@@ -385,6 +412,7 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   return current;
 }
 
+
 void testIV(int16_t startV, int16_t endV, int16_t numPoints,
             uint32_t delayTime_ms)
 {
@@ -399,6 +427,15 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   uint32_t voltage_step;
 
   voltage_step = (endV - startV) / numPoints;
+  if (voltage_step == 0)
+  {
+    voltage_step = 1; // 1 mV minimum
+  }
+
+  SerialDebugger.println(startV);
+  SerialDebugger.println(endV);
+  SerialDebugger.println(numPoints);
+  SerialDebugger.println(voltage_step);
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
 
@@ -433,7 +470,8 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
     SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
     SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
 
-    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f");
+//    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f");
+    SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f");
   }
 
   for (int16_t this_voltage = startV; this_voltage <= endV; this_voltage += voltage_step)
@@ -473,7 +511,7 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
   float adc_bits_minus_avg_squared_sum = 0;
   int num_readings_to_average = 1;
 
-  float num_points_to_average[9] = {1, 5, 10, 50, 100, 500, 1000, 5000, 10000};
+  float num_points_to_average[7] = {1, 5, 10, 50, 100, 500, 1000};
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
   initLMP(LMPgain);
@@ -489,14 +527,15 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
 
   SerialDebugger.println("adc_std_dev");
 
-  for (int16_t i = 1; i < 1000; i += 1)
+  //  for (int16_t i = 1; i < 1000; i += 1)
+  for (int16_t i = 0; i < 7; i += 1)
   {
     adc_bits_array_sum = 0;
     adc_bits_array_avg = 0;
     adc_bits_array_std_dev = 0;
     adc_bits_minus_avg_squared_sum = 0;
-    //    num_readings_to_average = num_points_to_average[i];
-    num_readings_to_average = i;
+    num_readings_to_average = num_points_to_average[i];
+    //num_readings_to_average = i;
     delay(delayTime_ms);
     for (int16_t j = 0; j < numPoints; j += 1) // read the adc data
     {
@@ -1601,17 +1640,17 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
             uint16_t samples, uint8_t range, bool setToZero)
 {
   //Print column headers
-//  String current = "";
-//  if (range == 12)
-//    current = "Current(pA)";
-//  else if (range == 9)
-//    current = "Current(nA)";
-//  else if (range == 6)
-//    current = "Current(uA)";
-//  else if (range == 3)
-//    current = "Current(mA)";
-//  else
-//    current = "SOME ERROR";
+  //  String current = "";
+  //  if (range == 12)
+  //    current = "Current(pA)";
+  //  else if (range == 9)
+  //    current = "Current(nA)";
+  //  else if (range == 6)
+  //    current = "Current(uA)";
+  //  else if (range == 3)
+  //    current = "Current(mA)";
+  //  else
+  //    current = "SOME ERROR";
 
   if (samples > arr_samples / 3)
     samples = arr_samples / 3;
@@ -1794,6 +1833,7 @@ void configureserver()
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, PUT");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
 
+  // Button #1
   server.addHandler(new AsyncCallbackJsonWebHandler("/led1", [](AsyncWebServerRequest *request1, JsonVariant &json1) {
     const JsonObject &jsonObj1 = json1.as<JsonObject>();
     if (jsonObj1["on"])
@@ -1810,6 +1850,8 @@ void configureserver()
     }
     request1->send(200, "OK");
   }));
+
+  // Button #2
   server.addHandler(new AsyncCallbackJsonWebHandler("/led2", [](AsyncWebServerRequest *request2, JsonVariant &json2) {
     const JsonObject &jsonObj2 = json2.as<JsonObject>();
     if (jsonObj2["on"])
@@ -1825,6 +1867,8 @@ void configureserver()
     }
     request2->send(200, "OK");
   }));
+
+  // Button #3
   server.addHandler(new AsyncCallbackJsonWebHandler("/led3", [](AsyncWebServerRequest *request3, JsonVariant &json3) {
     const JsonObject &jsonObj3 = json3.as<JsonObject>();
     if (jsonObj3["on"])
@@ -1840,6 +1884,8 @@ void configureserver()
     }
     request3->send(200, "OK");
   }));
+
+  // Button #4
   server.addHandler(new AsyncCallbackJsonWebHandler("/led4", [](AsyncWebServerRequest *request4, JsonVariant &json4) {
     const JsonObject &jsonObj4 = json4.as<JsonObject>();
     if (jsonObj4["on"])
@@ -1854,6 +1900,58 @@ void configureserver()
       digitalWrite(LEDPIN, LOW);
     }
     request4->send(200, "OK");
+  }));
+
+  // Button #5
+  server.addHandler(new AsyncCallbackJsonWebHandler("/led5", [](AsyncWebServerRequest *request5, JsonVariant &json5) {
+    const JsonObject &jsonObj5 = json5.as<JsonObject>();
+    if (jsonObj5["on"])
+    {
+      Serial.println("Turn on LED5");
+      digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = DCBIAS;
+    }
+    else
+    {
+      Serial.println("Turn off LED5");
+      digitalWrite(LEDPIN, LOW);
+    }
+    request5->send(200, "OK");
+  }));
+
+  // Button #6
+  server.addHandler(new AsyncCallbackJsonWebHandler("/led6", [](AsyncWebServerRequest *request6, JsonVariant &json6) {
+    const JsonObject &jsonObj6 = json6.as<JsonObject>();
+    if (jsonObj6["on"])
+    {
+      Serial.println("Turn on LED6");
+      digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = IV;
+    }
+    else
+    {
+      Serial.println("Turn off LED6");
+      digitalWrite(LEDPIN, LOW);
+    }
+    request6->send(200, "OK");
+  }));
+
+  // Button #7
+
+  server.addHandler(new AsyncCallbackJsonWebHandler("/led7", [](AsyncWebServerRequest *request7, JsonVariant &json7) {
+    const JsonObject &jsonObj7 = json7.as<JsonObject>();
+    if (jsonObj7["on"])
+    {
+      Serial.println("Turn on LED7");
+      digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = CAL;
+    }
+    else
+    {
+      Serial.println("Turn off LED7");
+      digitalWrite(LEDPIN, LOW);
+    }
+    request7->send(200, "OK");
   }));
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
@@ -1932,8 +2030,7 @@ void loop()
 
   if (Sweep_Mode == NPV)
   {
-    // runNPVandPrintToSerial(); // comment out to run testIV
-    //testIV(-200, 500, 100, 50);
+
     // testNoiseAtABiasPoint(-100, 100, 50);
 
     // testNOISE(100);
@@ -1946,10 +2043,9 @@ void loop()
   }
   else if (Sweep_Mode == CV)
   {
-    //runCVandPrintToSerial();
+
     // testLMP91000(50, 1);
-    // calibrateDACandADCs(50);
-    runCV(LMPgain, 4, 0, 0, 450, -200, 5, 1000, true);
+    runCV(LMPgain, 2, 0, 0, 450, -200, 5, 1000, true);
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == SQV)
@@ -1959,12 +2055,31 @@ void loop()
   }
   else if (Sweep_Mode == CA)
   {
-    //runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
-    //      int16_t v1, uint32_t t1, int16_t v2, uint32_t t2,
-    //    uint16_t samples, uint8_t range, bool setToZero)
-
     runAmp(LMPgain, 50, 2000, 100, 2000, 50, 200, 100, 1, true);
-    //  runAmp(2, 0, 5000, 66, 5000, 250, 5000, 80, 6);
+    Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == DCBIAS)
+  {
+    testNoiseAtABiasPoint(-100, 100, 50); //  bias at -100 mV on cell. Read 100 readings and calculate std dev and avg of adc for different reading avgs.
+    // testNOISE(100);
+    // testDACs(50);
+    // testDACandADCs(50);
+    // testLMP91000(50, 1);
+    Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == IV)
+  {
+    testIV(-200, 500, 701, 50);
+    Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == CAL)
+  {
+    calibrateDACandADCs(50);
+    Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == MISC_MODE)
+  {
+    testNoiseAtABiasPoint(-100, 100, 50);
     Sweep_Mode = dormant;
   }
   else
