@@ -1,4 +1,4 @@
-bool userpause = false;              // pauses for user to press input on serial between each point in npv
+bool userpause = false;             // pauses for user to press input on serial between each point in npv
 bool print_output_to_serial = true; // pauses for user to press input on serial between each point in npv
 
 //Standard Arduino Libraries
@@ -1601,17 +1601,17 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
             uint16_t samples, uint8_t range, bool setToZero)
 {
   //Print column headers
-  String current = "";
-  if (range == 12)
-    current = "Current(pA)";
-  else if (range == 9)
-    current = "Current(nA)";
-  else if (range == 6)
-    current = "Current(uA)";
-  else if (range == 3)
-    current = "Current(mA)";
-  else
-    current = "SOME ERROR";
+//  String current = "";
+//  if (range == 12)
+//    current = "Current(pA)";
+//  else if (range == 9)
+//    current = "Current(nA)";
+//  else if (range == 6)
+//    current = "Current(uA)";
+//  else if (range == 3)
+//    current = "Current(mA)";
+//  else
+//    current = "SOME ERROR";
 
   if (samples > arr_samples / 3)
     samples = arr_samples / 3;
@@ -1639,19 +1639,29 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
     unsigned long startTime = millis();
 
     //Print column headers
-    SerialDebugger.println("Voltage(mV),Time(ms)," + current);
+    //SerialDebugger.println("Voltage(mV),Time(ms)," + current);
+    SerialDebugger.println("Voltage(mV),Time(ms), Current(microA)");
 
     //set bias potential
     setLMPBias(voltageArray[i]);
     setVoltage(voltageArray[i]);
-    SerialDebugger.println();
+    //SerialDebugger.println();
 
     while (millis() - startTime < timeArray[i])
     {
-      //output voltage of the transimpedance amplifier
-      float v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);
-      //float v2 = dacVout*.5; //the zero of the internal transimpedance amplifier
-      float v2 = pStat.getVoltage(analogRead(LMP_C1), opVolt, adcBits); //the zero of the internal transimpedance amplifier
+      //  Calibrate coefficients (make a local copy of the global ones):
+      float a = a_coeff; // a is local copy of global a_coeff
+      float b = b_coeff; // b is local copy of global a_coeff
+      // Read output voltage of the transimpedance amplifier
+      int adc_bits; // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
+      // hard wired in BurkeLab ESP32Stat Rev 3.5 to LMP i.e ESP32 pin 32 (ADC1_CH7)
+      //adc_bits = analogRead(LMP); // read a single point
+      adc_bits = analog_read_avg(num_adc_readings_to_average, LMP); // read a number of points and average them...
+      float v1;
+      v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
+      v1 = v1 * 1000;
+      float v2 = dacVout * .5; //the zero of the internal transimpedance amplifier
+      // V2 is not measured in  BurkeLab ESP32Stat Rev 3.5 and assumed to be half dacVout, calibration helps this see above
       float current = 0;
 
       //the current is determined by the zero of the transimpedance amplifier
@@ -1659,11 +1669,10 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       //by the feedback resistor
       //current = (V_OUT - V_IN-) / RFB
       //v1 and v2 are in milliVolts
-      if (LMPgain == 0)
-        current = (((v1 - v2) / 1000) / RFB) * pow(10, range); //scales to nA
+      if (LMPgain == 0)                                    // using external feedback resistor, not (yet) suppored with BurkeLab ESP32Stat Rev 3.5
+        current = (((v1 - v2) / 1000) / RFB) * pow(10, 9); //scales to nA
       else
-        current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, range); //scales to nA
-
+        current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
       //Sample and save data
       volts[arr_cur_index] = voltageArray[i];
       output_time[arr_cur_index] = millis();
@@ -1730,7 +1739,6 @@ void runCVandPrintToSerial()
 }
 
 void runSWVForwardandPrintToSerial()
-// LEGACY FROM TESTING DO NOT USE
 // runSWVandPrintToSerial (forward)
 {
   //  ##############################SQUARE WAVE VOLTAMMETRY (Forward -- Oxidation)##############################
@@ -1747,7 +1755,6 @@ void runSWVForwardandPrintToSerial()
 }
 
 void runSWVReverseandPrintToSerial()
-// LEGACY FROM TESTING DO NOT USE
 // runCAandPrintToSerial (reverse)
 {
 
@@ -1824,7 +1831,7 @@ void configureserver()
     {
       Serial.println("Turn on LED3");
       digitalWrite(LEDPIN, HIGH);
-            Sweep_Mode = SQV;
+      Sweep_Mode = SQV;
     }
     else
     {
@@ -1839,6 +1846,7 @@ void configureserver()
     {
       Serial.println("Turn on LED4");
       digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = CA;
     }
     else
     {
@@ -1941,12 +1949,22 @@ void loop()
     //runCVandPrintToSerial();
     // testLMP91000(50, 1);
     // calibrateDACandADCs(50);
-    runCV(LMPgain, 4, 0, 0, 450, -200, 5, 100, true);
+    runCV(LMPgain, 4, 0, 0, 450, -200, 5, 1000, true);
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == SQV)
   {
     runSWV(LMPgain, -200, 500, 25, 5, 10, true);
+    Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == CA)
+  {
+    //runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
+    //      int16_t v1, uint32_t t1, int16_t v2, uint32_t t2,
+    //    uint16_t samples, uint8_t range, bool setToZero)
+
+    runAmp(LMPgain, 50, 2000, 100, 2000, 50, 200, 100, 1, true);
+    //  runAmp(2, 0, 5000, 66, 5000, 250, 5000, 80, 6);
     Sweep_Mode = dormant;
   }
   else
