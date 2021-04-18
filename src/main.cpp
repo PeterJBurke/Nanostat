@@ -1955,6 +1955,7 @@ void configureserver()
   }));
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  
   server.onNotFound([](AsyncWebServerRequest *request) {
     if (request->method() == HTTP_OPTIONS)
     {

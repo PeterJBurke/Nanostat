@@ -8,13 +8,13 @@
 
 <body>
 
-  <center>
-    <h2>BurkeLab ESP32 Stat</h2>
-    <p>Rev 3.5 @2021 BurkeLab </p>
-
-
-  </center>
-
+  <header>
+    <center>
+      <h2>BurkeLab ESP32 Stat</h2>
+      <p>Rev 3.5</p>
+    </center>
+  </header>
+  <hr>
   <p><b>Please</b> <u>choose</u> from the following sweep <i>options</i>:</p>
 
   <button onclick="toggleLED1()">NPV!</button>
@@ -27,16 +27,26 @@
 
   <h3>Sweep modes:</h3>
   <p>NPV = Normal pulsed voltammetry.<br>
-   CV = Cyclic voltammetry.<br>
-  SWV = Square wave voltammetry.<br>
-   CA = Chronoamperometry.<br>
-   DC = Fixed DC bias.<br>
-  IV = IV curve.<br>
-  Cal = calibrate ESP32Stat. </p>
+    CV = Cyclic voltammetry.<br>
+    SWV = Square wave voltammetry.<br>
+    CA = Chronoamperometry.<br>
+    DC = Fixed DC bias.<br>
+    IV = IV curve.<br>
+    Cal = calibrate ESP32Stat. </p>
+  <hr>
 
 
   <h3>Calibration instructions:</h3>
   <p>To calibrate, run "Cal" with WE disconnected from RE/CE.</p>
+  <hr>
+
+  <footer>
+    <center>
+
+      <p> @2021 BurkeLab </p>
+    </center>
+  </footer>
+
 
 
   <script>
