@@ -35,6 +35,33 @@
     Cal = calibrate ESP32Stat. </p>
   <hr>
 
+  <h3>Sweep parameters:</h3>
+  <p></p>Start V<br>
+  End V<br>
+  Num points<br>
+  Time/rate</p>
+
+<!-- 
+  void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
+  int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
+  uint32_t quietTime, uint8_t range, bool setToZero)
+{
+//@param      lmpGain:      gain setting for LMP91000
+//@param      startV:       voltage to start the scan
+//@param      endV:         voltage to stop the scan
+//@param      pulseAmp:     amplitude of square wave
+//@param      pulse_period: the  of the excitation voltage
+//@param      pulse_width:  the pulse-width of the excitation voltage
+//@param      quietTime:    initial wait time before the first pulse
+//@param      range:        the expected range of the measured current
+//@param      setToZero:    Boolean determining whether the bias potential of
+//                          the electrochemical cell should be set to 0 at the
+//                          end of the experiment. -->
+
+   <p><b>Please</b> <u>click</u>   <a href="/inputsweepparams.html">here</a>
+    to adjust sweep <i>parameters</i>.</p>
+  <hr>
+
 
   <h3>Calibration instructions:</h3>
   <p>To calibrate, run "Cal" with WE disconnected from RE/CE.</p>
@@ -47,13 +74,15 @@
     </center>
   </footer>
 
+<!-- // For async java explanation of the following lines of code, see:
+// https://www.w3schools.com/js/js_api_fetch.asp -->
 
 
   <script>
     let led1 = false;
 
     async function toggleLED1() {
-      led1 = !led1;
+      led1 = !led1; // toggle value
       try {
         const response = await fetch("http://ESP32stat.local/led1", {
           method: "PUT",

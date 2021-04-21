@@ -1,4 +1,4 @@
-bool userpause = false;             // pauses for user to press input on serial between each point in npv
+bool userpause = false;              // pauses for user to press input on serial between each point in npv
 bool print_output_to_serial = false; // pauses for user to press input on serial between each point in npv
 
 //Standard Arduino Libraries
@@ -49,6 +49,17 @@ enum Sweep_Mode_Type
 };
 Sweep_Mode_Type Sweep_Mode = dormant;
 
+// Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
+int sweep_param_lmpGain = 7;       //  (index) gain setting for LMP91000
+int sweep_param_cycles = 3;        //  (#)  number of times to run the scan
+int sweep_param_startV = 0;        //   (mV)  voltage to start the scan
+int sweep_param_endV = 0;          //     (mV)  voltage to stop the scan
+int sweep_param_vertex1 = 100;     //  (mV)  edge of the scan
+int sweep_param_vertex2 = -100;    // (mV)  edge of the scan
+int sweep_param_stepV = 5;         // (mV)      how much to increment the voltage by
+int sweep_param_rate = 100;        // (mV/sec)       scanning rate
+bool sweep_param_setToZero = true; //   Boolean determining whether the bias potential of
+
 // Arrays of IV curves etc:
 const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other experiments
 uint16_t arr_cur_index = 0;
@@ -98,6 +109,9 @@ LMP91000 pStat = LMP91000();
 
 // create webserver object for website:
 AsyncWebServer server(80);
+// example code to control LED from browser used here from
+// https://www.youtube.com/watch?v=aNDfsHQ5Gts&list=PL4cUxeGkcC9jx2TTZk3IGWKSbtugYdrlu&index=2
+const char *PARAM_MESSAGE = "message"; // message server receives from client
 
 // Legacy from LMP91000 examples in library:
 bool saveQueues = false;
@@ -240,7 +254,6 @@ inline void setVoltage(int16_t voltage)
 
   int16_t setV = dacVout * TIA_BIAS[bias_setting]; // "setV" is the exact cell voltage we will get, try to get it close to "voltage"
   voltage = abs(voltage);                          // (sign handled elsewhere in the code...)
-
 
   if (abs(voltage) < 15)
   {
@@ -412,7 +425,6 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   return current;
 }
 
-
 void testIV(int16_t startV, int16_t endV, int16_t numPoints,
             uint32_t delayTime_ms)
 {
@@ -470,7 +482,7 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
     SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
     SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
 
-//    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f");
+    //    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f");
     SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f");
   }
 
@@ -1828,7 +1840,7 @@ void runCAandPrintToSerial()
 void configureserver()
 // configures server
 {
-
+  // Need to tell server to accept packets from any source with any header via http methods GET, PUT:
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, PUT");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
@@ -1955,11 +1967,11 @@ void configureserver()
   }));
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
-  
+
   server.onNotFound([](AsyncWebServerRequest *request) {
     if (request->method() == HTTP_OPTIONS)
     {
-      request->send(200);
+      request->send(200); // options request typically sent by client at beginning to make sure server can handle request
     }
     else
     {
@@ -1968,8 +1980,66 @@ void configureserver()
     }
   });
 
+  // Send a POST request to <IP>/actionpage with a form field message set to <message>
+  server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String message;
+    Serial.println("server.on bla bla bla called");
+
+    //**********************************************
+
+    // List all parameters int params = request->params();
+    int params = request->params();
+    for (int i = 0; i < params; i++)
+    {
+      AsyncWebParameter *p = request->getParam(i);
+      if (p->isPost())
+      {
+        Serial.print(i);
+        Serial.print(F("\t"));
+        Serial.print(p->name().c_str());
+        Serial.print(F("\t"));
+        Serial.println(p->value().c_str());
+        //SerialDebugger.print(F("\t"))
+
+
+       //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+       // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+        //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+        //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+      }
+    }
+
+    //**********************************************
+
+    if (request->hasParam(PARAM_MESSAGE, true))
+    {
+      message = request->getParam(PARAM_MESSAGE, true)->value();
+      Serial.println(message);
+    }
+    else
+    {
+      message = "No message sent";
+    }
+    request->send(200, "text/plain", "Hello, POST: " + message);
+  });
+
   server.begin();
 }
+
+// void configuresweepparamssever(){
+// // configures server to parse html post messages that allow the user to set the sweep parameters
+// // Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
+// // int sweep_param_lmpGain=7; //  (index) gain setting for LMP91000
+// // int sweep_param_cycles=3;  //  (#)  number of times to run the scan
+// // int sweep_param_startV=0; //   (mV)  voltage to start the scan
+// // int sweep_param_endV=0; //     (mV)  voltage to stop the scan
+// // int sweep_param_vertex1=100;//  (mV)  edge of the scan
+// // int sweep_param_vertex2=-100; // (mV)  edge of the scan
+// // int sweep_param_stepV=5; // (mV)      how much to increment the voltage by
+// // int sweep_param_rate=100; // (mV/sec)       scanning rate
+// // bool sweep_param_setToZero=true;//   Boolean determining whether the bias potential of
+
+// }
 
 void setup()
 {
@@ -2014,6 +2084,8 @@ void setup()
 
   configureserver();
   //####################################################################################
+  File root = SPIFFS.open("/");
+  File file = root.openNextFile();
 }
 
 void loop()

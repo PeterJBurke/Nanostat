@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set Params</title>
+</head>
+
+<body>
+
+  <header>
+    <center>
+      <h2>BurkeLab ESP32 Stat</h2>
+      <p>Rev 3.5</p>
+    </center>
+  </header>
+  <hr>
+  <p><b>Please</b> <u>input</u> the following sweep <i>parameters</i>:</p>
+  <!-- <form action="/actionpage.html" method="POST" enctype="multipart/form-data"> -->
+    <form action="/actionpage.html" method="POST" enctype="application/json">
+      <!-- <div>
+      <label for="lmpGain_id">TIA gain</label>
+      <input name="lmpGain_input_name" id="lmpGain_id">
+    </div> -->
+      <!-- //void LMP91000::setGain(uint8_t gain) const
+//@param            gain: the gain to be set to
+//param - value - gain resistor
+//0 - 000 - External resistor
+//1 - 001 - 2.75 kOhm
+//2 - 010 - 3.5 kOhm
+//3 - 011 - 7 kOhm
+//4 - 100 - 14 kOhm
+//5 - 101 - 35 kOhm
+//6 - 110 - 120 kOhm
+//7 - 111 - 350 kOhm -->
+      <div>
+        <label for="lmpGain_id">TIA gain</label>
+        <select name="lmpGain_input_name" id="lmpGain_id">
+          <option value=7>350 kOhm</option>
+          <option value=6>120 kOhm</option>
+          <option value=5>35 kOhm</option>
+          <option value=4>14 kOhm</option>
+          <option value=3>7 kOhm</option>
+          <option value=2>3.5 kOhm</option>
+          <option value=1>2.75 kOhm</option>
+          <option value=0>External resistor</option>
+        </select>
+      </div>
+      <div>
+        <label># cycles</label>
+        <input type="number" name="cycles_name" id="cycles_id" value=3 min=1>
+      </div>
+      <div>
+        <label>Start voltage (mV)</label>
+        <input type="number" name="startV_name" id="startV_id" value=0 min=-792 max=792>
+      </div>
+      <div>
+        <label>End voltage (mV)</label>
+        <input type="number" name="endV_name" id="endV_id" value=0 min=-792 max=792>
+      </div>
+      <div>
+        <label>Vertex 1 (mV)</label>
+        <input type="number" name="vertex1_name" id="vertex1_id" value=100 min=-792 max=792>
+      </div>
+      <div>
+        <label>Vertex 2 (mV)</label>
+        <input type="number" name="vertex2_name" id="vertex2_id" value=-100 min=-792 max=792>
+      </div>
+      <div>
+        <label>Step voltage (mV)</label>
+        <input type="number" name="stepV_name" id="stepV_id" value=5 min=1 max=1000>
+      </div>
+      <div>
+        <label>Scan rate (mV/s)</label>
+        <input type="number" name="rate_name" id="rate_id" value=100 min=1 max=100000>
+      </div>
+      <div>
+        <label>Set to zero at end?</label>
+        <input type="radio" setToZero_name" id="setToZero_id" value=true>
+      </div>
+      <div>
+        <button type="reset">Reset</button>
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+
+
+    <h3>Sweep modes:</h3>
+    <p>NPV = Normal pulsed voltammetry.<br>
+      CV = Cyclic voltammetry.<br>
+      SWV = Square wave voltammetry.<br>
+      CA = Chronoamperometry.<br>
+      DC = Fixed DC bias.<br>
+      IV = IV curve.<br>
+      Cal = calibrate ESP32Stat. </p>
+
+
+    <hr>
+
+</body>
+
+</html>
+
+<!-- //void runCV()
+//
+//@param      lmpGain:    gain setting for LMP91000
+//@param      cycles:     number of times to run the scan
+//@param      startV:     voltage to start the scan
+//@param      endV:       voltage to stop the scan
+//@param      vertex1:    edge of the scan
+//                        If vertex1 is greater than starting voltage, we start
+//                        the experiment by running CV in the forward
+//                        (oxidation) direction.
+//@param      vertex2:    edge of the scan
+//                        If vertex2 is greater than starting voltage, we start
+//                        the experiment by running CV in the reverse
+//                        (reduction) direction.
+//@param      stepV:      how much to increment the voltage by
+//@param      rate:       scanning rate
+//                        in the case of CV, scanning rate is in mV/s
+//@param      setToZero:  Boolean determining whether the bias potential of
+//                        the electrochemical cell should be set to 0 at the
+//                        end of the experiment.
+//
+//Runs the electrochemical technique, Cyclic Voltammetry. In this
+//technique the electrochemical cell is biased at a series of
+//voltages and the current at each subsequent voltage is measured. -->
+
+<!-- void runCV(uint8_t lmpGain, uint8_t cycles, int16_t startV,
+           int16_t endV, int16_t vertex1, int16_t vertex2,
+           int16_t stepV, uint16_t rate, bool setToZero) -->
+
+
+
+<!-- 
+  void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
+  int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
+  uint32_t quietTime, uint8_t range, bool setToZero)
+{
+//@param      lmpGain:      gain setting for LMP91000
+//@param      startV:       voltage to start the scan
+//@param      endV:         voltage to stop the scan
+//@param      pulseAmp:     amplitude of square wave
+//@param      pulse_period: the  of the excitation voltage
+//@param      pulse_width:  the pulse-width of the excitation voltage
+//@param      quietTime:    initial wait time before the first pulse
+//@param      range:        the expected range of the measured current
+//@param      setToZero:    Boolean determining whether the bias potential of
+//                          the electrochemical cell should be set to 0 at the
+//                          end of the experiment. -->
