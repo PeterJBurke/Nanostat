@@ -1837,6 +1837,63 @@ void runCAandPrintToSerial()
   SerialDebugger.println("Quiet time till next Amp run");
 }
 
+
+void set_sweep_parameters_from_form_input(String form_id, String form_value)
+{
+// // Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
+// int sweep_param_lmpGain = 7;       //  (index) gain setting for LMP91000
+// int sweep_param_cycles = 3;        //  (#)  number of times to run the scan
+// int sweep_param_startV = 0;        //   (mV)  voltage to start the scan
+// int sweep_param_endV = 0;          //     (mV)  voltage to stop the scan
+// int sweep_param_vertex1 = 100;     //  (mV)  edge of the scan
+// int sweep_param_vertex2 = -100;    // (mV)  edge of the scan
+// int sweep_param_stepV = 5;         // (mV)      how much to increment the voltage by
+// int sweep_param_rate = 100;        // (mV/sec)       scanning rate
+// bool sweep_param_setToZero = true; //   Boolean determining whether the bias potential of
+
+  if(form_id=="sweep_param_lmpGain"){
+    sweep_param_lmpGain=form_value.toInt();
+  }
+
+  // else if(form_id=="xyz"){
+  //   xyz=form_value.toInt();
+  // }
+
+  else if(form_id=="sweep_param_cycles"){
+    sweep_param_cycles=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_startV"){
+    sweep_param_startV=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_endV"){
+    sweep_param_endV=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_vertex1"){
+    sweep_param_vertex1=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_vertex2"){
+    sweep_param_vertex2=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_stepV"){
+    sweep_param_stepV=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_rate"){
+    sweep_param_rate=form_value.toInt();
+  }
+  else if(form_id=="sweep_param_setToZero"){
+    if(form_value=="true"){
+      sweep_param_setToZero=true;
+    }
+    else if(form_value!="true"){
+      sweep_param_setToZero=false;
+    }
+  }
+
+
+}
+
+
+
 void configureserver()
 // configures server
 {
@@ -1981,7 +2038,7 @@ void configureserver()
   });
 
   // Send a POST request to <IP>/actionpage with a form field message set to <message>
-  server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
+   server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
     String message;
     Serial.println("server.on bla bla bla called");
 
@@ -2006,6 +2063,7 @@ void configureserver()
        // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
         //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
         //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+        set_sweep_parameters_from_form_input(p->name().c_str(),p->value().c_str());
       }
     }
 
@@ -2020,11 +2078,18 @@ void configureserver()
     {
       message = "No message sent";
     }
-    request->send(200, "text/plain", "Hello, POST: " + message);
+    // request->send(200, "text/HTML", "Hello, POST: " + message);
+    request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
+    // request->send(200, "text/URL", "www.google.com");
+    // request->send(200, "text/URL", "<meta http-equiv=\"Refresh\" content=\"0; URL=https://google.com/\">");
+// <meta http-equiv="Refresh" content="0; URL=https://example.com/">
+
   });
 
   server.begin();
 }
+
+
 
 // void configuresweepparamssever(){
 // // configures server to parse html post messages that allow the user to set the sweep parameters
