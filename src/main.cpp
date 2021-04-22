@@ -2183,7 +2183,10 @@ void loop()
   {
 
     // testLMP91000(50, 1);
-    runCV(LMPgain, 2, 0, 0, 450, -200, 5, 1000, true);
+
+
+    // runCV(LMPgain, 2, 0, 0, 450, -200, 5, 1000, true);
+    runCV(sweep_param_lmpGain, sweep_param_cycles, sweep_param_startV, sweep_param_endV, sweep_param_vertex1, sweep_param_vertex2, sweep_param_stepV, sweep_param_rate, sweep_param_setToZero);
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == SQV)
