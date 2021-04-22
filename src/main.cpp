@@ -828,6 +828,17 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
   // internally iterates averages per reading to get idea how it effects noise...
   // dumps output to serial
 
+  //Reset Arrays
+  for (uint16_t i = 0; i < arr_samples; i++)
+    volts[i] = 0;
+  for (uint16_t i = 0; i < arr_samples; i++)
+    output_time[i] = 0;
+  for (uint16_t i = 0; i < arr_samples; i++)
+    amps[i] = 0;
+
+  number_of_valid_points_in_volts_amps_array = 0;
+  arr_cur_index = 0;
+
   float adc_bits_array[numPoints];
   float adc_bits_array_sum = 0;
   float adc_bits_array_avg = 0;
@@ -863,8 +874,15 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
     delay(delayTime_ms);
     for (int16_t j = 0; j < numPoints; j += 1) // read the adc data
     {
+      pulseLED_on_off(LEDPIN, 10);
       adc_bits_array[j] = analog_read_avg(num_readings_to_average, LMP);
       //pulseLED_on_off(LEDPIN, 10);
+      // Now populate Volts array etc:
+      volts[arr_cur_index] = biasV;
+      output_time[arr_cur_index] = millis();
+      amps[arr_cur_index] = adc_bits_array[j];
+      arr_cur_index ++;
+      number_of_valid_points_in_volts_amps_array++;
     }
     for (int16_t j = 0; j < numPoints; j += 1) // calculate the average
     {
@@ -2674,7 +2692,7 @@ void loop()
     // testNoiseAtABiasPoint(-100, 100, 50); //  bias at -100 mV on cell. Read 100 readings and calculate std dev and avg of adc for different reading avgs.
     testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
                           sweep_param_delayTime_ms_noisetest);
-    writeVoltsCurrentArraytoFile();
+    writeVoltsCurrentTimeArraytoFile();
     // testNOISE(100);
     // testDACs(50);
     // testDACandADCs(50);
