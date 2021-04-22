@@ -505,7 +505,7 @@ void writeVoltsCurrentArraytoFile()
   // }
   // file.close();
 
-  File file = SPIFFS.open("/test.txt", FILE_WRITE);
+  File file = SPIFFS.open("/data.txt", FILE_WRITE);
 
   if (!file)
   {
@@ -547,7 +547,7 @@ void writeVoltsCurrentArraytoFile()
 
 void readFileAndPrintToSerial()
 {
-  File file2 = SPIFFS.open("/test.txt");
+  File file2 = SPIFFS.open("/data.txt");
 
   if (!file2)
   {
@@ -565,6 +565,25 @@ void readFileAndPrintToSerial()
 
   file2.close();
 }
+
+// void downloadfile()
+// {
+
+//   File todownload = SPIFFS.open("/data.txt", "r");
+//   if (todownload)
+//   {
+//     server.sendHeader("Content-Type", "text/text");
+//     server.sendHeader("Content-Disposition", "attachment; filename=" + filename);
+//     server.sendHeader("Connection", "close");
+//     server.streamFile(todownload, "application/octet-stream");
+//     todownload.close();
+//   }
+//   else
+//   {
+//     Serial.println("Couldn't open file data.txt.")
+//   }
+// }
+// }
 
 void listDir(const char *dirname, uint8_t levels)
 {
@@ -609,6 +628,38 @@ void listDir(const char *dirname, uint8_t levels)
   }
 }
 
+inline void saveVoltammogram(float voltage, float current, bool debug)
+{
+  //@param        voltage: voltage or time depending on type of experiment
+  //                       voltage for voltammetry, time for time for
+  //                       time evolution experiments like chronoamperometry
+  //@param        current: current from the electrochemical cell
+  //@param        debug:   flag for determining whether or not to print to
+  //                       serial monitor
+  //
+  //Save voltammogram data to corresponding arrays.
+  // if (saveQueues && arr_cur_index < arr_samples)
+  // {
+  //   volts[arr_cur_index] = (int16_t)voltage;
+  //   amps[arr_cur_index] = current;
+  //   arr_cur_index++;
+  //   number_of_valid_points_in_volts_amps_array += 1;
+  // }
+    volts[arr_cur_index] = (int16_t)voltage;
+    amps[arr_cur_index] = current;
+    arr_cur_index++;
+    number_of_valid_points_in_volts_amps_array ++;
+
+  if (debug)
+  {
+    SerialDebugger.print(voltage);
+    //SerialDebugger.print(F("\t"));
+    SerialDebugger.print(F(","));
+    SerialDebugger.print(current, 5);
+    SerialDebugger.print(F(","));
+    SerialDebugger.print(micros());
+  }
+}
 void testIV(int16_t startV, int16_t endV, int16_t numPoints,
             uint32_t delayTime_ms)
 {
@@ -621,6 +672,15 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   // Measures IV curve, dumps output to serial.
   float i_forward = 0;
   uint32_t voltage_step;
+
+  //Reset Arrays
+  for (uint16_t i = 0; i < arr_samples; i++)
+    volts[i] = 0;
+  for (uint16_t i = 0; i < arr_samples; i++)
+    amps[i] = 0;
+
+  arr_cur_index = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
 
   voltage_step = (endV - startV) / numPoints;
   if (voltage_step == 0)
@@ -675,6 +735,9 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
     // SerialDebugger.println(this_voltage);
     // SerialDebugger.println(delayTime_ms);
     i_forward = biasAndSample(this_voltage, delayTime_ms);
+
+    saveVoltammogram(this_voltage, i_forward, false);
+    // saveVoltammogram(this_voltage, i_forward, true);
     //i_forward = biasAndSample(startV, delayTime_ms);
     if (print_output_to_serial)
     {
@@ -1179,34 +1242,6 @@ void testLMP91000(uint32_t delayTime_ms, uint8_t bias_setting_local)
   }
 }
 
-inline void saveVoltammogram(float voltage, float current, bool debug)
-{
-  //@param        voltage: voltage or time depending on type of experiment
-  //                       voltage for voltammetry, time for time for
-  //                       time evolution experiments like chronoamperometry
-  //@param        current: current from the electrochemical cell
-  //@param        debug:   flag for determining whether or not to print to
-  //                       serial monitor
-  //
-  //Save voltammogram data to corresponding arrays.
-  if (saveQueues && arr_cur_index < arr_samples)
-  {
-    volts[arr_cur_index] = (int16_t)voltage;
-    amps[arr_cur_index] = current;
-    arr_cur_index++;
-    number_of_valid_points_in_volts_amps_array += 1;
-  }
-
-  if (debug)
-  {
-    SerialDebugger.print(voltage);
-    //SerialDebugger.print(F("\t"));
-    SerialDebugger.print(F(","));
-    SerialDebugger.print(current, 5);
-    SerialDebugger.print(F(","));
-    SerialDebugger.print(micros());
-  }
-}
 void runNPVForward(int16_t startV, int16_t endV, int8_t pulseAmp,
                    uint32_t pulse_width, uint32_t off_time)
 {
@@ -2346,6 +2381,10 @@ void configureserver()
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
+  server.on("/download", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(SPIFFS, "/data.txt", "text/plain", true);
+  });
+
   server.onNotFound([](AsyncWebServerRequest *request) {
     if (request->method() == HTTP_OPTIONS)
     {
@@ -2502,6 +2541,7 @@ void loop()
            sweep_param_pulseAmp_NPV, sweep_param_pulseAmp_NPV, sweep_param_period_NPV,
            sweep_param_quietTime_NPV, 1, sweep_param_setToZero);
 
+    writeVoltsCurrentArraytoFile();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CV)
@@ -2514,7 +2554,7 @@ void loop()
     runCV(sweep_param_lmpGain, sweep_param_cycles_CV, sweep_param_startV_CV,
           sweep_param_endV_CV, sweep_param_vertex1_CV, sweep_param_vertex2_CV, sweep_param_stepV_CV,
           sweep_param_rate_CV, sweep_param_setToZero);
-
+    writeVoltsCurrentArraytoFile();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == SQV)
@@ -2523,7 +2563,7 @@ void loop()
 
     runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
            sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero);
-
+    writeVoltsCurrentArraytoFile();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CA)
@@ -2533,7 +2573,7 @@ void loop()
     runAmp(sweep_param_lmpGain, sweep_param_pre_stepV_CA, sweep_param_quietTime_CA,
            sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
            sweep_param_samples_CA, 1, sweep_param_setToZero);
-
+    writeVoltsCurrentArraytoFile();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == DCBIAS)
@@ -2541,7 +2581,7 @@ void loop()
     // testNoiseAtABiasPoint(-100, 100, 50); //  bias at -100 mV on cell. Read 100 readings and calculate std dev and avg of adc for different reading avgs.
     testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
                           sweep_param_delayTime_ms_noisetest);
-
+    writeVoltsCurrentArraytoFile();
     // testNOISE(100);
     // testDACs(50);
     // testDACandADCs(50);
@@ -2554,23 +2594,23 @@ void loop()
 
     testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
            sweep_param_delayTime_ms_IV);
-
+    writeVoltsCurrentArraytoFile();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CAL)
   {
     // calibrateDACandADCs(50);
     // calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
-    listDir("/", 3);
-    writeVoltsCurrentArraytoFile();
-    sleep(1);
-    readFileAndPrintToSerial();
+
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == MISC_MODE)
   {
     // testNoiseAtABiasPoint(-100, 100, 50);
+    listDir("/", 3);
     writeVoltsCurrentArraytoFile();
+    sleep(1);
+    readFileAndPrintToSerial();
     Sweep_Mode = dormant;
   }
   else
