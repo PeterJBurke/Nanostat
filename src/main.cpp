@@ -545,6 +545,71 @@ void writeVoltsCurrentArraytoFile()
   file.close();
 }
 
+void writeVoltsCurrentTimeArraytoFile()
+{
+  // File file = SPIFFS.open("/file.txt", "w");
+  // if (!file)
+  // {
+  //   Serial.println("Error opening file for writing");
+  //   return;
+  // }
+  // int bytesWritten = file.print("TEST SPIFFS");
+
+  // if (bytesWritten > 0)
+  // {
+  //   Serial.println("File was written");
+  //   Serial.println(bytesWritten);
+  // }
+  // else
+  // {
+  //   Serial.println("File write failed");
+  // }
+  // file.close();
+
+  File file = SPIFFS.open("/data.txt", FILE_WRITE);
+
+  if (!file)
+  {
+    Serial.println("There was an error opening the file for writing");
+    return;
+  }
+  if (file.println("BurkeLab Nanostat Rev 3.5 Sweep"))
+  {
+    Serial.println("File was written");
+  }
+  else
+  {
+    Serial.println("File write failed");
+  }
+  // file.println("Line 2!");
+  // file.println("Line 3!");
+  Serial.println("Writing file. Date in millis() is:");
+  Serial.println(millis());
+  Serial.println("number_of_valid_points_in_volts_amps_array=");
+  Serial.println(number_of_valid_points_in_volts_amps_array);
+
+  file.print("Index");
+  file.print(F("\t")); // tab
+  file.print("Time");
+  file.print(F("\t")); // tab
+  file.print("Current_Amps");
+  file.print(F("\t")); // tab
+  file.println("Voltage_V");
+
+  //Write Arrays
+  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+  {
+    file.print(i);
+    file.print(F("\t")); // tab
+    file.print(output_time[i]);
+    file.print(F("\t")); // tab
+    file.print(amps[i], DEC);
+    file.print(F("\t")); // tab
+    file.println(volts[i] / 1e3, DEC);
+  }
+  file.close();
+}
+
 void readFileAndPrintToSerial()
 {
   File file2 = SPIFFS.open("/data.txt");
@@ -645,10 +710,10 @@ inline void saveVoltammogram(float voltage, float current, bool debug)
   //   arr_cur_index++;
   //   number_of_valid_points_in_volts_amps_array += 1;
   // }
-    volts[arr_cur_index] = (int16_t)voltage;
-    amps[arr_cur_index] = current;
-    arr_cur_index++;
-    number_of_valid_points_in_volts_amps_array ++;
+  volts[arr_cur_index] = (int16_t)voltage;
+  amps[arr_cur_index] = current;
+  arr_cur_index++;
+  number_of_valid_points_in_volts_amps_array++;
 
   if (debug)
   {
@@ -1334,6 +1399,14 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   //voltages. The current is sampled at the end of each step potential. The
   //potential is returned to the startV at the end of each pulse period.
   //https://www.basinc.com/manuals/EC_epsilon/techniques/Pulse/pulse#normal
+  //Reset Arrays
+  for (uint16_t i = 0; i < arr_samples; i++)
+    volts[i] = 0;
+  for (uint16_t i = 0; i < arr_samples; i++)
+    amps[i] = 0;
+
+  arr_cur_index = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
 
   if (pulse_width > pulse_period)
   {
@@ -1701,6 +1774,15 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
   pulseAmp = abs(pulseAmp);
   freq = (uint16_t)(1000.0 / (2 * freq)); //converts frequency to milliseconds
 
+  //Reset Arrays
+  for (uint16_t i = 0; i < arr_samples; i++)
+    volts[i] = 0;
+  for (uint16_t i = 0; i < arr_samples; i++)
+    amps[i] = 0;
+
+  arr_cur_index = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
+
   //testing shows that time is usually off by 1 ms or so, therefore
   //we subtract 1 ms from the calculated rate to compensate
   freq -= 1;
@@ -1885,6 +1967,15 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   //  else
   //    current = "SOME ERROR";
 
+  //Reset Arrays
+  for (uint16_t i = 0; i < arr_samples; i++)
+    volts[i] = 0;
+  for (uint16_t i = 0; i < arr_samples; i++)
+    amps[i] = 0;
+
+  arr_cur_index = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
+
   if (samples > arr_samples / 3)
     samples = arr_samples / 3;
   initLMP(lmpGain);
@@ -1928,6 +2019,8 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       int adc_bits; // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
       // hard wired in BurkeLab ESP32Stat Rev 3.5 to LMP i.e ESP32 pin 32 (ADC1_CH7)
       //adc_bits = analogRead(LMP); // read a single point
+      pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
+      number_of_valid_points_in_volts_amps_array++;
       adc_bits = analog_read_avg(num_adc_readings_to_average, LMP); // read a number of points and average them...
       float v1;
       v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
@@ -2573,7 +2666,7 @@ void loop()
     runAmp(sweep_param_lmpGain, sweep_param_pre_stepV_CA, sweep_param_quietTime_CA,
            sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
            sweep_param_samples_CA, 1, sweep_param_setToZero);
-    writeVoltsCurrentArraytoFile();
+    writeVoltsCurrentTimeArraytoFile();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == DCBIAS)
