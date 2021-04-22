@@ -7,96 +7,115 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Set Params</title>
 
-   <!-- style from https://gist.github.com/prof3ssorSt3v3/8d0616f4df11dae5233584b0d2a807f6
+  <!-- style from https://gist.github.com/prof3ssorSt3v3/8d0616f4df11dae5233584b0d2a807f6
    and https://www.youtube.com/watch?v=ikR9DsGMUMc&list=PL4sSjlE6rMIlWr9aFHfosaQt2YB2eIl43&index=18&t=334s -->
 
-<style>
+  <style>
     *,
     *::after,
-    *:before{
-        padding: 0;
-        margin: 0;
-        box-sizing: border-box;
+    *:before {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
     }
-    html{
-        font:normal 14px/1.5 sans-serif;
+
+    html {
+      font: normal 14px/1.5 sans-serif;
     }
-    h1{
-        margin: 1rem 2rem;
+
+    h1 {
+      margin: 1rem 2rem;
     }
-    form{
-        margin: 2rem;
-        width: 350px;
-        background-color: white;
-        padding: 0.5rem;
-        margin-left: auto;
-        margin-right: auto;
+
+    form {
+      margin: 2rem;
+      width: 350px;
+      background-color: white;
+      padding: 0.5rem;
+      margin-left: auto;
+      margin-right: auto;
     }
-    .form-box{
-        padding: 0.5rem;
-        clear: both;
-        width: 100%;
-        position: relative;
+
+    .form-box {
+      padding: 0.5rem;
+      clear: both;
+      width: 100%;
+      position: relative;
     }
-    .form-box label{
-        font-size: 1rem;
-        float: left;
-        width: 150px;
-        margin-right: 20px;
+
+    .form-box label {
+      font-size: 1rem;
+      float: left;
+      width: 150px;
+      margin-right: 20px;
     }
-    .form-box input{
-        font-size: 1rem;
-        width: 75px;
-        padding: 0.25rem 1rem;
+
+    .form-box input {
+      font-size: 1rem;
+      width: 75px;
+      padding: 0.25rem 1rem;
     }
-    .form-box select{
-        font-size: 1rem;
-        width: 150px;
-        padding: 0.25rem 1rem;
+
+    .form-box select {
+      font-size: 1rem;
+      width: 150px;
+      padding: 0.25rem 1rem;
     }
-    .form-box option{
-        font-size: 1rem;
-        width: 300px;
-        padding: 0.25rem 1rem;
+
+    .form-box option {
+      font-size: 1rem;
+      width: 300px;
+      padding: 0.25rem 1rem;
     }
-    .form-box input[type="checkbox"]{
-        font-size: 1rem;
+
+    .form-box input[type="checkbox"] {
+      font-size: 1rem;
     }
-    .form-box button{
-        font-size: 1rem;
-        border: none;
-        padding: 0.25rem 2rem;
-        margin-right: 1rem;
-        color: white;
-        background-color: cornflowerblue;
-        cursor: pointer;
+
+    .form-box button {
+      font-size: 1rem;
+      border: none;
+      padding: 0.25rem 2rem;
+      margin-right: 1rem;
+      color: white;
+      background-color: cornflowerblue;
+      cursor: pointer;
     }
-    
-    .error::after{
-        background-color: hsl(10, 60%, 50%);
-        color: papayawhip;
-        font-size: 1rem;
-        line-height: 1.8;
-        width: 350px;
-        padding-left: 1rem;
-        position:absolute;
-        right: 0;
-        content: attr(data-errormsg);
+
+    .error::after {
+      background-color: hsl(10, 60%, 50%);
+      color: papayawhip;
+      font-size: 1rem;
+      line-height: 1.8;
+      width: 350px;
+      padding-left: 1rem;
+      position: absolute;
+      right: 0;
+      content: attr(data-errormsg);
     }
-</style>
+  </style>
 </head>
 
 <body style="background-color: lightblue;">
   <header>
     <center>
-      <h1>BurkeLab ESP32 Stat</h1>
+      <h2>BurkeLab ESP32 Stat: <i>"NanoStat"</i></h2>
+
       <p>Rev 3.5</p>
     </center>
   </header>
   <hr>
   <p><b>Please</b> <u>input</u> the following sweep <i>parameters</i>:</p>
+  <!-- <center><h2><i>Sweep parameters</i> </h2>
+  </center> -->
   <form action="/actionpage.html" method="POST" enctype="application/json">
-      <!-- <div>
+    <!-- format: -->
+    <!--  <div class="form-box">
+      <label>xyz</label>
+      <input type="number" name="sweep_xyz" id="zya_id" value=xyz min=xyz max=xyz>
+    </div> -->
+
+    <!-- <div>
       <label for="lmpGain_id">TIA gain</label>
       <input name="lmpGain_input_name" id="lmpGain_id">
     </div> -->
@@ -111,6 +130,7 @@
 //5 - 101 - 35 kOhm
 //6 - 110 - 120 kOhm
 //7 - 111 - 350 kOhm -->
+    <h3> General </h3>
     <div class="form-box">
       <label for="lmpGain_id">TIA gain</label>
       <select name="sweep_param_lmpGain" id="lmpGain_id">
@@ -124,44 +144,241 @@
         <option value=0>External resistor</option>
       </select>
     </div>
+
     <div class="form-box">
-      <label># cycles</label>
-      <input type="number" name="sweep_param_cycles" id="cycles_id" value=3 min=1>
+      <label>Set to zero at end?</label>
+      <input type="radio" name="sweep_param_setToZero" id="setToZero_id" value="true">
     </div>
+
 
     <!-- <div class="form-box">
       <label>Start voltage test (mV)</label>
       <input type="range" name="sweep_param_startV2" id="startV_id2" value=0 min=-792 max=792 oninput="result.value=send.value">
     </div> -->
 
+
+    <h3> CV specific</h3>
+
+    <div class="form-box">
+      <label># cycles</label>
+      <input type="number" name="sweep_param_cycles_CV" id="sweep_param_cycles_CV_id" value=3 min=1>
+    </div>
+
     <div class="form-box">
       <label>Start voltage (mV)</label>
-      <input type="number" name="sweep_param_startV" id="startV_id" value=0 min=-792 max=792>
+      <input type="number" name="sweep_param_startV_CV" id="sweep_param_startV_CV_id" value=0 min=-792 max=792>
     </div>
+
     <div class="form-box">
       <label>End voltage (mV)</label>
-      <input type="number" name="sweep_param_endV" id="endV_id" value=0 min=-792 max=792>
+      <input type="number" name="sweep_param_endV_CV" id="sweep_param_endV_CV_id" value=0 min=-792 max=792>
     </div>
+
     <div class="form-box">
-      <label>Vertex 1 (mV)</label>
-      <input type="number" name="sweep_param_vertex1" id="vertex1_id" value=100 min=-792 max=792>
+      <label>Max. voltage (mV)</label>
+      <input type="number" name="sweep_param_vertex1_CV" id="sweep_param_vertex1_CV_id" value=100 min=-792 max=792>
     </div>
+
     <div class="form-box">
-      <label>Vertex 2 (mV)</label>
-      <input type="number" name="sweep_param_vertex2" id="vertex2_id" value=-100 min=-792 max=792>
+      <label>Min. voltage (mV)</label>
+      <input type="number" name="sweep_param_vertex2_CV" id="sweep_param_vertex2_CV_id" value=-100 min=-792 max=792>
     </div>
+
     <div class="form-box">
       <label>Step voltage (mV)</label>
-      <input type="number" name="sweep_param_stepV" id="stepV_id" value=5 min=1 max=1000>
+      <input type="number" name="sweep_param_stepV_CV" id="sweep_param_stepV_CV_id" value=5 min=1 max=1000>
     </div>
+
     <div class="form-box">
       <label>Scan rate (mV/s)</label>
-      <input type="number" name="sweep_param_rate" id="rate_id" value=100 min=1 max=100000>
+      <input type="number" name="sweep_param_rate_CV" id="sweep_param_rate_CV_id" value=100 min=1 max=100000>
     </div>
+
+
+    <h3> NPV specific</h3>
+    <!--  <div class="form-box">
+      <label>xyz</label>
+      <input type="number" name="sweep_xyz" id="zya_id" value=xyz min=xyz max=xyz>
+    </div> -->
+
+
+
     <div class="form-box">
-      <label>Set to zero at end?</label>
-      <input type="radio" name="sweep_param_setToZero" id="setToZero_id" value="true" >
+      <label>Start voltage (mV)</label>
+      <input type="number" name="sweep_param_startV_NPV" id="sweep_param_startV_NPV_id" value=-200 min=-792 max=792>
     </div>
+
+    <div class="form-box">
+      <label>End voltage (mV)</label>
+      <input type="number" name="sweep_param_endV_NPV_xyz" id="sweep_param_endV_NPV_id" value=500 min=-792 max=792>
+    </div>
+
+
+    <div class="form-box">
+      <label>Pulse amplitude (mV)</label>
+      <input type="number" name="sweep_param_pulseAmp_NPV" id="sweep_param_pulseAmp_NPV_id" value=1 min=1 max=1000>
+    </div>
+
+
+    <div class="form-box">
+      <label>Pulse width (ms)</label>
+      <input type="number" name="sweep_param_width_NPV" id="sweep_param_width_NPV_id" value=50 min=1 max=1000>
+    </div>
+
+
+    <div class="form-box">
+      <label>Pulse period (ms)</label>
+      <input type="number" name="sweep_param_period_NPV" id="sweep_param_period_NPV_id" value=200 min=1 max=1000>
+    </div>
+
+
+    <div class="form-box">
+      <label>Quiet time (ms)</label>
+      <input type="number" name="sweep_param_quietTime_NPV" id="sweep_param_quietTime_NPV_id" value=1000 min=1
+        max=100000>
+    </div>
+
+
+
+
+    <h3> SW specific</h3>
+
+    <!--  <div class="form-box">
+      <label>xyz</label>
+      <input type="number" name="sweep_xyz" id="zya_id" value=xyz min=xyz max=xyz>
+    </div> -->
+
+    <div class="form-box">
+      <label>Start voltage (mV)</label>
+      <input type="number" name="sweep_param_startV_SWV" id="sweep_param_startV_SWV_id" value=-200 min=-792 max=792>
+    </div>
+
+    <div class="form-box">
+      <label>End voltage (mV)</label>
+      <input type="number" name="sweep_param_endV_SWV" id="sweep_param_endV_SWV_id" value=500 min=-792 max=792>
+    </div>
+
+    <div class="form-box">
+      <label>Pulse amplitude (mV)</label>
+      <input type="number" name="sweep_param_pulseAmp_SWV" id="sweep_param_pulseAmp_SWV_id" value=1 min=1 max=1000>
+    </div>
+
+    <div class="form-box">
+      <label>Step voltage (mV)</label>
+      <input type="number" name="sweep_param_stepV_SWV" id="sweep_param_stepV_SWV_id" value=5 min=1 max=1000>
+    </div>
+
+    <div class="form-box">
+      <label>Frequency (Hz)</label>
+      <input type="number" name="sweep_param_freq_SWV" id="sweep_param_freq_SWV_id" value=10 min=1 max=100000>
+    </div>
+
+    <h3> CA specific</h3>
+
+
+    <div class="form-box">
+      <label>Step voltage (mV)</label>
+      <input type="number" name="sweep_param_pre_stepV_CA" id="sweep_param_pre_stepV_CA_id" value=50 min=1 max=1000>
+    </div>
+
+
+    <div class="form-box">
+      <label>Quiet time (ms)</label>
+      <input type="number" name="sweep_param_quietTime_CA" id="sweep_param_quietTime_CA_id" value=1000 min=1 max=100000>
+    </div>
+
+
+    <div class="form-box">
+      <label>First step voltage (mV)</label>
+      <input type="number" name="sweep_param_V1_CA" id="sweep_param_V1_CA_id" value=100 min=-792 max=792>
+    </div>
+
+
+    <div class="form-box">
+      <label>First step time (mV)</label>
+      <input type="number" name="sweep_param_t1_CA" id="sweep_param_t1_CA_id" value=2000 min=1 max=100000>
+    </div>
+
+
+
+    <div class="form-box">
+      <label>First step voltage (mV)</label>
+      <input type="number" name="sweep_param_V2_CA" id="sweep_param_V2_CA_id" value=50 min=-792 max=792>
+    </div>
+
+
+    <div class="form-box">
+      <label>First step time (mV)</label>
+      <input type="number" name="sweep_param_t2_CA" id="sweep_param_t2_CA_id" value=2000 min=1 max=100000>
+    </div>
+
+
+    <div class="form-box">
+      <label>Number of samples</label>
+      <input type="number" name="sweep_param_samples_CA" id="sweep_param_samples_CA_id" value=100 min=1 max=100000>
+    </div>
+
+
+
+    <h3> Noise test specific</h3>
+    <!--  <div class="form-box">
+      <label>xyz</label>
+      <input type="number" name="sweep_xyz" id="zya_id" value=xyz min=xyz max=xyz>
+    </div> -->
+
+
+    <div class="form-box">
+      <label>Bias voltage (mV)</label>
+      <input type="number" name="sweep_param_biasV_noisetest" id="sweep_param_biasV_noisetest_id" value=100 min=-792
+        max=792>
+    </div>
+
+    <div class="form-box">
+      <label>Number of points</label>
+      <input type="number" name="sweep_param_numPoints_noisetest" id="sweep_param_numPoints_noisetest_id" value=100
+        min=1 max=1000000>
+    </div>
+
+    <div class="form-box">
+      <label>Delay time (ms)</label>
+      <input type="number" name="sweep_param_delayTime_ms_noisetest" id="sweep_param_delayTime_ms_noisetest_id" value=50
+        min=1 max=1000000>
+    </div>
+
+
+
+    <h3> IV test specific</h3>
+
+    <div class="form-box">
+      <label>Start voltage (mV)</label>
+      <input type="number" name="sweep_param_startV_IV" id="sweep_param_startV_IV_id" value=-200 min=-792 max=792>
+    </div>
+
+    <div class="form-box">
+      <label>End voltage (mV)</label>
+      <input type="number" name="sweep_param_endV_IV" id="sweep_param_endV_IV_id" value=500 min=-792 max=792>
+    </div>
+
+    <div class="form-box">
+      <label>Number of points</label>
+      <input type="number" name="sweep_param_numPoints_IV" id="sweep_param_numPoints_IV_id" value=701 min=1 max=1000000>
+    </div>
+
+    <div class="form-box">
+      <label>Delay time (ms)</label>
+      <input type="number" name="sweep_param_delayTime_ms_IV" id="sweep_param_delayTime_ms_IV_id" value=50 min=1
+        max=1000000>
+    </div>
+
+    <h3> Calibration test specific</h3>
+     <div class="form-box">
+      <label>Delay time (ms)</label>
+      <input type="number" name="sweep_param_delayTime_ms_CAL" id="sweep_param_delayTime_ms_CAL_id" value=50 min=1
+      max=1000000>
+    </div>
+
+
+ 
 
     <!-- <form>
       <input type="radio" id="male" name="gender" value="male">
@@ -184,18 +401,62 @@
       <input type="submit"/>  
      </a> -->
 
-
-  <!-- <h3>Sweep modes:</h3>
-  <p>NPV = Normal pulsed voltammetry.<br>
-    CV = Cyclic voltammetry.<br>
+  <hr>
+  <h3>Sweep modes:</h3>
+  <p>CV = Cyclic voltammetry.<br>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/CycVolt/cv">Bioanalytical Systems, Inc. tutorial on
+      CV</a><br>
+    <img src="/cv_wave_form.gif" alt="CV"><br>
+    NPV = Normal pulsed voltammetry. <br>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/techniques/Pulse/pulse#normal">Bioanalytical Systems, Inc.
+      tutorial on NPV</a><br>
+    <img src="/npv_wave_form.gif" alt="NPV"><br>
     SWV = Square wave voltammetry.<br>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/Pulse/pulse#square">Bioanalytical Systems, Inc.
+      tutorial on SWV</a><br>
+    <img src="/dpv_wave_form.gif" alt="SWV"><br>
     CA = Chronoamperometry.<br>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/ChronoI/ca">Bioanalytical Systems, Inc. tutorial on
+      CA</a><br>
+    <img src="/ca_wave_form.gif" alt="CA"><br>
     DC = Fixed DC bias.<br>
     IV = IV curve.<br>
-    Cal = calibrate ESP32Stat. </p> -->
+    Cal = calibrate ESP32Stat.
+  </p>
+
 
 
   <hr>
+
+  <!-- svg drawing tool at http://drawsvg.org/drawsvg.html -->
+  <!-- <svg width="200px" height="200px" viewBox="0 0 200 200" preserveAspectRatio="xMinYMin meet">
+    <rect id="svgEditorBackground" x="0" y="0" width="200" height="200" style="fill: none; stroke: none;" />
+    <line id="e1_line" x1="13.00" y1="88.00" x2="167.00" y2="89.00" style="stroke:black;fill:none;stroke-width:1px;" />
+    <line id="e2_line" x1="55.00" y1="167.00" x2="55.00" y2="16.00" style="stroke:black;fill:none;stroke-width:1px;" />
+    <polyline style="stroke:black;fill:none;stroke-width:1px;" id="e3_polyline" points="78,73" />
+    <polyline style="stroke:#FF0000;fill:none;stroke-width:1px;" id="e4_polyline"
+      points="17,133,73,48,124,168,168,51" />
+    <text style="fill:black;font-family:Arial;font-size:20px;kit-user-select: none;-ms-user-select: none;" x="75" y="36"
+      id="e5_texte">
+      <tspan x="75">Vstart</tspan>
+      <tspan x="75" dy="1.25em"></tspan>
+    </text>
+    <text
+      style="fill:black;font-family:Arial;font-size:20px;kit-user-select: none;-ms-user-select: none;ser-select: none;-moz-user-select: none;-webkit-user-select: none;-ms-user-select: none;"
+      x="141" y="158" id="e6_texte">
+      <tspan x="141">Vend</tspan>
+    </text>
+  </svg> -->
+  <!-- <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200px" height="100px"
+    viewBox="0 0 200 100" preserveAspectRatio="xMinYMin meet">
+    <rect id="svgEditorBackground" x="0" y="0" width="200" height="100" style="fill: none; stroke: none;" />
+    <path d="M16,16v75" style="fill:none;stroke:black;stroke-width:1px;" id="e2_pathV" />
+    <path d="M13,50h175" style="fill:none;stroke:black;stroke-width:1px;" id="e4_pathH" />
+    <polyline style="stroke:#FF0000;fill:none;stroke-width:1px;" id="e6_polyline"
+      points="177,65,149,25,93,87,54,23,36,38" /><text
+      style="fill:black;font-family:Arial;font-size:8px;kit-user-select: none;-ms-user-select: none;ser-select: none;er-select: none;ser-select: none;-moz-user-select: none;-webkit-user-select: none;-ms-user-select: none;"
+      x="61" y="14" id="e7_texte">vstart</text>
+  </svg> -->
 
 </body>
 
@@ -259,3 +520,39 @@
 //@param      setToZero:    Boolean determining whether the bias potential of
 //                          the electrochemical cell should be set to 0 at the
 //                          end of the experiment. -->
+
+<!-- 
+runCV(sweep_param_lmpGain, sweep_param_cycles, sweep_param_startV, sweep_param_endV, sweep_param_vertex1, sweep_param_vertex2, sweep_param_stepV, sweep_param_rate, sweep_param_setToZero);
+
+
+void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
+           int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
+           uint32_t quietTime, uint8_t range, bool setToZero)
+
+void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
+           int16_t pulseAmp, int16_t stepV, double freq, bool setToZero)
+
+void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
+           int16_t v1, uint32_t t1, int16_t v2, uint32_t t2,
+           uint16_t samples, uint8_t range, bool setToZero)
+
+void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
+                          uint32_t delayTime_ms)
+
+void testIV(int16_t startV, int16_t endV, int16_t numPoints,
+           uint32_t delayTime_ms)
+
+void calibrateDACandADCs(uint32_t delayTime_ms)
+ -->
+
+<!-- 
+
+
+
+
+
+
+
+
+
+

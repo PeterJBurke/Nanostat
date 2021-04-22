@@ -50,15 +50,73 @@ enum Sweep_Mode_Type
 Sweep_Mode_Type Sweep_Mode = dormant;
 
 // Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
+// (Initialized to their default values)
+// General sweep parameters:
 int sweep_param_lmpGain = 7;       //  (index) gain setting for LMP91000
-int sweep_param_cycles = 3;        //  (#)  number of times to run the scan
-int sweep_param_startV = 0;        //   (mV)  voltage to start the scan
-int sweep_param_endV = 0;          //     (mV)  voltage to stop the scan
-int sweep_param_vertex1 = 100;     //  (mV)  edge of the scan
-int sweep_param_vertex2 = -100;    // (mV)  edge of the scan
-int sweep_param_stepV = 5;         // (mV)      how much to increment the voltage by
-int sweep_param_rate = 100;        // (mV/sec)       scanning rate
 bool sweep_param_setToZero = true; //   Boolean determining whether the bias potential of
+
+// CV sweep parameters:
+// runCV(sweep_param_lmpGain, sweep_param_cycles_CV, sweep_param_startV_CV,
+// sweep_param_endV_CV, sweep_param_vertex1_CV, sweep_param_vertex2_CV, sweep_param_stepV_CV,
+// sweep_param_rate_CV, sweep_param_setToZero);
+int sweep_param_cycles_CV = 3;     //  (#)  number of times to run the scan
+int sweep_param_startV_CV = 0;     //   (mV)  voltage to start the scan
+int sweep_param_endV_CV = 0;       //     (mV)  voltage to stop the scan
+int sweep_param_vertex1_CV = 100;  //  (mV)  edge of the scan
+int sweep_param_vertex2_CV = -100; // (mV)  edge of the scan
+int sweep_param_stepV_CV = 5;      // (mV)      how much to increment the voltage by
+int sweep_param_rate_CV = 100;     // (mV/sec)       scanning rate
+
+// NPV sweep parameters:
+// runNPV(sweep_param_lmpGain, sweep_param_startV_NPV, sweep_param_endV_NPV,
+//            sweep_param_pulseAmp_NPV, sweep_param_pulseAmp_NPV, sweep_param_period_NPV,
+//            sweep_param_quietTime_NPV, uint8_t range, sweep_param_setToZero)
+int sweep_param_startV_NPV = -200; //   (mV)  voltage to start the scan
+int sweep_param_endV_NPV = 500;    //     (mV)  voltage to stop the scan
+int sweep_param_pulseAmp_NPV = 1;
+int sweep_param_width_NPV = 50;
+int sweep_param_period_NPV = 200;
+int sweep_param_quietTime_NPV = 1000;
+
+// SWV sweep parameters:
+// runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
+//            sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero)
+int sweep_param_startV_SWV = -200; //   (mV)  voltage to start the scan
+int sweep_param_endV_SWV = 500;    //     (mV)  voltage to stop the scan
+int sweep_param_pulseAmp_SWV = 25;
+int sweep_param_stepV_SWV = 5; // (mV)      how much to increment the voltage by
+int sweep_param_freq_SWV = 10;
+
+// CA sweep parameters:
+// runAmp(sweep_param_lmpGain, sweep_param_pre_stepV_CA, sweep_param_quietTime_CA,
+//            sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
+//            sweep_param_samples_CA, uint8_t range, sweep_param_setToZero)
+int sweep_param_pre_stepV_CA = 50;
+int sweep_param_quietTime_CA = 2000;
+int sweep_param_V1_CA = 100;
+int sweep_param_t1_CA = 2000;
+int sweep_param_V2_CA = 50;
+int sweep_param_t2_CA = 200;
+int sweep_param_samples_CA = 100;
+
+// Noise test sweep parameters:
+// testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
+//                           sweep_param_delayTime_ms_noisetest)
+int sweep_param_biasV_noisetest = -100;
+int sweep_param_numPoints_noisetest = 100;
+int sweep_param_delayTime_ms_noisetest = 50;
+
+// IV sweep parameters:
+// testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
+//            sweep_param_delayTime_ms_IV)
+int sweep_param_startV_IV = -200; //   (mV)  voltage to start the scan
+int sweep_param_endV_IV = 500;    //     (mV)  voltage to stop the scan
+int sweep_param_numPoints_IV = 701;
+int sweep_param_delayTime_ms_IV = 50;
+
+// Cal sweep parameters:
+// calibrateDACandADCs(sweep_param_delayTime_ms_CAL)
+int sweep_param_delayTime_ms_CAL = 50;
 
 // Arrays of IV curves etc:
 const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other experiments
@@ -1837,62 +1895,203 @@ void runCAandPrintToSerial()
   SerialDebugger.println("Quiet time till next Amp run");
 }
 
-
 void set_sweep_parameters_from_form_input(String form_id, String form_value)
 {
-// // Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
-// int sweep_param_lmpGain = 7;       //  (index) gain setting for LMP91000
-// int sweep_param_cycles = 3;        //  (#)  number of times to run the scan
-// int sweep_param_startV = 0;        //   (mV)  voltage to start the scan
-// int sweep_param_endV = 0;          //     (mV)  voltage to stop the scan
-// int sweep_param_vertex1 = 100;     //  (mV)  edge of the scan
-// int sweep_param_vertex2 = -100;    // (mV)  edge of the scan
-// int sweep_param_stepV = 5;         // (mV)      how much to increment the voltage by
-// int sweep_param_rate = 100;        // (mV/sec)       scanning rate
-// bool sweep_param_setToZero = true; //   Boolean determining whether the bias potential of
+ 
+  // else if(form_id=="xyz"){
+  //   xyz=form_value.toInt();
+  // }
 
-  if(form_id=="sweep_param_lmpGain"){
-    sweep_param_lmpGain=form_value.toInt();
+  if (form_id == "sweep_param_lmpGain")
+  {
+    sweep_param_lmpGain = form_value.toInt();
   }
+
+
+  else if(form_id=="sweep_param_startV_CV"){
+    sweep_param_startV_CV=form_value.toInt();
+  }
+
+
+  else if(form_id=="sweep_param_endV_CV"){
+    sweep_param_endV_CV=form_value.toInt();
+  }
+
+
+  else if(form_id=="sweep_param_vertex1_CV"){
+    sweep_param_vertex1_CV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_vertex2_CV"){
+    sweep_param_vertex2_CV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_stepV_CV"){
+    sweep_param_stepV_CV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_rate_CV"){
+    sweep_param_rate_CV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_startV_NPV"){
+    sweep_param_startV_NPV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_endV_NPV"){
+    sweep_param_endV_NPV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_pulseAmp_NPV"){
+    sweep_param_pulseAmp_NPV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_width_NPV"){
+    sweep_param_width_NPV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_period_NPV"){
+    sweep_param_period_NPV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_quietTime_NPV"){
+    sweep_param_quietTime_NPV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_startV_SWV"){
+    sweep_param_startV_SWV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_endV_SWV"){
+    sweep_param_endV_SWV=form_value.toInt();
+  }
+
+  else if(form_id=="sweep_param_pulseAmp_SWV"){
+    sweep_param_pulseAmp_SWV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_stepV_SWV"){
+    sweep_param_stepV_SWV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_freq_SWV"){
+    sweep_param_freq_SWV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_pre_stepV_CA"){
+    sweep_param_pre_stepV_CA=form_value.toInt();
+  }
+
+  else if(form_id=="sweep_param_quietTime_CA"){
+    sweep_param_quietTime_CA=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_V1_CA"){
+    sweep_param_V1_CA=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_t1_CA"){
+    sweep_param_t1_CA=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_V2_CA"){
+    sweep_param_V2_CA=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_t2_CA"){
+    sweep_param_t2_CA=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_samples_CA"){
+    sweep_param_samples_CA=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_biasV_noisetest"){
+    sweep_param_biasV_noisetest=form_value.toInt();
+  }
+  
+
+  
+
+  else if(form_id=="sweep_param_delayTime_ms_noisetest"){
+    sweep_param_delayTime_ms_noisetest=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_startV_IV"){
+    sweep_param_startV_IV=form_value.toInt();
+  }
+
+  else if(form_id=="sweep_param_endV_IV"){
+    sweep_param_endV_IV=form_value.toInt();
+  }
+  
+
+  else if(form_id=="sweep_param_numPoints_IV"){
+    sweep_param_numPoints_IV=form_value.toInt();
+  }
+  
+  else if(form_id=="sweep_param_delayTime_ms_IV"){
+    sweep_param_delayTime_ms_IV=form_value.toInt();
+  }
+  
+
+
+  else if(form_id=="sweep_param_delayTime_ms_CAL"){
+    sweep_param_delayTime_ms_CAL=form_value.toInt();
+  }
+  
+
+
 
   // else if(form_id=="xyz"){
   //   xyz=form_value.toInt();
   // }
 
-  else if(form_id=="sweep_param_cycles"){
-    sweep_param_cycles=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_startV"){
-    sweep_param_startV=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_endV"){
-    sweep_param_endV=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_vertex1"){
-    sweep_param_vertex1=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_vertex2"){
-    sweep_param_vertex2=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_stepV"){
-    sweep_param_stepV=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_rate"){
-    sweep_param_rate=form_value.toInt();
-  }
-  else if(form_id=="sweep_param_setToZero"){
-    if(form_value=="true"){
-      sweep_param_setToZero=true;
-    }
-    else if(form_value!="true"){
-      sweep_param_setToZero=false;
-    }
+  else if (form_id == "sweep_param_cycles_CV")
+  {
+    sweep_param_cycles_CV = form_value.toInt();
   }
 
-
+  else if (form_id == "sweep_param_setToZero")
+  {
+    if (form_value == "true")
+    {
+      sweep_param_setToZero = true;
+    }
+    else if (form_value != "true")
+    {
+      sweep_param_setToZero = false;
+    }
+  }
 }
-
-
 
 void configureserver()
 // configures server
@@ -2038,7 +2237,7 @@ void configureserver()
   });
 
   // Send a POST request to <IP>/actionpage with a form field message set to <message>
-   server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
+  server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
     String message;
     Serial.println("server.on bla bla bla called");
 
@@ -2058,12 +2257,11 @@ void configureserver()
         Serial.println(p->value().c_str());
         //SerialDebugger.print(F("\t"))
 
-
-       //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
-       // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+        //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+        // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
         //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
         //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-        set_sweep_parameters_from_form_input(p->name().c_str(),p->value().c_str());
+        set_sweep_parameters_from_form_input(p->name().c_str(), p->value().c_str());
       }
     }
 
@@ -2082,14 +2280,11 @@ void configureserver()
     request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
     // request->send(200, "text/URL", "www.google.com");
     // request->send(200, "text/URL", "<meta http-equiv=\"Refresh\" content=\"0; URL=https://google.com/\">");
-// <meta http-equiv="Refresh" content="0; URL=https://example.com/">
-
+    // <meta http-equiv="Refresh" content="0; URL=https://example.com/">
   });
 
   server.begin();
 }
-
-
 
 // void configuresweepparamssever(){
 // // configures server to parse html post messages that allow the user to set the sweep parameters
@@ -2175,7 +2370,11 @@ void loop()
     // testDACs(50);
     // testDACandADCs(50);
     //testLMP91000(50, 1);
-    runNPV(6, -200, 500, 10, 50, 200, 1000, 1, true);
+    // runNPV(6, -200, 500, 10, 50, 200, 1000, 1, true);
+
+    runNPV(sweep_param_lmpGain, sweep_param_startV_NPV, sweep_param_endV_NPV,
+           sweep_param_pulseAmp_NPV, sweep_param_pulseAmp_NPV, sweep_param_period_NPV,
+           sweep_param_quietTime_NPV, 1, sweep_param_setToZero);
 
     Sweep_Mode = dormant;
   }
@@ -2184,24 +2383,39 @@ void loop()
 
     // testLMP91000(50, 1);
 
-
     // runCV(LMPgain, 2, 0, 0, 450, -200, 5, 1000, true);
-    runCV(sweep_param_lmpGain, sweep_param_cycles, sweep_param_startV, sweep_param_endV, sweep_param_vertex1, sweep_param_vertex2, sweep_param_stepV, sweep_param_rate, sweep_param_setToZero);
+
+    runCV(sweep_param_lmpGain, sweep_param_cycles_CV, sweep_param_startV_CV,
+          sweep_param_endV_CV, sweep_param_vertex1_CV, sweep_param_vertex2_CV, sweep_param_stepV_CV,
+          sweep_param_rate_CV, sweep_param_setToZero);
+
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == SQV)
   {
-    runSWV(LMPgain, -200, 500, 25, 5, 10, true);
+    // runSWV(LMPgain, -200, 500, 25, 5, 10, true);
+
+    runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
+           sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero);
+
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CA)
   {
-    runAmp(LMPgain, 50, 2000, 100, 2000, 50, 200, 100, 1, true);
+    // runAmp(LMPgain, 50, 2000, 100, 2000, 50, 200, 100, 1, true);
+
+    runAmp(sweep_param_lmpGain, sweep_param_pre_stepV_CA, sweep_param_quietTime_CA,
+           sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
+           sweep_param_samples_CA, 1, sweep_param_setToZero);
+
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == DCBIAS)
   {
-    testNoiseAtABiasPoint(-100, 100, 50); //  bias at -100 mV on cell. Read 100 readings and calculate std dev and avg of adc for different reading avgs.
+    // testNoiseAtABiasPoint(-100, 100, 50); //  bias at -100 mV on cell. Read 100 readings and calculate std dev and avg of adc for different reading avgs.
+    testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
+                          sweep_param_delayTime_ms_noisetest);
+
     // testNOISE(100);
     // testDACs(50);
     // testDACandADCs(50);
@@ -2210,12 +2424,20 @@ void loop()
   }
   else if (Sweep_Mode == IV)
   {
-    testIV(-200, 500, 701, 50);
+    //testIV(-200, 500, 701, 50);
+
+  
+    testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
+           sweep_param_delayTime_ms_IV);
+
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CAL)
   {
-    calibrateDACandADCs(50);
+    // calibrateDACandADCs(50);
+    calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
+
+
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == MISC_MODE)
