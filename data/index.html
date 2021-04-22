@@ -17,17 +17,22 @@
   <hr>
   <p><b>Please</b> <u>choose</u> from the following sweep <i>options</i>:</p>
 
-  <button onclick="toggleLED2()">CV!</button>
-  <button onclick="toggleLED1()">NPV!</button>
-  <button onclick="toggleLED3()">SWV!</button>
-  <button onclick="toggleLED4()">CA!</button>
-  <button onclick="toggleLED5()">DC!</button>
-  <button onclick="toggleLED6()">IV!</button>
-  <button onclick="toggleLED7()">Cal!</button>
+
+  <button onclick="on_Button_1_pressed()">CV!</button>
+  <button onclick="on_Button_2_pressed()">NPV!</button>
+  <button onclick="on_Button_3_pressed()">SWV!</button>
+  <button onclick="on_Button_4_pressed()">CA!</button>
+  <button onclick="on_Button_4_pressed()">DC!</button>
+  <button onclick="on_Button_6_pressed()">IV!</button>
+  <button onclick="on_Button_7_pressed()">Cal!</button>
+  <button onclick="on_Button_8_pressed()">Misc!</button>
+  <!-- <button onclick="on_Button_9_pressed()">9!</button>
+  <button onclick="on_Button_10_pressed()">10!</button> -->
+
 
   <h3>Sweep modes:</h3>
-  <p>NPV = Normal pulsed voltammetry.<br>
-    CV = Cyclic voltammetry.<br>
+  <p>CV = Cyclic voltammetry.<br>
+    NPV = Normal pulsed voltammetry.<br>
     SWV = Square wave voltammetry.<br>
     CA = Chronoamperometry.<br>
     DC = Fixed DC bias.<br>
@@ -36,29 +41,9 @@
   <hr>
 
   <h3>Sweep parameters:</h3>
-  <p></p>Start V<br>
-  End V<br>
-  Num points<br>
-  Time/rate</p>
 
-<!-- 
-  void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
-  int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
-  uint32_t quietTime, uint8_t range, bool setToZero)
-{
-//@param      lmpGain:      gain setting for LMP91000
-//@param      startV:       voltage to start the scan
-//@param      endV:         voltage to stop the scan
-//@param      pulseAmp:     amplitude of square wave
-//@param      pulse_period: the  of the excitation voltage
-//@param      pulse_width:  the pulse-width of the excitation voltage
-//@param      quietTime:    initial wait time before the first pulse
-//@param      range:        the expected range of the measured current
-//@param      setToZero:    Boolean determining whether the bias potential of
-//                          the electrochemical cell should be set to 0 at the
-//                          end of the experiment. -->
 
-   <p><b>Please</b> <u>click</u>   <a href="/inputsweepparams.html">here</a>
+  <p><b>Please</b> <u>click</u> <a href="/inputsweepparams.html">here</a>
     to adjust sweep <i>parameters</i>.</p>
   <hr>
 
@@ -74,19 +59,18 @@
     </center>
   </footer>
 
-<!-- // For async java explanation of the following lines of code, see:
+  <!-- // For async java explanation of the following lines of code, see:
 // https://www.w3schools.com/js/js_api_fetch.asp -->
 
 
   <script>
-    let led1 = false;
 
-    async function toggleLED1() {
-      led1 = !led1; // toggle value
+    let temporary_boolean = true;
+    async function on_Button_1_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led1", {
+        const response = await fetch("http://ESP32stat.local/button1pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led1 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -96,18 +80,11 @@
         console.error(error);
       }
     }
-  </script>
-
-
-  <script>
-    let led2 = false;
-
-    async function toggleLED2() {
-      led2 = !led2;
+    async function on_Button_2_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led2", {
+        const response = await fetch("http://ESP32stat.local/button2pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led2 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -117,18 +94,11 @@
         console.error(error);
       }
     }
-  </script>
-
-
-  <script>
-    let led3 = false;
-
-    async function toggleLED3() {
-      led3 = !led3;
+    async function on_Button_3_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led3", {
+        const response = await fetch("http://ESP32stat.local/button3pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led3 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -138,18 +108,11 @@
         console.error(error);
       }
     }
-  </script>
-
-
-  <script>
-    let led4 = false;
-
-    async function toggleLED4() {
-      led4 = !led4;
+    async function on_Button_4_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led4", {
+        const response = await fetch("http://ESP32stat.local/button4pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led4 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -159,17 +122,11 @@
         console.error(error);
       }
     }
-  </script>
-
-  <script>
-    let led5 = false;
-
-    async function toggleLED5() {
-      led5 = !led5;
+    async function on_Button_5_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led5", {
+        const response = await fetch("http://ESP32stat.local/button5pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led5 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -179,17 +136,11 @@
         console.error(error);
       }
     }
-  </script>
-
-  <script>
-    let led6 = false;
-
-    async function toggleLED6() {
-      led6 = !led6;
+    async function on_Button_6_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led6", {
+        const response = await fetch("http://ESP32stat.local/button6pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led6 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -199,17 +150,11 @@
         console.error(error);
       }
     }
-  </script>
-
-  <script>
-    let led7 = false;
-
-    async function toggleLED7() {
-      led7 = !led7;
+    async function on_Button_7_pressed() {
       try {
-        const response = await fetch("http://ESP32stat.local/led7", {
+        const response = await fetch("http://ESP32stat.local/button7pressed", {
           method: "PUT",
-          body: JSON.stringify({ on: led4 }),
+          body: JSON.stringify({ on: temporary_boolean }),
           headers: {
             "Content-Type": "application/json",
           },
@@ -219,8 +164,49 @@
         console.error(error);
       }
     }
+    async function on_Button_8_pressed() {
+      try {
+        const response = await fetch("http://ESP32stat.local/button8pressed", {
+          method: "PUT",
+          body: JSON.stringify({ on: temporary_boolean }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        alert("Request failed - check the console");
+        console.error(error);
+      }
+    }
+    async function on_Button_9_pressed() {
+      try {
+        const response = await fetch("http://ESP32stat.local/button9pressed", {
+          method: "PUT",
+          body: JSON.stringify({ on: temporary_boolean }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        alert("Request failed - check the console");
+        console.error(error);
+      }
+    }
+    async function on_Button_10_pressed() {
+      try {
+        const response = await fetch("http://ESP32stat.local/button10pressed", {
+          method: "PUT",
+          body: JSON.stringify({ on: temporary_boolean }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        alert("Request failed - check the console");
+        console.error(error);
+      }
+    }
+
   </script>
-
-
 
 </body>

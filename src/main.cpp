@@ -121,8 +121,9 @@ int sweep_param_delayTime_ms_CAL = 50;
 // Arrays of IV curves etc:
 const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other experiments
 uint16_t arr_cur_index = 0;
-int16_t volts[arr_samples] = {0}; // single sweep IV curve "V"
-float amps[arr_samples] = {0};    // single sweep IV curve "I"
+int16_t volts[arr_samples] = {0};                   // single sweep IV curve "V"
+float amps[arr_samples] = {0};                      // single sweep IV curve "I"
+int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
 unsigned long input_time[arr_samples] = {0};
 unsigned long output_time[arr_samples] = {0};
 float v1_array[arr_samples] = {0};
@@ -481,6 +482,131 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   lastTime = millis();
 
   return current;
+}
+
+void writeVoltsCurrentArraytoFile()
+{
+  // File file = SPIFFS.open("/file.txt", "w");
+  // if (!file)
+  // {
+  //   Serial.println("Error opening file for writing");
+  //   return;
+  // }
+  // int bytesWritten = file.print("TEST SPIFFS");
+
+  // if (bytesWritten > 0)
+  // {
+  //   Serial.println("File was written");
+  //   Serial.println(bytesWritten);
+  // }
+  // else
+  // {
+  //   Serial.println("File write failed");
+  // }
+  // file.close();
+
+  File file = SPIFFS.open("/test.txt", FILE_WRITE);
+
+  if (!file)
+  {
+    Serial.println("There was an error opening the file for writing");
+    return;
+  }
+  if (file.println("Hello world ESP32 Spiffs file!"))
+  {
+    Serial.println("File was written");
+  }
+  else
+  {
+    Serial.println("File write failed");
+  }
+  file.println("Line 2!");
+  file.println("Line 3!");
+  Serial.println("Writing file. Date in millis() is:");
+  Serial.println(millis());
+  Serial.println("number_of_valid_points_in_volts_amps_array=");
+  Serial.println(number_of_valid_points_in_volts_amps_array);
+
+  file.print("Index");
+  file.print(F("\t")); // tab
+  file.print("Current_Amps");
+  file.print(F("\t")); // tab
+  file.println("Voltage_V");
+
+  //Wrie Arrays
+  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+  {
+    file.print(i);
+    file.print(F("\t")); // tab
+    file.print(amps[i], DEC);
+    file.print(F("\t")); // tab
+    file.println(volts[i] / 1e3, DEC);
+  }
+  file.close();
+}
+
+void readFileAndPrintToSerial()
+{
+  File file2 = SPIFFS.open("/test.txt");
+
+  if (!file2)
+  {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+
+  Serial.println("File Content:");
+
+  while (file2.available())
+  {
+
+    Serial.write(file2.read());
+  }
+
+  file2.close();
+}
+
+void listDir(const char *dirname, uint8_t levels)
+{
+  // from https://github.com/espressif/arduino-esp32/blob/master/libraries/SPIFFS/examples/SPIFFS_Test/SPIFFS_Test.ino#L9
+  // see also https://techtutorialsx.com/2019/02/24/esp32-arduino-listing-files-in-a-spiffs-file-system-specific-path/
+  Serial.printf("Listing directory: %s\r\n", dirname);
+
+  File root = SPIFFS.open(dirname);
+  if (!root)
+  {
+    Serial.println("- failed to open directory");
+    return;
+  }
+  if (!root.isDirectory())
+  {
+    Serial.println(" - not a directory");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file)
+  {
+    // if(file.isDirectory()){
+    //     Serial.print("  DIR : ");
+    //     Serial.println(file.name());
+    //     if(levels){
+    //         listDir(SPIFFS, file.path(), levels -1);
+    //     }
+    // } else {
+    //     Serial.print("  FILE: ");
+    //     Serial.print(file.name());
+    //     Serial.print("\tSIZE: ");
+    //     Serial.println(file.size());
+    // }
+
+    Serial.print("  FILE: ");
+    Serial.print(file.name());
+    Serial.print("\tSIZE: ");
+    Serial.println(file.size());
+
+    file = root.openNextFile();
+  }
 }
 
 void testIV(int16_t startV, int16_t endV, int16_t numPoints,
@@ -1068,6 +1194,7 @@ inline void saveVoltammogram(float voltage, float current, bool debug)
     volts[arr_cur_index] = (int16_t)voltage;
     amps[arr_cur_index] = current;
     arr_cur_index++;
+    number_of_valid_points_in_volts_amps_array += 1;
   }
 
   if (debug)
@@ -1283,6 +1410,7 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
 {
   int16_t j = startV;
   float i_cv = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
 
   for (uint8_t i = 0; i < cycles; i++)
   {
@@ -1897,7 +2025,7 @@ void runCAandPrintToSerial()
 
 void set_sweep_parameters_from_form_input(String form_id, String form_value)
 {
- 
+
   // else if(form_id=="xyz"){
   //   xyz=form_value.toInt();
   // }
@@ -1907,169 +2035,160 @@ void set_sweep_parameters_from_form_input(String form_id, String form_value)
     sweep_param_lmpGain = form_value.toInt();
   }
 
-
-  else if(form_id=="sweep_param_startV_CV"){
-    sweep_param_startV_CV=form_value.toInt();
+  else if (form_id == "sweep_param_startV_CV")
+  {
+    sweep_param_startV_CV = form_value.toInt();
   }
 
-
-  else if(form_id=="sweep_param_endV_CV"){
-    sweep_param_endV_CV=form_value.toInt();
+  else if (form_id == "sweep_param_endV_CV")
+  {
+    sweep_param_endV_CV = form_value.toInt();
   }
 
-
-  else if(form_id=="sweep_param_vertex1_CV"){
-    sweep_param_vertex1_CV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_vertex2_CV"){
-    sweep_param_vertex2_CV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_stepV_CV"){
-    sweep_param_stepV_CV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_rate_CV"){
-    sweep_param_rate_CV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_startV_NPV"){
-    sweep_param_startV_NPV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_endV_NPV"){
-    sweep_param_endV_NPV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_pulseAmp_NPV"){
-    sweep_param_pulseAmp_NPV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_width_NPV"){
-    sweep_param_width_NPV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_period_NPV"){
-    sweep_param_period_NPV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_quietTime_NPV"){
-    sweep_param_quietTime_NPV=form_value.toInt();
-  }
-  
-
-
-  else if(form_id=="sweep_param_startV_SWV"){
-    sweep_param_startV_SWV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_endV_SWV"){
-    sweep_param_endV_SWV=form_value.toInt();
+  else if (form_id == "sweep_param_vertex1_CV")
+  {
+    sweep_param_vertex1_CV = form_value.toInt();
   }
 
-  else if(form_id=="sweep_param_pulseAmp_SWV"){
-    sweep_param_pulseAmp_SWV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_stepV_SWV"){
-    sweep_param_stepV_SWV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_freq_SWV"){
-    sweep_param_freq_SWV=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_pre_stepV_CA"){
-    sweep_param_pre_stepV_CA=form_value.toInt();
+  else if (form_id == "sweep_param_vertex2_CV")
+  {
+    sweep_param_vertex2_CV = form_value.toInt();
   }
 
-  else if(form_id=="sweep_param_quietTime_CA"){
-    sweep_param_quietTime_CA=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_V1_CA"){
-    sweep_param_V1_CA=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_t1_CA"){
-    sweep_param_t1_CA=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_V2_CA"){
-    sweep_param_V2_CA=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_t2_CA"){
-    sweep_param_t2_CA=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_samples_CA"){
-    sweep_param_samples_CA=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_biasV_noisetest"){
-    sweep_param_biasV_noisetest=form_value.toInt();
-  }
-  
-
-  
-
-  else if(form_id=="sweep_param_delayTime_ms_noisetest"){
-    sweep_param_delayTime_ms_noisetest=form_value.toInt();
-  }
-  
-
-  else if(form_id=="sweep_param_startV_IV"){
-    sweep_param_startV_IV=form_value.toInt();
+  else if (form_id == "sweep_param_stepV_CV")
+  {
+    sweep_param_stepV_CV = form_value.toInt();
   }
 
-  else if(form_id=="sweep_param_endV_IV"){
-    sweep_param_endV_IV=form_value.toInt();
+  else if (form_id == "sweep_param_rate_CV")
+  {
+    sweep_param_rate_CV = form_value.toInt();
   }
-  
 
-  else if(form_id=="sweep_param_numPoints_IV"){
-    sweep_param_numPoints_IV=form_value.toInt();
+  else if (form_id == "sweep_param_startV_NPV")
+  {
+    sweep_param_startV_NPV = form_value.toInt();
   }
-  
-  else if(form_id=="sweep_param_delayTime_ms_IV"){
-    sweep_param_delayTime_ms_IV=form_value.toInt();
+
+  else if (form_id == "sweep_param_endV_NPV")
+  {
+    sweep_param_endV_NPV = form_value.toInt();
   }
-  
 
-
-  else if(form_id=="sweep_param_delayTime_ms_CAL"){
-    sweep_param_delayTime_ms_CAL=form_value.toInt();
+  else if (form_id == "sweep_param_pulseAmp_NPV")
+  {
+    sweep_param_pulseAmp_NPV = form_value.toInt();
   }
-  
 
+  else if (form_id == "sweep_param_width_NPV")
+  {
+    sweep_param_width_NPV = form_value.toInt();
+  }
 
+  else if (form_id == "sweep_param_period_NPV")
+  {
+    sweep_param_period_NPV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_quietTime_NPV")
+  {
+    sweep_param_quietTime_NPV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_startV_SWV")
+  {
+    sweep_param_startV_SWV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_endV_SWV")
+  {
+    sweep_param_endV_SWV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_pulseAmp_SWV")
+  {
+    sweep_param_pulseAmp_SWV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_stepV_SWV")
+  {
+    sweep_param_stepV_SWV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_freq_SWV")
+  {
+    sweep_param_freq_SWV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_pre_stepV_CA")
+  {
+    sweep_param_pre_stepV_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_quietTime_CA")
+  {
+    sweep_param_quietTime_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_V1_CA")
+  {
+    sweep_param_V1_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_t1_CA")
+  {
+    sweep_param_t1_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_V2_CA")
+  {
+    sweep_param_V2_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_t2_CA")
+  {
+    sweep_param_t2_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_samples_CA")
+  {
+    sweep_param_samples_CA = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_biasV_noisetest")
+  {
+    sweep_param_biasV_noisetest = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_delayTime_ms_noisetest")
+  {
+    sweep_param_delayTime_ms_noisetest = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_startV_IV")
+  {
+    sweep_param_startV_IV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_endV_IV")
+  {
+    sweep_param_endV_IV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_numPoints_IV")
+  {
+    sweep_param_numPoints_IV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_delayTime_ms_IV")
+  {
+    sweep_param_delayTime_ms_IV = form_value.toInt();
+  }
+
+  else if (form_id == "sweep_param_delayTime_ms_CAL")
+  {
+    sweep_param_delayTime_ms_CAL = form_value.toInt();
+  }
 
   // else if(form_id=="xyz"){
   //   xyz=form_value.toInt();
@@ -2101,125 +2220,128 @@ void configureserver()
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, PUT");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
 
+  // // Button #xyz
+  // server.addHandler(new AsyncCallbackJsonWebHandler("/buttonxyzpressed", [](AsyncWebServerRequest *requestxyz, JsonVariant &jsonxyz) {
+  //   const JsonObject &jsonObjxyz = jsonxyz.as<JsonObject>();
+  //   if (jsonObjxyz["on"])
+  //   {
+  //     Serial.println("Button xyz pressed.");
+  //     // digitalWrite(LEDPIN, HIGH);
+  //     Sweep_Mode = CV;
+  //   }
+  //   requestxyz->send(200, "OK");
+  // }));
+
   // Button #1
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led1", [](AsyncWebServerRequest *request1, JsonVariant &json1) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button1pressed", [](AsyncWebServerRequest *request1, JsonVariant &json1) {
     const JsonObject &jsonObj1 = json1.as<JsonObject>();
     if (jsonObj1["on"])
     {
-      Serial.println("Turn on LED1");
-      digitalWrite(LEDPIN, HIGH);
-      //runNPVandPrintToSerial();
-      Sweep_Mode = NPV;
-    }
-    else
-    {
-      Serial.println("Turn off LED1");
-      digitalWrite(LEDPIN, LOW);
+      Serial.println("Button 1 pressed. Running CV sweep.");
+      // digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = CV;
     }
     request1->send(200, "OK");
   }));
-
   // Button #2
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led2", [](AsyncWebServerRequest *request2, JsonVariant &json2) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button2pressed", [](AsyncWebServerRequest *request2, JsonVariant &json2) {
     const JsonObject &jsonObj2 = json2.as<JsonObject>();
     if (jsonObj2["on"])
     {
-      Serial.println("Turn on LED2");
-      digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = CV;
-    }
-    else
-    {
-      Serial.println("Turn off LED2");
-      digitalWrite(LEDPIN, LOW);
+      Serial.println("Button 2 pressed. Running NPV sweep.");
+      // digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = NPV;
     }
     request2->send(200, "OK");
   }));
-
   // Button #3
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led3", [](AsyncWebServerRequest *request3, JsonVariant &json3) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button3pressed", [](AsyncWebServerRequest *request3, JsonVariant &json3) {
     const JsonObject &jsonObj3 = json3.as<JsonObject>();
     if (jsonObj3["on"])
     {
-      Serial.println("Turn on LED3");
-      digitalWrite(LEDPIN, HIGH);
+      Serial.println("Button 3 pressed. Running SQV sweep.");
+      // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = SQV;
-    }
-    else
-    {
-      Serial.println("Turn off LED3");
-      digitalWrite(LEDPIN, LOW);
     }
     request3->send(200, "OK");
   }));
-
   // Button #4
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led4", [](AsyncWebServerRequest *request4, JsonVariant &json4) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button4pressed", [](AsyncWebServerRequest *request4, JsonVariant &json4) {
     const JsonObject &jsonObj4 = json4.as<JsonObject>();
     if (jsonObj4["on"])
     {
-      Serial.println("Turn on LED4");
-      digitalWrite(LEDPIN, HIGH);
+      Serial.println("Button 4 pressed. Running CA sweep.");
+      // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = CA;
-    }
-    else
-    {
-      Serial.println("Turn off LED4");
-      digitalWrite(LEDPIN, LOW);
     }
     request4->send(200, "OK");
   }));
-
   // Button #5
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led5", [](AsyncWebServerRequest *request5, JsonVariant &json5) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button5pressed", [](AsyncWebServerRequest *request5, JsonVariant &json5) {
     const JsonObject &jsonObj5 = json5.as<JsonObject>();
     if (jsonObj5["on"])
     {
-      Serial.println("Turn on LED5");
-      digitalWrite(LEDPIN, HIGH);
+      Serial.println("Button 5 pressed. Running DC sweep.");
+      // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = DCBIAS;
-    }
-    else
-    {
-      Serial.println("Turn off LED5");
-      digitalWrite(LEDPIN, LOW);
     }
     request5->send(200, "OK");
   }));
-
   // Button #6
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led6", [](AsyncWebServerRequest *request6, JsonVariant &json6) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button6pressed", [](AsyncWebServerRequest *request6, JsonVariant &json6) {
     const JsonObject &jsonObj6 = json6.as<JsonObject>();
     if (jsonObj6["on"])
     {
-      Serial.println("Turn on LED6");
-      digitalWrite(LEDPIN, HIGH);
+      Serial.println("Button 6 pressed. Running IV sweep.");
+      // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = IV;
-    }
-    else
-    {
-      Serial.println("Turn off LED6");
-      digitalWrite(LEDPIN, LOW);
     }
     request6->send(200, "OK");
   }));
 
   // Button #7
-
-  server.addHandler(new AsyncCallbackJsonWebHandler("/led7", [](AsyncWebServerRequest *request7, JsonVariant &json7) {
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button7pressed", [](AsyncWebServerRequest *request7, JsonVariant &json7) {
     const JsonObject &jsonObj7 = json7.as<JsonObject>();
     if (jsonObj7["on"])
     {
-      Serial.println("Turn on LED7");
-      digitalWrite(LEDPIN, HIGH);
+      Serial.println("Button 7 pressed. Running CAL sweep.");
+      // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = CAL;
     }
-    else
-    {
-      Serial.println("Turn off LED7");
-      digitalWrite(LEDPIN, LOW);
-    }
     request7->send(200, "OK");
+  }));
+  // Button #8
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button8pressed", [](AsyncWebServerRequest *request8, JsonVariant &json8) {
+    const JsonObject &jsonObj8 = json8.as<JsonObject>();
+    if (jsonObj8["on"])
+    {
+      Serial.println("Button 8 pressed. Running MISC_MODE sweep.");
+      // digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = MISC_MODE;
+    }
+    request8->send(200, "OK");
+  }));
+  // Button #9
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button9pressed", [](AsyncWebServerRequest *request9, JsonVariant &json9) {
+    const JsonObject &jsonObj9 = json9.as<JsonObject>();
+    if (jsonObj9["on"])
+    {
+      Serial.println("Button 9 pressed.");
+      // digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = dormant;
+    }
+    request9->send(200, "OK");
+  }));
+  // Button #10
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button10pressed", [](AsyncWebServerRequest *request10, JsonVariant &json10) {
+    const JsonObject &jsonObj10 = json10.as<JsonObject>();
+    if (jsonObj10["on"])
+    {
+      Serial.println("Button 10 pressed.");
+      // digitalWrite(LEDPIN, HIGH);
+      Sweep_Mode = dormant;
+    }
+    request10->send(200, "OK");
   }));
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
@@ -2339,7 +2461,11 @@ void setup()
   Serial.println("The local IP address is:");
   //print the local IP address
   Serial.println(WiFi.localIP());
-  SPIFFS.begin(true);
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
   MDNS.begin("ESP32Stat");
 
   configureserver();
@@ -2426,7 +2552,6 @@ void loop()
   {
     //testIV(-200, 500, 701, 50);
 
-  
     testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
            sweep_param_delayTime_ms_IV);
 
@@ -2435,14 +2560,17 @@ void loop()
   else if (Sweep_Mode == CAL)
   {
     // calibrateDACandADCs(50);
-    calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
-
-
+    // calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
+    listDir("/", 3);
+    writeVoltsCurrentArraytoFile();
+    sleep(1);
+    readFileAndPrintToSerial();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == MISC_MODE)
   {
-    testNoiseAtABiasPoint(-100, 100, 50);
+    // testNoiseAtABiasPoint(-100, 100, 50);
+    writeVoltsCurrentArraytoFile();
     Sweep_Mode = dormant;
   }
   else
