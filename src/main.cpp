@@ -397,9 +397,16 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   // dacVout: desired output of the DAC in mV
   // bias_setting: determines percentage of VREF applied to CE opamp, from 1% to 24%
 
-  setLMPBias(voltage);         // Sets the LMP91000's bias to positive or negative // voltage is cell voltage
-  setVoltage(voltage);         // Sets the DAC voltage, LMP91000 bias percentage, and LMP91000 bias sign, to get the desired cell "voltage".
-  pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
+  setLMPBias(voltage); // Sets the LMP91000's bias to positive or negative // voltage is cell voltage
+  setVoltage(voltage); // Sets the DAC voltage, LMP91000 bias percentage, and LMP91000 bias sign, to get the desired cell "voltage".
+  if (rate > 10)
+  {
+    pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
+  }
+  else if (rate < 10)
+  {
+    pulseLED_on_off(LEDPIN, 1); // signify start of a new data point
+  }
 
   //delay sampling to set scan rate
   while (millis() - lastTime < rate)
@@ -737,7 +744,7 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   // Measures IV curve, dumps output to serial.
   float i_forward = 0;
   uint32_t voltage_step;
-
+  lastTime = millis();
   //Reset Arrays
   for (uint16_t i = 0; i < arr_samples; i++)
     volts[i] = 0;
@@ -874,14 +881,16 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
     delay(delayTime_ms);
     for (int16_t j = 0; j < numPoints; j += 1) // read the adc data
     {
-      pulseLED_on_off(LEDPIN, 10);
+
+      pulseLED_on_off(LEDPIN, 1);
+
       adc_bits_array[j] = analog_read_avg(num_readings_to_average, LMP);
       //pulseLED_on_off(LEDPIN, 10);
       // Now populate Volts array etc:
       volts[arr_cur_index] = biasV;
       output_time[arr_cur_index] = millis();
       amps[arr_cur_index] = adc_bits_array[j];
-      arr_cur_index ++;
+      arr_cur_index++;
       number_of_valid_points_in_volts_amps_array++;
     }
     for (int16_t j = 0; j < numPoints; j += 1) // calculate the average
@@ -1386,6 +1395,8 @@ void runNPVBackward(int16_t startV, int16_t endV, int8_t pulseAmp,
       ;
     SerialDebugger.read();
     i_backward = biasAndSample(startV, off_time);
+    saveVoltammogram(j, i_forward - i_backward, true); // this will print voltage, current
+
     //will hold the code here until a character is sent over the SerialDebugger port
     //this ensures the experiment will only run when initiated
     while (!SerialDebugger.available())
@@ -1600,6 +1611,7 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
 {
   int16_t j = startV;
   float i_cv = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
 
   for (uint8_t i = 0; i < cycles; i++)
   {
@@ -1729,7 +1741,7 @@ void runSWVForward(int16_t startV, int16_t endV, int16_t pulseAmp,
 
     //negative pulse
     i_backward = biasAndSample(j - pulseAmp, freq);
-
+    number_of_valid_points_in_volts_amps_array++;
     saveVoltammogram(j, i_forward - i_backward, true);
     SerialDebugger.println();
   }
@@ -1758,7 +1770,7 @@ void runSWVBackward(int16_t startV, int16_t endV, int16_t pulseAmp,
 
     //negative pulse
     i_backward = biasAndSample(j - pulseAmp, freq);
-
+    number_of_valid_points_in_volts_amps_array++;
     saveVoltammogram(j, i_forward - i_backward, true);
     SerialDebugger.println();
   }
@@ -1864,6 +1876,7 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
     volts[i] = 0;
   for (uint16_t i = 0; i < arr_samples; i++)
     amps[i] = 0;
+  number_of_valid_points_in_volts_amps_array = 0;
 
   if (startV < endV)
     runSWVForward(startV, endV, pulseAmp, stepV, freq);
@@ -1888,6 +1901,7 @@ void runDPVForward(int16_t startV, int16_t endV, int8_t pulseAmp,
 
     //pulse
     i_forward = biasAndSample(j + pulseAmp, pulse_width);
+    number_of_valid_points_in_volts_amps_array++;
 
     saveVoltammogram(j, i_forward - i_backward, true);
     SerialDebugger.println();
@@ -1907,6 +1921,7 @@ void runDPVBackward(int16_t startV, int16_t endV, int8_t pulseAmp,
 
     //pulse
     i_forward = biasAndSample(j + pulseAmp, pulse_width);
+    number_of_valid_points_in_volts_amps_array++;
 
     saveVoltammogram(j, i_forward - i_backward, true);
     SerialDebugger.println();
@@ -1984,7 +1999,7 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   //    current = "Current(mA)";
   //  else
   //    current = "SOME ERROR";
-
+  pulseLED_on_off(LEDPIN, 10);
   //Reset Arrays
   for (uint16_t i = 0; i < arr_samples; i++)
     volts[i] = 0;
@@ -2037,7 +2052,7 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       int adc_bits; // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
       // hard wired in BurkeLab ESP32Stat Rev 3.5 to LMP i.e ESP32 pin 32 (ADC1_CH7)
       //adc_bits = analogRead(LMP); // read a single point
-      pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
+
       number_of_valid_points_in_volts_amps_array++;
       adc_bits = analog_read_avg(num_adc_readings_to_average, LMP); // read a number of points and average them...
       float v1;
@@ -2070,7 +2085,16 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       SerialDebugger.println();
 
       arr_cur_index++;
-      delay(fs - 1); //the -1 is for adjusting for a slight offset
+      if (fs > 10)
+      {                              // time between points is over 10 ms, we can blink LED for 10 ms
+        pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
+        delay(fs - 10 - 1);          //the -1 is for adjusting for a slight offset; 10 is for the LED blink time
+      }
+      else if (fs < 10)
+      {                             // time between points is under 10 ms, we can blink LED for 1 ms
+        pulseLED_on_off(LEDPIN, 1); // signify start of a new data point
+        delay(fs - 1 - 1);          //the -1 is for adjusting for a slight offset; 1 is for the LED blink time
+      }
     }
 
     SerialDebugger.println();
