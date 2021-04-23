@@ -1,0 +1,32 @@
+<!-- index.html -->
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>ESP8266 & ESP32 Management Portal</title>
+</head>
+
+<body> 
+
+<h1>ESP8266 & ESP32 Management Portal</h1>
+
+<button onclick= "window.location.href = '/wifi_manager.html'"> Wifi Setup </button>
+<button onclick= "window.location.href = '/wifi_upload.html'"> OTA </button>
+<button onclick= "window.location.href = '/wifi_spiffs_admin.html'"> SPIFFS Manger</button>
+<button onclick="restartRequest()">Restart</button>
+
+</body>
+
+<script>
+function restartRequest() {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      console.log(this.responseText)
+    }
+  }
+  xhttp.open("GET", "/restart", true); 
+  xhttp.send(null);
+}
+</script>
+</html>

@@ -1,3 +1,14 @@
+// License: https://github.com/PeterJBurke/ESP32Stat_Rev_3_5_PIO
+// Wifitool from https://github.com/oferzv/wifiTool (Not in use as of 4/21/2021, on the to do list...)
+// Libraries from Arduino offical library database.
+
+
+
+
+
+
+
+
 bool userpause = false;              // pauses for user to press input on serial between each point in npv
 bool print_output_to_serial = false; // pauses for user to press input on serial between each point in npv
 
@@ -13,6 +24,7 @@ bool print_output_to_serial = false; // pauses for user to press input on serial
 #include "wifi_credentials.h"
 //Custom Internal Libraries
 #include "LMP91000.h"
+// #include <wifiTool.h>
 
 // Arduino serial interface
 #define SerialDebugger Serial
@@ -167,7 +179,10 @@ float RFB = 2200000; // feedback resistor if using external feedback resistor
 LMP91000 pStat = LMP91000();
 
 // create webserver object for website:
-AsyncWebServer server(80);
+ AsyncWebServer server(80); // wifitools ALSO creates this when it starts in setup; problem???
+
+//WifiTool object
+// WifiTool wifiTool;
 // example code to control LED from browser used here from
 // https://www.youtube.com/watch?v=aNDfsHQ5Gts&list=PL4cUxeGkcC9jx2TTZk3IGWKSbtugYdrlu&index=2
 const char *PARAM_MESSAGE = "message"; // message server receives from client
@@ -519,7 +534,7 @@ void writeVoltsCurrentArraytoFile()
     Serial.println("There was an error opening the file for writing");
     return;
   }
-  if (file.println("Hello world ESP32 Spiffs file!"))
+  if (file.println("BurkeLab Nanostat Rev 3.5 Sweep"))
   {
     Serial.println("File was written");
   }
@@ -527,8 +542,8 @@ void writeVoltsCurrentArraytoFile()
   {
     Serial.println("File write failed");
   }
-  file.println("Line 2!");
-  file.println("Line 3!");
+  // file.println("Line 2!");
+  // file.println("Line 3!");
   Serial.println("Writing file. Date in millis() is:");
   Serial.println(millis());
   Serial.println("number_of_valid_points_in_volts_amps_array=");
@@ -2620,7 +2635,24 @@ void setup()
   SerialDebugger.println(F("Setup complete."));
   SerialDebugger.print(F(" "));
 
-  //############################# WEBSERVER & WIFI #####################################
+//############################### SPIFFS STARTUP #######################################
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+
+//############################# WEBSERVER & WIFI #####################################
+
+// wifitool setup:
+  // wifiTool.begin(false);
+  // if (!wifiTool.wifiAutoConnect())  // if autoconnect true, then wifi is connected to an AP from secrets.json or ESP32 memory
+  // { // need to set up access point to get wifi credentials from user....
+  //   Serial.println("fail to connect to wifi!!!!");
+  //   wifiTool.runApPortal();
+  // }
+
+//############################# STATIC WIFI #####################################
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
@@ -2635,17 +2667,16 @@ void setup()
   Serial.println("The local IP address is:");
   //print the local IP address
   Serial.println(WiFi.localIP());
-  if (!SPIFFS.begin(true))
-  {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }
-  MDNS.begin("ESP32Stat");
 
+//############################# DNS #####################################
+  MDNS.begin("nanostat");
+
+//############################# WEBSERVER & WIFI #####################################
   configureserver();
-  //####################################################################################
-  File root = SPIFFS.open("/");
-  File file = root.openNextFile();
+
+
+  // File root = SPIFFS.open("/"); // Leftover code ???
+  // File file = root.openNextFile(); // Leftover code ???
 }
 
 void loop()
