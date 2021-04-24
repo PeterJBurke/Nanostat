@@ -2,13 +2,6 @@
 // Wifitool from https://github.com/oferzv/wifiTool (Not in use as of 4/21/2021, on the to do list...)
 // Libraries from Arduino offical library database.
 
-
-
-
-
-
-
-
 bool userpause = false;              // pauses for user to press input on serial between each point in npv
 bool print_output_to_serial = false; // pauses for user to press input on serial between each point in npv
 
@@ -25,6 +18,7 @@ bool print_output_to_serial = false; // pauses for user to press input on serial
 //Custom Internal Libraries
 #include "LMP91000.h"
 // #include <wifiTool.h>
+#include "WebSocketsServer.h"
 
 // Arduino serial interface
 #define SerialDebugger Serial
@@ -179,7 +173,18 @@ float RFB = 2200000; // feedback resistor if using external feedback resistor
 LMP91000 pStat = LMP91000();
 
 // create webserver object for website:
- AsyncWebServer server(80); // wifitools ALSO creates this when it starts in setup; problem???
+AsyncWebServer server(80); // wifitools ALSO creates this when it starts in setup; problem???
+
+// Websockets:
+// Tutorial: https://www.youtube.com/watch?v=ZbX-l1Dl4N4&list=PL4sSjlE6rMIlvrllrtOVSBW8WhhMC_oI-&index=8
+// Tutorial: https://www.youtube.com/watch?v=mkXsmCgvy0k
+// Code tutorial: https://shawnhymel.com/1882/how-to-create-a-web-server-with-websockets-using-an-esp32-in-arduino/
+// Github: https://github.com/Links2004/arduinoWebSockets
+WebSocketsServer m_websocketserver = WebSocketsServer(81);
+String m_websocketserver_text_to_send = "";
+String m_websocketserver_text_to_send_2 = "";
+int m_time_sent_websocketserver_text = millis();
+int m_microsbefore_websocketsendcalled = micros();
 
 //WifiTool object
 // WifiTool wifiTool;
@@ -191,6 +196,16 @@ const char *PARAM_MESSAGE = "message"; // message server receives from client
 bool saveQueues = false;
 
 //******************* END VARIABLE DECLARATIONS**************************8
+
+void sendTimeOverWebsocket()
+{
+
+  m_websocketserver_text_to_send = String(millis())+","+String(millis()-m_time_sent_websocketserver_text);
+  m_websocketserver.broadcastTXT(m_websocketserver_text_to_send.c_str(), m_websocketserver_text_to_send.length());
+  m_time_sent_websocketserver_text=millis();
+
+}
+
 
 void blinkLED(int pin, int blinkFrequency_Hz, int duration_ms)
 // blinks LED for duration ms using frequency of blinkFrequency
@@ -411,6 +426,10 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   // v_tolerance: how close to desired cell voltage user can tolerate since it is digitized
   // dacVout: desired output of the DAC in mV
   // bias_setting: determines percentage of VREF applied to CE opamp, from 1% to 24%
+  
+  // int microsbefore=micros();
+  // sendTimeOverWebsocket(); // takes 2.6 ms on average...
+  // Serial.println(micros()-microsbefore);
 
   setLMPBias(voltage); // Sets the LMP91000's bias to positive or negative // voltage is cell voltage
   setVoltage(voltage); // Sets the DAC voltage, LMP91000 bias percentage, and LMP91000 bias sign, to get the desired cell "voltage".
@@ -2397,6 +2416,58 @@ void set_sweep_parameters_from_form_input(String form_id, String form_value)
   }
 }
 
+// Called when receiving any WebSocket message
+void onWebSocketEvent(uint8_t num,
+                      WStype_t type,
+                      uint8_t *payload,
+                      size_t length)
+{
+
+  // Figure out the type of WebSocket event
+  switch (type)
+  {
+
+  // Client has disconnected
+  case WStype_DISCONNECTED:
+    Serial.printf("[%u] Disconnected!\n", num);
+    break;
+
+  // New client has connected
+  case WStype_CONNECTED:
+  {
+    IPAddress ip = m_websocketserver.remoteIP(num);
+    Serial.printf("[%u] Connection from ", num);
+    Serial.println(ip.toString());
+  }
+  break;
+
+  // Echo text message back to client
+  case WStype_TEXT:
+    Serial.printf("[%u] Text: %s\n", num, payload);
+    m_websocketserver.sendTXT(num, payload);
+    break;
+
+  // For everything else: do nothing
+  case WStype_BIN:
+  case WStype_ERROR:
+  case WStype_FRAGMENT_TEXT_START:
+  case WStype_FRAGMENT_BIN_START:
+  case WStype_FRAGMENT:
+  case WStype_FRAGMENT_FIN:
+  default:
+    break;
+  }
+}
+
+// void sendMessageToWebsocket(int num, char *MessageToSendToWebsocket)
+// {
+//   //  m_websocketserver.sendTXT(num,  MessageToSendToWebsocket);
+//   //m_websocketserver.sendTXT("test hello world");
+//   m_websocketserver.sendTXT(num, "Connected");
+//   //  m_websocketserver.sendTXT(0, String &payload);
+// }
+
+
 void configureserver()
 // configures server
 {
@@ -2635,16 +2706,16 @@ void setup()
   SerialDebugger.println(F("Setup complete."));
   SerialDebugger.print(F(" "));
 
-//############################### SPIFFS STARTUP #######################################
+  //############################### SPIFFS STARTUP #######################################
   if (!SPIFFS.begin(true))
   {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
 
-//############################# WEBSERVER & WIFI #####################################
+  //############################# WEBSERVER & WIFI #####################################
 
-// wifitool setup:
+  // wifitool setup:
   // wifiTool.begin(false);
   // if (!wifiTool.wifiAutoConnect())  // if autoconnect true, then wifi is connected to an AP from secrets.json or ESP32 memory
   // { // need to set up access point to get wifi credentials from user....
@@ -2652,7 +2723,7 @@ void setup()
   //   wifiTool.runApPortal();
   // }
 
-//############################# STATIC WIFI #####################################
+  //############################# STATIC WIFI #####################################
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
@@ -2668,15 +2739,19 @@ void setup()
   //print the local IP address
   Serial.println(WiFi.localIP());
 
-//############################# DNS #####################################
+  //############################# DNS #####################################
   MDNS.begin("nanostat");
 
-//############################# WEBSERVER & WIFI #####################################
+  //############################# WEBSERVER & WIFI #####################################
   configureserver();
-
 
   // File root = SPIFFS.open("/"); // Leftover code ???
   // File file = root.openNextFile(); // Leftover code ???
+
+  //############################# WEBSOCKET #####################################
+  // Start WebSocket server and assign callback
+  m_websocketserver.begin();
+  m_websocketserver.onEvent(onWebSocketEvent);
 }
 
 void loop()
@@ -2689,8 +2764,12 @@ void loop()
   //  while (!SerialDebugger.available())
   //    ;
   //  SerialDebugger.read();
-
+  // Look for and handle WebSocket data
+  m_websocketserver.loop();
   delay(10); // 10 ms delay
+  // m_microsbefore_websocketsendcalled=micros();
+  // sendTimeOverWebsocket(); // takes 2.5 ms on average, when client is connect, else 45 microseconds...
+  // Serial.println(micros()-m_microsbefore_websocketsendcalled);
 
   if (Sweep_Mode == NPV)
   {
@@ -2774,9 +2853,18 @@ void loop()
   {
     // testNoiseAtABiasPoint(-100, 100, 50);
     listDir("/", 3);
-    writeVoltsCurrentArraytoFile();
-    sleep(1);
-    readFileAndPrintToSerial();
+    // writeVoltsCurrentArraytoFile();
+    //sleep(1);
+    delay(250);
+    m_websocketserver.broadcastTXT("Hello world websocket from main.cpp!!!"); // broadcast sends to all connected clients
+    String m_temp_string = "{\"value\":";
+    m_temp_string += String(millis() / 1e3, 3);
+    m_temp_string += "}";
+    m_websocketserver.broadcastTXT(m_temp_string.c_str(), m_temp_string.length());
+    delay(10);
+
+    //sendMessageToWebsocket(0, &"hello world websocket");
+    // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
   }
   else
