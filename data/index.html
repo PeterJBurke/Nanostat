@@ -7,6 +7,7 @@
   <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
   <script type="text/javascript" src="websocketcode.js"></script>
   <script type="text/javascript" src="button_handle_JS.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
 
 </head>
 
@@ -74,7 +75,15 @@
     <label for="dataRateSlider" id="dataRateLabel">Rate: 0.2Hz</label>
   </div>
 
+
+
   <hr>
+    <div id="plotly-tester" style="width:600px;height:250px;"></div>
+  <hr>
+  <script type="text/javascript" src="plotlyplot.js"></script>
+
+
+
   <canvas id="m_canvas" width="100" height="100" style="border:1px solid #000000;"
     style="background-color: darkred;"></canvas>
   <footer>

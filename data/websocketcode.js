@@ -17,26 +17,8 @@ function init() {
     m_canvas_JS = document.getElementById("m_canvas");
 
     // create chart:
-    dataPlot = new Chart(document.getElementById("m_canvas"), {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                data: [],
-                label: "Temperature (C)",
-                borderColor: "#3e95cd",
-                fill: false
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    // dataPlot = new CharacterData(document.getElementById("m_canvas"),{
+
+    // dataPlot = new Chart(document.getElementById("m_canvas"), {
     //     type: 'line',
     //     data: {
     //         labels: [],
@@ -46,8 +28,15 @@ function init() {
     //             borderColor: "#3e95cd",
     //             fill: false
     //         }]
+    //     },
+    //     options: {
+    //         scales: {
+    //             y: {
+    //                 beginAtZero: true
+    //             }
+    //         }
     //     }
-    // })
+    // });
 
     // Connect to WebSocket server
     wsConnect(m_url_JS);

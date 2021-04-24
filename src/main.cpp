@@ -188,6 +188,7 @@ int m_microsbefore_websocketsendcalled = micros();
 int last_time_loop_called = millis();
 int last_time_sent_websocket_server = millis();
 float m_websocket_send_rate = 1.0; // Hz, how often to send a test point to websocket...
+bool m_send_websocket_test_data_in_loop = false;
 
 //WifiTool object
 // WifiTool wifiTool;
@@ -222,6 +223,15 @@ void sendValueOverWebsocketJSON(int value_to_send_over_websocket)
   json += "}";
   m_websocketserver.broadcastTXT(json.c_str(), json.length());
 }
+
+void sendVoltammogramWebsocketJSON()
+{
+  String json = "{\"value\":";
+  json += String(millis() / 1e3, 3);
+  json += "}";
+  m_websocketserver.broadcastTXT(json.c_str(), json.length());
+}
+
 
 void blinkLED(int pin, int blinkFrequency_Hz, int duration_ms)
 // blinks LED for duration ms using frequency of blinkFrequency
@@ -2461,8 +2471,8 @@ void onWebSocketEvent(uint8_t num,
   case WStype_TEXT:
     // Serial.printf("[%u] Text: %s\n", num, payload);
     // m_websocketserver.sendTXT(num, payload);
-    m_websocket_send_rate = (float) atof((const char *) &payload[0]); // adjust data send rate used in loop
-    
+    m_websocket_send_rate = (float)atof((const char *)&payload[0]); // adjust data send rate used in loop
+
     break;
 
   // For everything else: do nothing
@@ -2783,17 +2793,21 @@ void loop()
   //  SerialDebugger.read();
   // Look for and handle WebSocket data
   m_websocketserver.loop();
-  delay(10);                                            // 10 ms delay
-  // Pseudocode: xxx_period_in_ms_xxx=period_in_s * 1e3 = (1/freqHz)*1e3
-  if (millis() - last_time_sent_websocket_server > (1000/m_websocket_send_rate)) // every half second, print
+  delay(10); // 10 ms delay
+
+  if (m_send_websocket_test_data_in_loop == true)
   {
-    //    sendTimeOverWebsocketJSON();
-    sendValueOverWebsocketJSON(100 * 0.5 * sin(millis() / 1e3)); // value is sine wave of time , frequency 0.5 Hz, amplitude 100.
-    last_time_sent_websocket_server = millis();
+    // Pseudocode: xxx_period_in_ms_xxx=period_in_s * 1e3 = (1/freqHz)*1e3
+    if (millis() - last_time_sent_websocket_server > (1000 / m_websocket_send_rate)) // every half second, print
+    {
+      //    sendTimeOverWebsocketJSON();
+      sendValueOverWebsocketJSON(100 * 0.5 * sin(millis() / 1e3)); // value is sine wave of time , frequency 0.5 Hz, amplitude 100.
+      last_time_sent_websocket_server = millis();
+    }
+    // m_microsbefore_websocketsendcalled=micros();
+    // sendTimeOverWebsocket(); // takes 2.5 ms on average, when client is connected, else 45 microseconds...
+    // Serial.println(micros()-m_microsbefore_websocketsendcalled);
   }
-  // m_microsbefore_websocketsendcalled=micros();
-  // sendTimeOverWebsocket(); // takes 2.5 ms on average, when client is connected, else 45 microseconds...
-  // Serial.println(micros()-m_microsbefore_websocketsendcalled);
 
   if (Sweep_Mode == NPV)
   {
@@ -2880,14 +2894,13 @@ void loop()
     // writeVoltsCurrentArraytoFile();
     //sleep(1);
     delay(250);
+
     m_websocketserver.broadcastTXT("Hello world websocket from main.cpp!!!"); // broadcast sends to all connected clients
     String m_temp_string = "{\"value\":";
     m_temp_string += String(millis() / 1e3, 3);
     m_temp_string += "}";
     m_websocketserver.broadcastTXT(m_temp_string.c_str(), m_temp_string.length());
-    delay(10);
 
-    //sendMessageToWebsocket(0, &"hello world websocket");
     // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
   }
