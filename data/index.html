@@ -68,7 +68,13 @@
   <h3>Calibration instructions:</h3>
   <p>To calibrate, run "Cal" with WE disconnected from RE/CE. (Short RE/CE).</p>
   <hr>
+  <!-- slider: -->
+  <div>
+    <input type="range" min="1" max="20" value="5" id="dataRateSlider" oninput="sendDataRate()" />
+    <label for="dataRateSlider" id="dataRateLabel">Rate: 0.2Hz</label>
+  </div>
 
+  <hr>
   <canvas id="m_canvas" width="100" height="100" style="border:1px solid #000000;"
     style="background-color: darkred;"></canvas>
   <footer>

@@ -4,6 +4,7 @@ var m_url_JS = "ws://nanostat.local:81/";
 //var m_url_JS = "ws://192.168.1.44:81/";
 // var url = "ws://192.168.4.1:1337/";
 
+var m_websocket;
 var m_canvas_JS;
 var context;
 var dataPlot;
@@ -26,6 +27,13 @@ function init() {
                 borderColor: "#3e95cd",
                 fill: false
             }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
         }
     });
     // dataPlot = new CharacterData(document.getElementById("m_canvas"),{
@@ -135,11 +143,13 @@ function doSend(message) {
     websocket.send(message);
 }
 
-// Called whenever the HTML button is pressed
-// function onPress() {
-//   doSend("toggleLED");
-//   doSend("getLEDState");
-//}
+// Slider calls this to set data rate:
+function sendDataRate() {
+    var dataRate = document.getElementById("dataRateSlider").value;
+    m_websocket.send(dataRate);
+    dataRate = 1.0 * dataRate;
+    document.getElementById("dataRateLabel").innerHTML = "Rate: " + dataRate.toFixed(2) + "Hz";
+}
 
 // Call the init function as soon as the page loads
 window.addEventListener("load", init, false);
