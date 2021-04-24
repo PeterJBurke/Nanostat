@@ -4,10 +4,11 @@
   <title>ESP32Stat
   </title>
 
-</head>
-<script type="text/javascript" src="websocketcode.js"></script>
-<script type="text/javascript" src="button_handle_JS.js"></script>
+  <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
+  <script type="text/javascript" src="websocketcode.js"></script>
+  <script type="text/javascript" src="button_handle_JS.js"></script>
 
+</head>
 
 <body style="background-color: lightblue;">
 
@@ -68,7 +69,8 @@
   <p>To calibrate, run "Cal" with WE disconnected from RE/CE. (Short RE/CE).</p>
   <hr>
 
-  <canvas id="m_canvas" width="100" height="100" style="border:1px solid #000000;" style="background-color: darkred;"></canvas>
+  <canvas id="m_canvas" width="100" height="100" style="border:1px solid #000000;"
+    style="background-color: darkred;"></canvas>
   <footer>
     <center>
 

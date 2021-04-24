@@ -6,12 +6,40 @@ var m_url_JS = "ws://nanostat.local:81/";
 
 var m_canvas_JS;
 var context;
+var dataPlot;
+var maxDataPoints = 20; // max points in browser cache
 
 // This is called when the page finishes loading
 function init() {
 
     // Assign page elements to variables
     m_canvas_JS = document.getElementById("m_canvas");
+
+    // create chart:
+    dataPlot = new Chart(document.getElementById("m_canvas"), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                label: "Temperature (C)",
+                borderColor: "#3e95cd",
+                fill: false
+            }]
+        }
+    });
+    // dataPlot = new CharacterData(document.getElementById("m_canvas"),{
+    //     type: 'line',
+    //     data: {
+    //         labels: [],
+    //         datasets: [{
+    //             data: [],
+    //             label: "Temperature (C)",
+    //             borderColor: "#3e95cd",
+    //             fill: false
+    //         }]
+    //     }
+    // })
 
     // Connect to WebSocket server
     wsConnect(m_url_JS);
@@ -21,7 +49,7 @@ function init() {
 function wsConnect(m_url_JS) {
 
     // Connect to WebSocket server
-    m_url_JS="ws://" + window.location.hostname + ":81/"
+    m_url_JS = "ws://" + window.location.hostname + ":81/"
     // console.log(m_url_JS);
     m_websocket = new WebSocket(m_url_JS);
 
@@ -59,28 +87,42 @@ function onClose(evt) {
     setTimeout(function () { wsConnect(m_url_JS) }, 2000);
 }
 
+// remove excess data from plot
+function removeData() {
+    dataPlot.data.labels.shift();
+    dataPlot.data.datasets[0].data.shift();
+}
+
+// add data to plot (through chart object push method...)
+function addData(label, data) {
+    if (dataPlot.data.labels.length > maxDataPoints) removeData();
+    dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[0].data.push(data);
+    dataPlot.update();
+}
+
 // Called when a message is received from the server
 function onMessage(evt) {
 
     // Print out our received message
     console.log("Received: " + evt.data);
 
-    // Update circle graphic with LED state
-    // switch (evt.data) {
-    //   case "0":
-    //     console.log("LED is off");
-    //     context.fillStyle = "black";
-    //     context.fill();
-    //     break;
-    //   case "1":
-    //     console.log("LED is on");
-    //     context.fillStyle = "red";
-    //     context.fill();
-    //     break;
-    //   default:
-    //     break;
+    var data = JSON.parse(evt.data); // data is a json object; data.time assumes format it {"value",123456}
+    var today = new Date();
+    var t = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    addData(t, data.value); // add new data points to plot one by one...
+    console.log("Parsed version: " + data.value);
+    console.log(t);
+    console.log(data);
+
 }
-  
+
+function addData(label, data) {
+    if (dataPlot.data.labels.length > maxDataPoints) removeData();
+    dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[0].data.push(data);
+    dataPlot.update();
+}
 
 // Called when a WebSocket error occurs
 function onError(evt) {
@@ -93,11 +135,11 @@ function doSend(message) {
     websocket.send(message);
 }
 
-  // Called whenever the HTML button is pressed
-  // function onPress() {
-  //   doSend("toggleLED");
-  //   doSend("getLEDState");
-  //}
+// Called whenever the HTML button is pressed
+// function onPress() {
+//   doSend("toggleLED");
+//   doSend("getLEDState");
+//}
 
 // Call the init function as soon as the page loads
 window.addEventListener("load", init, false);
