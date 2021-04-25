@@ -104,13 +104,49 @@ function onMessage(evt) {
     // Print out our received message
     console.log("Received: " + evt.data);
 
-    var data = JSON.parse(evt.data); // data is a json object; data.time assumes format it {"value",123456}
-    var today = new Date();
-    var t = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    addData(t, data.value); // add new data points to plot one by one...
-    console.log("Parsed version: " + data.value);
-    console.log(t);
-    console.log(data);
+    // Add data to chart.js plot:
+    // var data = JSON.parse(evt.data); // data is a json object; data.time assumes format it {"value",123456}
+    // var today = new Date();
+    // var t = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    // addData(t, data.value); // add new data points to plot one by one...
+    // console.log("Parsed version: " + data.value);
+    // console.log(t);
+    // console.log(data);
+
+    var m_json_obj = JSON.parse(evt.data);
+    console.log(m_json_obj);
+    var m_voltage_array = m_json_obj.Voltage;
+    var m_current_array = m_json_obj.Current;
+    console.log(m_voltage_array);
+    console.log(m_current_array);
+
+    TESTER = document.getElementById('plotly-tester');
+    // Plotly.newPlot(TESTER, [{
+    //     x: [1, 2, 3, 4, 5],
+    //     y: [1, 2, 4, 8, 16]
+    // }], {
+    //     margin: { t: 0 }
+    // });
+    
+    var trace_Voltammogram = {
+        x: m_voltage_array,
+        y: m_current_array,
+        mode: 'markers',
+        type: 'scatter'
+      };
+      
+    //   var trace2 = {
+    //     x: [2, 3, 4, 5],
+    //     y: [16, 5, 11, 9],
+    //     mode: 'lines',
+    //     type: 'scatter'
+    //   };
+      
+      
+      var data_Voltammogram = [trace_Voltammogram];
+      
+      Plotly.newPlot('plotly-tester', data_Voltammogram);
+    
 
 }
 

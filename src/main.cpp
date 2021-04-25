@@ -226,12 +226,53 @@ void sendValueOverWebsocketJSON(int value_to_send_over_websocket)
 
 void sendVoltammogramWebsocketJSON()
 {
-  String json = "{\"value\":";
-  json += String(millis() / 1e3, 3);
-  json += "}";
-  m_websocketserver.broadcastTXT(json.c_str(), json.length());
-}
+  // psuedo code:
+  // 1) Convert voltammagram to JSON...
+  // Voltammagram JSON format will be like this:
+  // { "Current" : [3,2,6,...], "Voltage": [8,6,7,....], "Time": [3,4,5,...]}
+  // 2) Send JSON over websocket...
 
+  String current_array_string = "[";
+  String voltage_array_string = "[";
+  // String time_array_string = "[";
+  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+  {
+    current_array_string += amps[i];
+    if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    {
+      current_array_string += ",";
+    }
+
+    voltage_array_string += volts[i];
+    if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    {
+      voltage_array_string += ",";
+    }
+
+    // time_array_string += time[i];
+    //     if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    // {
+    //   time_array_string += ",";
+    // }
+  }
+  current_array_string += "]";
+  voltage_array_string += "]";
+  // time_array_string += "]";
+
+  String Voltammogram_JSON = "";
+  Voltammogram_JSON += "{\"Current\":";
+  Voltammogram_JSON += current_array_string;
+  Voltammogram_JSON += ",\"Voltage\":";
+  Voltammogram_JSON += voltage_array_string;
+  // Voltammogram_JSON += "{,\"Time\":";
+  // Voltammogram_JSON += time_array_string;
+  Voltammogram_JSON += "}";
+
+  // Serial.println("####################################");
+  // Serial.println(Voltammogram_JSON);
+
+  m_websocketserver.broadcastTXT(Voltammogram_JSON.c_str(), Voltammogram_JSON.length());
+}
 
 void blinkLED(int pin, int blinkFrequency_Hz, int duration_ms)
 // blinks LED for duration ms using frequency of blinkFrequency
@@ -2895,11 +2936,16 @@ void loop()
     //sleep(1);
     delay(250);
 
-    m_websocketserver.broadcastTXT("Hello world websocket from main.cpp!!!"); // broadcast sends to all connected clients
-    String m_temp_string = "{\"value\":";
-    m_temp_string += String(millis() / 1e3, 3);
-    m_temp_string += "}";
-    m_websocketserver.broadcastTXT(m_temp_string.c_str(), m_temp_string.length());
+    sendVoltammogramWebsocketJSON();
+
+    if (m_send_websocket_test_data_in_loop == true)
+    {
+      m_websocketserver.broadcastTXT("Hello world websocket from main.cpp!!!"); // broadcast sends to all connected clients
+      String m_temp_string = "{\"value\":";
+      m_temp_string += String(millis() / 1e3, 3);
+      m_temp_string += "}";
+      m_websocketserver.broadcastTXT(m_temp_string.c_str(), m_temp_string.length());
+    }
 
     // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
