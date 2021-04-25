@@ -29,4 +29,6 @@ var trace1 = {
   
   var data = [trace1, trace2, trace3];
   
-  Plotly.newPlot('plotly-tester', data);
+  Plotly.newPlot('plotly-IV', data);
+  Plotly.newPlot('plotly-VvsTime', data);
+  Plotly.newPlot('plotly-IvsTime', data);

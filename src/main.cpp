@@ -127,8 +127,9 @@ int sweep_param_delayTime_ms_CAL = 50;
 // Arrays of IV curves etc:
 const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other experiments
 uint16_t arr_cur_index = 0;
-int16_t volts[arr_samples] = {0};                   // single sweep IV curve "V"
-float amps[arr_samples] = {0};                      // single sweep IV curve "I"
+int16_t volts[arr_samples] = {0}; // single sweep IV curve "V"
+float amps[arr_samples] = {0};    // single sweep IV curve "I"
+int time_Voltammaogram[arr_samples] = {0};
 int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
 unsigned long input_time[arr_samples] = {0};
 unsigned long output_time[arr_samples] = {0};
@@ -234,7 +235,7 @@ void sendVoltammogramWebsocketJSON()
 
   String current_array_string = "[";
   String voltage_array_string = "[";
-  // String time_array_string = "[";
+  String time_array_string = "[";
   for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
   {
     current_array_string += amps[i];
@@ -249,23 +250,23 @@ void sendVoltammogramWebsocketJSON()
       voltage_array_string += ",";
     }
 
-    // time_array_string += time[i];
-    //     if (i != (number_of_valid_points_in_volts_amps_array - 1))
-    // {
-    //   time_array_string += ",";
-    // }
+    time_array_string += time_Voltammaogram[i];
+        if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    {
+      time_array_string += ",";
+    }
   }
   current_array_string += "]";
   voltage_array_string += "]";
-  // time_array_string += "]";
+  time_array_string += "]";
 
   String Voltammogram_JSON = "";
   Voltammogram_JSON += "{\"Current\":";
   Voltammogram_JSON += current_array_string;
   Voltammogram_JSON += ",\"Voltage\":";
   Voltammogram_JSON += voltage_array_string;
-  // Voltammogram_JSON += "{,\"Time\":";
-  // Voltammogram_JSON += time_array_string;
+  Voltammogram_JSON += ",\"Time\":";
+  Voltammogram_JSON += time_array_string;
   Voltammogram_JSON += "}";
 
   // Serial.println("####################################");
@@ -709,7 +710,8 @@ void writeVoltsCurrentTimeArraytoFile()
   {
     file.print(i);
     file.print(F("\t")); // tab
-    file.print(output_time[i]);
+    //file.print(output_time[i]);
+    file.print(time_Voltammaogram[i]); // xxx need to check for all modes especially CA...
     file.print(F("\t")); // tab
     file.print(amps[i], DEC);
     file.print(F("\t")); // tab
@@ -801,6 +803,16 @@ void listDir(const char *dirname, uint8_t levels)
   }
 }
 
+void reset_Voltammogram_arrays()
+{
+  for (uint16_t i = 0; i < arr_samples; i++)
+  {
+    volts[i] = 0;
+    amps[i] = 0;
+    time_Voltammaogram[i] = 0;
+  }
+}
+
 inline void saveVoltammogram(float voltage, float current, bool debug)
 {
   //@param        voltage: voltage or time depending on type of experiment
@@ -820,6 +832,7 @@ inline void saveVoltammogram(float voltage, float current, bool debug)
   // }
   volts[arr_cur_index] = (int16_t)voltage;
   amps[arr_cur_index] = current;
+  time_Voltammaogram[arr_cur_index] = millis();
   arr_cur_index++;
   number_of_valid_points_in_volts_amps_array++;
 
@@ -847,10 +860,7 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   uint32_t voltage_step;
   lastTime = millis();
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
@@ -908,7 +918,6 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
     // SerialDebugger.println(this_voltage);
     // SerialDebugger.println(delayTime_ms);
     i_forward = biasAndSample(this_voltage, delayTime_ms);
-
     saveVoltammogram(this_voltage, i_forward, false);
     // saveVoltammogram(this_voltage, i_forward, true);
     //i_forward = biasAndSample(startV, delayTime_ms);
@@ -937,12 +946,8 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
   // dumps output to serial
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    output_time[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   number_of_valid_points_in_volts_amps_array = 0;
   arr_cur_index = 0;
@@ -990,6 +995,7 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
       // Now populate Volts array etc:
       volts[arr_cur_index] = biasV;
       output_time[arr_cur_index] = millis();
+      time_Voltammaogram[arr_cur_index]=millis();
       amps[arr_cur_index] = adc_bits_array[j];
       arr_cur_index++;
       number_of_valid_points_in_volts_amps_array++;
@@ -1530,10 +1536,8 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   //potential is returned to the startV at the end of each pulse period.
   //https://www.basinc.com/manuals/EC_epsilon/techniques/Pulse/pulse#normal
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
@@ -1599,10 +1603,8 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   }
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   initLMP(lmpGain);
   pulseAmp = abs(pulseAmp);
@@ -1801,10 +1803,8 @@ void runCV(uint8_t lmpGain, uint8_t cycles, int16_t startV,
   // so new "rate" is delay in ms between points (assuming read is instantaneous)
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   lastTime = millis();
   if (vertex1 > startV)
@@ -1906,10 +1906,8 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
   freq = (uint16_t)(1000.0 / (2 * freq)); //converts frequency to milliseconds
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
@@ -1973,10 +1971,8 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
   }
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
   number_of_valid_points_in_volts_amps_array = 0;
 
   if (startV < endV)
@@ -2044,10 +2040,8 @@ void runDPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   saveQueues = true;
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   if (startV < endV)
     runDPVForward(startV, endV, pulseAmp, stepV, pulse_width, off_time);
@@ -2102,10 +2096,8 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   //    current = "SOME ERROR";
   pulseLED_on_off(LEDPIN, 10);
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
 
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
@@ -2118,12 +2110,11 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   uint32_t timeArray[3] = {quietTime, t1, t2};
 
   //Reset Arrays
-  for (uint16_t i = 0; i < arr_samples; i++)
-    volts[i] = 0;
+   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+
   for (uint16_t i = 0; i < arr_samples; i++)
     output_time[i] = 0;
-  for (uint16_t i = 0; i < arr_samples; i++)
-    amps[i] = 0;
+ 
 
   //i = 0 is pre-step voltage
   //i = 1 is first step potential
