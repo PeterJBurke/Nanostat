@@ -6,9 +6,10 @@ var m_url_JS = "ws://nanostat.local:81/";
 var button;
 var canvas;
 var context;
+var maxDataPoints=100;
 
 // initialize plotly plot
-  
+
 var trace_scope = {
     x: [],
     y: [],
@@ -89,22 +90,26 @@ function onClose(evt) {
 function onMessage(evt) {
 
     // Print out our received message
-    console.log("Received: " + evt.data);
+    // console.log("Received: " + evt.data);
     var m_json_obj = JSON.parse(evt.data);
-    console.log(m_json_obj);
+    // console.log(m_json_obj);
     var m_voltage_point = m_json_obj.volts;
     var m_current_point = m_json_obj.amps;
     var m_time_point = m_json_obj.time;
-    console.log(m_voltage_point);
-    console.log(m_current_point);
-    console.log(m_time_point);
+    // console.log(m_voltage_point);
+    // console.log(m_current_point);
+    // console.log(m_time_point);
     // now PUSH onto array m_current_point, m_time_point
     // var fruits = ["Banana", "Orange", "Apple", "Mango"];
     // fruits.push("Kiwi");       //  Adds a new element ("Kiwi") to fruits
+    if (trace_scope.x.length>maxDataPoints){
+        trace_scope.x.shift();
+        trace_scope.y.shift();
+    }
     trace_scope.x.push(m_time_point);
     trace_scope.y.push(m_current_point);
-//    console.log(trace_scope.x);
-//    console.log(trace_scope.y);
+    //    console.log(trace_scope.x);
+    //    console.log(trace_scope.y);
     // then update plotly plot....
     var data_scope = [trace_scope];
     Plotly.newPlot('plotly-scope', data_scope);
@@ -185,4 +190,39 @@ function respond_to_m_control_panel_is_inactive_id_change() {
     var control_panel_is_active_JSON_command;
     control_panel_is_active_JSON_command = "{\"change_control_panel_is_active_to\":false}";
     doSend(control_panel_is_active_JSON_command);
+}
+
+
+document.getElementById("max_number_of_points_in_browser_id").addEventListener("change", respond_to_max_number_of_points_in_browser_id_change);
+
+function respond_to_max_number_of_points_in_browser_id_change() {
+    maxDataPoints= document.getElementById("max_number_of_points_in_browser_id").value ;
+    // console.log("*******************");
+    // console.log(maxDataPoints);
+    // console.log(trace_scope.x.length);
+    if (trace_scope.x.length>maxDataPoints){
+        var num_points_to_delete;
+        num_points_to_delete=trace_scope.x.length-maxDataPoints;
+        for (i = 0; i <num_points_to_delete ; i++) {
+            trace_scope.x.shift();
+            trace_scope.y.shift();
+            // console.log(i);
+          }
+    }
+    // console.log(trace_scope.x.length);
+    // console.log("*******************");
+
+}
+
+
+
+function removeData() {
+    dataPlot.data.labels.shift();
+    dataPlot.data.datasets[0].data.shift();
+}
+function addData(label, data) {
+    if (dataPlot.data.labels.length > maxDataPoints) removeData();
+    dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[0].data.push(data);
+    dataPlot.update();
 }
