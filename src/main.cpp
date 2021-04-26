@@ -51,6 +51,7 @@ enum Sweep_Mode_Type
   IV,       // IV curve
   CAL,      // calibrate
   DCBIAS,   // DC bias at a fixed point
+  CTLPANEL, // Control panel type interface
   MISC_MODE // miscellanous
 };
 Sweep_Mode_Type Sweep_Mode = dormant;
@@ -129,6 +130,11 @@ const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other ex
 uint16_t arr_cur_index = 0;
 int16_t volts[arr_samples] = {0}; // single sweep IV curve "V"
 float amps[arr_samples] = {0};    // single sweep IV curve "I"
+int16_t volts_temp = 0;
+float amps_temp = 0;
+float v1_temp = 0;
+float v2_temp = 0;
+String temp_json_string = "";
 int time_Voltammaogram[arr_samples] = {0};
 int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
 unsigned long input_time[arr_samples] = {0};
@@ -200,6 +206,11 @@ const char *PARAM_MESSAGE = "message"; // message server receives from client
 // Legacy from LMP91000 examples in library:
 bool saveQueues = false;
 
+// Control panel mode settings:
+uint8_t LMPgain_control_panel = 6; // Feedback resistor of TIA.
+int num_adc_readings_to_average_control_panel = 1;
+int sweep_param_delayTime_ms_control_panel = 50;
+int cell_voltage_control_panel = 100;
 //******************* END VARIABLE DECLARATIONS**************************8
 
 void sendTimeOverWebsocket()
@@ -223,6 +234,11 @@ void sendValueOverWebsocketJSON(int value_to_send_over_websocket)
   json += String(value_to_send_over_websocket);
   json += "}";
   m_websocketserver.broadcastTXT(json.c_str(), json.length());
+}
+
+void sendStringOverWebsocket(String string_to_send_over_websocket)
+{
+  m_websocketserver.broadcastTXT(string_to_send_over_websocket.c_str(), string_to_send_over_websocket.length());
 }
 
 void sendVoltammogramWebsocketJSON()
@@ -251,7 +267,7 @@ void sendVoltammogramWebsocketJSON()
     }
 
     time_array_string += time_Voltammaogram[i];
-        if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    if (i != (number_of_valid_points_in_volts_amps_array - 1))
     {
       time_array_string += ",";
     }
@@ -712,7 +728,7 @@ void writeVoltsCurrentTimeArraytoFile()
     file.print(F("\t")); // tab
     //file.print(output_time[i]);
     file.print(time_Voltammaogram[i]); // xxx need to check for all modes especially CA...
-    file.print(F("\t")); // tab
+    file.print(F("\t"));               // tab
     file.print(amps[i], DEC);
     file.print(F("\t")); // tab
     file.println(volts[i] / 1e3, DEC);
@@ -948,7 +964,6 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
-
   number_of_valid_points_in_volts_amps_array = 0;
   arr_cur_index = 0;
 
@@ -995,7 +1010,7 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
       // Now populate Volts array etc:
       volts[arr_cur_index] = biasV;
       output_time[arr_cur_index] = millis();
-      time_Voltammaogram[arr_cur_index]=millis();
+      time_Voltammaogram[arr_cur_index] = millis();
       amps[arr_cur_index] = adc_bits_array[j];
       arr_cur_index++;
       number_of_valid_points_in_volts_amps_array++;
@@ -1139,7 +1154,7 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
   SerialDebugger.println("TIA_BIAS[0]=");
   SerialDebugger.println(TIA_BIAS[0]);
 
-  int adc_int_from_dac_int[140]; // for dac 116 to 255, what adc reads
+  // int adc_int_from_dac_int[140]; // for dac 116 to 255, what adc reads
   // assuming cell is open, no current, ADC is reading vout which is also WE voltage if no current
   // WE voltage is supposed to be 0.5* Vref, and Vref is DAC
 
@@ -1162,7 +1177,7 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
     }
     // read analog voltage which should be half of dac voltage...
     this_voltage_adc = analogRead(LMP);
-    adc_int_from_dac_int[j - 116] = this_voltage_adc;
+    // adc_int_from_dac_int[j - 116] = this_voltage_adc;
     dacgoal = 3300.0 * j / 255;
     SerialDebugger.print(j);
     SerialDebugger.print(F("\t"));
@@ -1536,8 +1551,7 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   //potential is returned to the startV at the end of each pulse period.
   //https://www.basinc.com/manuals/EC_epsilon/techniques/Pulse/pulse#normal
   //Reset Arrays
-   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
@@ -1603,8 +1617,7 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   }
 
   //Reset Arrays
-   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   initLMP(lmpGain);
   pulseAmp = abs(pulseAmp);
@@ -1660,7 +1673,8 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
       saveQueues = false;
 
     //j starts at startV
-    for (j; j <= vertex1; j += stepV)
+    //    for (j;j <= vertex1; j += stepV)
+    for (; j <= vertex1; j += stepV)
     {
       i_cv = biasAndSample(j, rate);
       SerialDebugger.print(i + 1);
@@ -1671,7 +1685,8 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
     j -= 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
     //j starts right below the first vertex
-    for (j; j >= vertex2; j -= stepV)
+    //    for (j; j >= vertex2; j -= stepV)
+    for (; j >= vertex2; j -= stepV)
     {
       i_cv = biasAndSample(j, rate);
       SerialDebugger.print(i + 1);
@@ -1682,7 +1697,8 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
     j += 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
     //j starts right above the second vertex
-    for (j; j <= endV; j += stepV)
+    //for (j; j <= endV; j += stepV)
+    for (; j <= endV; j += stepV)
     {
       i_cv = biasAndSample(j, rate);
       SerialDebugger.print(i + 1);
@@ -1724,7 +1740,8 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
       saveQueues = false;
 
     //j starts at startV
-    for (j; j >= vertex1; j -= stepV)
+    //    for (j; j >= vertex1; j -= stepV)
+    for (; j >= vertex1; j -= stepV)
     {
       i_cv = biasAndSample(j, rate);
       SerialDebugger.print(i + 1);
@@ -1735,7 +1752,8 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
     j += 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
     //j starts right above vertex1
-    for (j; j <= vertex2; j += stepV)
+    //    for (j; j <= vertex2; j += stepV)
+    for (; j <= vertex2; j += stepV)
     {
       i_cv = biasAndSample(j, rate);
       SerialDebugger.print(i + 1);
@@ -1746,7 +1764,8 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
     j -= 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
     //j starts right below vertex2
-    for (j; j >= endV; j -= stepV)
+    //for (j; j >= endV; j -= stepV)
+    for (; j >= endV; j -= stepV)
     {
       i_cv = biasAndSample(j, rate);
       SerialDebugger.print(i + 1);
@@ -1804,7 +1823,6 @@ void runCV(uint8_t lmpGain, uint8_t cycles, int16_t startV,
 
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
 
   lastTime = millis();
   if (vertex1 > startV)
@@ -1907,7 +1925,6 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
 
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
 
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
@@ -2040,8 +2057,7 @@ void runDPV(uint8_t lmpGain, int16_t startV, int16_t endV,
   saveQueues = true;
 
   //Reset Arrays
-   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   if (startV < endV)
     runDPVForward(startV, endV, pulseAmp, stepV, pulse_width, off_time);
@@ -2098,7 +2114,6 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
-
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
 
@@ -2110,11 +2125,10 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   uint32_t timeArray[3] = {quietTime, t1, t2};
 
   //Reset Arrays
-   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   for (uint16_t i = 0; i < arr_samples; i++)
     output_time[i] = 0;
- 
 
   //i = 0 is pre-step voltage
   //i = 1 is first step potential
@@ -2474,13 +2488,100 @@ void set_sweep_parameters_from_form_input(String form_id, String form_value)
   }
 }
 
+void handle_websocket_text(uint8_t *payload)
+{
+  // do something...
+  Serial.printf("handle_websocket_text called for: %s\n", payload);
+
+  // test JSON parsing...
+  //char m_JSONMessage[] = "{\"Key1\":123,\"Key2\",345}";
+  //StaticJsonDocument<1000> m_JSONdoc;
+  //deserializeJson(m_JSONdoc, m_JSONMessage); // m_JSONdoc is now a json object
+  //int m_key1_value = m_JSONdoc["Key1"];
+  // Serial.println(m_key1_value);
+
+  // Parse JSON payload
+  StaticJsonDocument<1000> m_JSONdoc_from_payload;
+  DeserializationError m_error = deserializeJson(m_JSONdoc_from_payload, payload); // m_JSONdoc is now a json object
+  if (m_error)
+  {
+    Serial.println("deserializeJson() failed with code ");
+    Serial.println(m_error.c_str());
+  }
+  // Serial.println(m_key2_value);
+  // now to iterate over (unknown) keys, we have to cast the StaticJsonDocument object into a JsonObject:
+  // see https://techtutorialsx.com/2019/07/09/esp32-arduinojson-printing-the-keys-of-the-jsondocument/
+  JsonObject m_JsonObject_from_payload = m_JSONdoc_from_payload.as<JsonObject>();
+  // Iterate and print to serial:
+  //   uint8_t LMPgain_control_panel = 6; // Feedback resistor of TIA.
+  // int num_adc_readings_to_average_control_panel = 1;
+  // int sweep_param_delayTime_ms_control_panel = 50;
+  // int cell_voltage_control_panel = 100;
+  for (JsonPair keyValue : m_JsonObject_from_payload)
+  {
+    String m_key_string = keyValue.key().c_str();
+
+    if (m_key_string == "change_cell_voltage_to")
+    {
+      Serial.println("change_cell_voltage_to called");
+      int m_new_cell_voltage = m_JSONdoc_from_payload["change_cell_voltage_to"];
+      Serial.println(m_new_cell_voltage);
+      cell_voltage_control_panel = m_new_cell_voltage;
+    }
+    if (m_key_string == "change_num_readings_to_average_per_point_to")
+    {
+      Serial.println("change_num_readings_to_average_per_point_to called");
+      int m_new_num_readings_to_average_per_point = m_JSONdoc_from_payload["change_num_readings_to_average_per_point_to"];
+      Serial.println(m_new_num_readings_to_average_per_point);
+      num_adc_readings_to_average_control_panel = m_new_num_readings_to_average_per_point;
+    }
+    if (m_key_string == "change_delay_between_points_ms_to")
+    {
+      Serial.println("change_delay_between_points_ms_to called");
+      int m_new_delay_between_points_ms = m_JSONdoc_from_payload["change_delay_between_points_ms_to"];
+      Serial.println(m_new_delay_between_points_ms);
+      sweep_param_delayTime_ms_control_panel = m_new_delay_between_points_ms;
+    }
+    if (m_key_string == "change_lmpGain_to")
+    {
+      Serial.println("change_lmpGain_to called");
+      int m_new_lmpGain = m_JSONdoc_from_payload["change_lmpGain_to"];
+      LMPgain = m_new_lmpGain;
+      Serial.println(LMPgain);
+      pStat.setGain(LMPgain);
+    }
+    // change_control_panel_is_active_to
+    if (m_key_string == "change_control_panel_is_active_to")
+    {
+      Serial.println("change_control_panel_is_active_to called");
+      bool m_new_control_panel_active_state = m_JSONdoc_from_payload["change_control_panel_is_active_to"];
+      Serial.println(m_new_control_panel_active_state);
+      if (m_new_control_panel_active_state)
+      {
+        Sweep_Mode = CTLPANEL;
+      }
+      if (!m_new_control_panel_active_state)
+      {
+        Sweep_Mode = dormant;
+      }
+      // set control panel to active or inactive, depending on message
+    }
+  }
+
+  // if (true == false) // if key = "change_cell_voltage_to"
+  // {
+  //   m_websocket_send_rate = (float)atof((const char *)&payload[0]); // adjust data send rate used in loop
+  // }
+  //deserializeJson(m_JSONdoc, payload); // m_JSONdoc is now a json object that was payload delivered by websocket message
+}
+
 // Called when receiving any WebSocket message
 void onWebSocketEvent(uint8_t num,
                       WStype_t type,
                       uint8_t *payload,
                       size_t length)
 {
-
+  Serial.println("onWebSocketEvent called");
   // Figure out the type of WebSocket event
   switch (type)
   {
@@ -2501,9 +2602,14 @@ void onWebSocketEvent(uint8_t num,
 
   // Echo text message back to client
   case WStype_TEXT:
-    // Serial.printf("[%u] Text: %s\n", num, payload);
+    // Serial.println(payload[0,length-1]); // this doesn't work....
+    Serial.printf("[%u] Received text: %s\n", num, payload);
     // m_websocketserver.sendTXT(num, payload);
-    m_websocket_send_rate = (float)atof((const char *)&payload[0]); // adjust data send rate used in loop
+    // if (true == false) // later change to if message has certain format:
+    // {
+    //   m_websocket_send_rate = (float)atof((const char *)&payload[0]); // adjust data send rate used in loop
+    // }
+    handle_websocket_text(payload);
 
     break;
 
@@ -2918,6 +3024,28 @@ void loop()
     // calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
 
     Sweep_Mode = dormant;
+  }
+  else if (Sweep_Mode == CTLPANEL)
+  {
+    // take a reading, send to websocket...
+    setLMPBias(cell_voltage_control_panel);
+    setVoltage(cell_voltage_control_panel);
+    delay(sweep_param_delayTime_ms_control_panel);
+    //Serial.println(analog_read_avg(num_adc_readings_to_average_control_panel, LMP));
+
+    v1_temp = 1000 * (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * (float)analog_read_avg(num_adc_readings_to_average_control_panel, LMP) - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
+    v2_temp = dacVout * .5;                                                                                                                                                        //the zero of the internal transimpedance amplifier
+    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6);                                                                                               //scales to uA
+    //Serial.println(amps_temp, DEC);
+
+    temp_json_string = "{\"amps\":";
+    temp_json_string += String(amps_temp,DEC);
+    temp_json_string += ",\"volts\":";
+    temp_json_string += String(cell_voltage_control_panel);
+    temp_json_string += ",\"time\":";
+    temp_json_string += String(millis());
+    temp_json_string += "}";
+    m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
   }
   else if (Sweep_Mode == MISC_MODE)
   {

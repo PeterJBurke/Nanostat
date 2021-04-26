@@ -1,0 +1,66 @@
+<!-- https://www.youtube.com/watch?v=mkXsmCgvy0k -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMP91000 control panel</title>
+
+</head>
+
+<body>
+
+  <body style="background-color: lightblue;"></body>
+  <h3>Control panel status</h3>
+    <input type="radio" id="m_control_panel_is_active_id" name="m_control_panel_is_active" value=true>
+    <label for="m_control_panel_is_active_id">Active.</label><br>
+    <input type="radio" id="m_control_panel_is_inactive_id" name="m_control_panel_is_active" value=false>
+    <label for="m_control_panel_is_inactive_id">Inactive.</label><br>
+  <hr>
+
+
+  <div class="form-box">
+    <label for="lmpGain_id">TIA gain</label>
+    <select name="sweep_param_lmpGain" id="lmpGain_id">
+      <option value=7>350 kOhm</option>
+      <option value=6>120 kOhm</option>
+      <option value=5>35 kOhm</option>
+      <option value=4>14 kOhm</option>
+      <option value=3>7 kOhm</option>
+      <option value=2>3.5 kOhm</option>
+      <option value=1>2.75 kOhm</option>
+      <option value=0>External resistor</option>
+    </select>
+  </div>
+  <hr>
+  <!-- <div><button id="toggleButton" onclick="onPress()" disabled>Toggle LED</button></div> -->
+  <!-- <div><button id="toggleButton" onclick="onPress()" >Toggle LED</button></div> -->
+  <!-- <hr> -->
+  <!-- <div><canvas id="led" width="50" height="50"></canvas></div> -->
+  <!-- <hr> -->
+
+  
+  <div class="form-box">
+    <label>Cell voltage (mV)</label>
+    <input type="number" name="cell_voltage" id="cell_voltage_id" value=100 min=-792 max=792>
+  </div>
+  <hr>
+
+  <div class="form-box">
+    <label># of readings to average per point.</label>
+    <input type="number" name="num_readings_to_average_per_point" id="num_readings_to_average_per_point_id" value=1 min=1 max=1000000>
+  </div>
+  <hr>
+  <div class="form-box">
+    <label>delay between points (ms)</label>
+    <input type="number" name="delay_between_points_ms" id="delay_between_points_ms_id" value=10 min=1 max=1000>
+  </div>
+
+
+</body>
+
+<script type="text/javascript" src="websckt_ctl_pan_LMP91000.js"></script>
+
+</html>
