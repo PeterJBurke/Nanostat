@@ -7,6 +7,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LMP91000 control panel</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 </head>
 
@@ -14,10 +15,10 @@
 
   <body style="background-color: lightblue;"></body>
   <h3>Control panel status</h3>
-    <input type="radio" id="m_control_panel_is_active_id" name="m_control_panel_is_active" value=true>
-    <label for="m_control_panel_is_active_id">Active.</label><br>
-    <input type="radio" id="m_control_panel_is_inactive_id" name="m_control_panel_is_active" value=false>
-    <label for="m_control_panel_is_inactive_id">Inactive.</label><br>
+  <input type="radio" id="m_control_panel_is_active_id" name="m_control_panel_is_active" value=true>
+  <label for="m_control_panel_is_active_id">Active.</label><br>
+  <input type="radio" id="m_control_panel_is_inactive_id" checked="checked" name="m_control_panel_is_active" value=false>
+  <label for="m_control_panel_is_inactive_id">Inactive.</label><br>
   <hr>
 
 
@@ -41,7 +42,7 @@
   <!-- <div><canvas id="led" width="50" height="50"></canvas></div> -->
   <!-- <hr> -->
 
-  
+
   <div class="form-box">
     <label>Cell voltage (mV)</label>
     <input type="number" name="cell_voltage" id="cell_voltage_id" value=100 min=-792 max=792>
@@ -50,14 +51,21 @@
 
   <div class="form-box">
     <label># of readings to average per point.</label>
-    <input type="number" name="num_readings_to_average_per_point" id="num_readings_to_average_per_point_id" value=1 min=1 max=1000000>
+    <input type="number" name="num_readings_to_average_per_point" id="num_readings_to_average_per_point_id" value=1
+      min=1 max=1000000>
   </div>
   <hr>
   <div class="form-box">
     <label>delay between points (ms)</label>
-    <input type="number" name="delay_between_points_ms" id="delay_between_points_ms_id" value=10 min=1 max=1000>
+    <input type="number" name="delay_between_points_ms" id="delay_between_points_ms_id" value=500 min=1 max=1000>
   </div>
 
+
+
+  <hr>
+  <div id="plotly-scope" style="width:800px;height:800px;"></div>
+  <hr>
+  <script type="text/javascr" src="plotlyscope.js"></script>
 
 </body>
 

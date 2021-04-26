@@ -7,6 +7,19 @@ var button;
 var canvas;
 var context;
 
+// initialize plotly plot
+  
+var trace_scope = {
+    x: [],
+    y: [],
+    mode: 'markers',
+    type: 'scatter'
+};
+var data_scope = [trace_scope];
+Plotly.newPlot('plotly-scope', data_scope);
+
+
+
 // This is called when the page finishes loading
 function init() {
 
@@ -24,6 +37,7 @@ function init() {
     // context.fill();
 
     wsConnect(m_url_JS);   // Connect to WebSocket server
+
 
 }
 
@@ -48,6 +62,13 @@ function onOpen(evt) {
     // Log connection state
     console.log("Connected");
 
+    // initialize values to front panel browswer:
+    doSend("{\"change_cell_voltage_to\":" + document.getElementById("cell_voltage_id").value + "}");
+    doSend("{\"change_num_readings_to_average_per_point_to\":" + document.getElementById("num_readings_to_average_per_point_id").value + "}");
+    doSend("{\"change_lmpGain_to\":" + document.getElementById("lmpGain_id").value + "}");
+    doSend("{\"change_control_panel_is_active_to\":false}");
+    doSend("{\"change_delay_between_points_ms_to\":" + document.getElementById("delay_between_points_ms_id").value + "}");
+
 }
 
 // Called when the WebSocket connection is closed
@@ -69,7 +90,24 @@ function onMessage(evt) {
 
     // Print out our received message
     console.log("Received: " + evt.data);
-
+    var m_json_obj = JSON.parse(evt.data);
+    console.log(m_json_obj);
+    var m_voltage_point = m_json_obj.volts;
+    var m_current_point = m_json_obj.amps;
+    var m_time_point = m_json_obj.time;
+    console.log(m_voltage_point);
+    console.log(m_current_point);
+    console.log(m_time_point);
+    // now PUSH onto array m_current_point, m_time_point
+    // var fruits = ["Banana", "Orange", "Apple", "Mango"];
+    // fruits.push("Kiwi");       //  Adds a new element ("Kiwi") to fruits
+    trace_scope.x.push(m_time_point);
+    trace_scope.y.push(m_current_point);
+//    console.log(trace_scope.x);
+//    console.log(trace_scope.y);
+    // then update plotly plot....
+    var data_scope = [trace_scope];
+    Plotly.newPlot('plotly-scope', data_scope);
 
 }
 
@@ -148,4 +186,3 @@ function respond_to_m_control_panel_is_inactive_id_change() {
     control_panel_is_active_JSON_command = "{\"change_control_panel_is_active_to\":false}";
     doSend(control_panel_is_active_JSON_command);
 }
-
