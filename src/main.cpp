@@ -134,6 +134,7 @@ int16_t volts_temp = 0;
 float amps_temp = 0;
 float v1_temp = 0;
 float v2_temp = 0;
+float analog_read_avg_bits_temp = 0;
 String temp_json_string = "";
 int16_t time_Voltammaogram[arr_samples] = {0};
 int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
@@ -2544,6 +2545,19 @@ void handle_websocket_text(uint8_t *payload)
       int m_new_cell_voltage = m_JSONdoc_from_payload["change_cell_voltage_to"];
       Serial.println(m_new_cell_voltage);
       cell_voltage_control_panel = m_new_cell_voltage;
+      if (Sweep_Mode == CTLPANEL)
+      {
+        // set cell voltage, send params back to browswer such as percentage and dac settings
+        setLMPBias(cell_voltage_control_panel);
+        setVoltage(cell_voltage_control_panel);
+        // send percent setting, dacvout back to browswer xyzxyz
+        temp_json_string = "{\"dacVout\":";
+        temp_json_string += String(dacVout, DEC);
+        temp_json_string += ",\"percentage\":";
+        temp_json_string += String(TIA_BIAS[bias_setting]);
+        temp_json_string += "}";
+        m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
+      }
     }
     if (m_key_string == "change_num_readings_to_average_per_point_to")
     {
@@ -2564,8 +2578,11 @@ void handle_websocket_text(uint8_t *payload)
       Serial.println("change_lmpGain_to called");
       int m_new_lmpGain = m_JSONdoc_from_payload["change_lmpGain_to"];
       LMPgain = m_new_lmpGain;
-      Serial.println(LMPgain);
-      pStat.setGain(LMPgain);
+      if (Sweep_Mode == CTLPANEL)
+      {
+        Serial.println(LMPgain);
+        pStat.setGain(LMPgain);
+      }
     }
     // change_control_panel_is_active_to
     if (m_key_string == "change_control_panel_is_active_to")
@@ -3070,14 +3087,15 @@ void loop()
   else if (Sweep_Mode == CTLPANEL)
   {
     // take a reading, send to websocket...
-    setLMPBias(cell_voltage_control_panel);
-    setVoltage(cell_voltage_control_panel);
+    // setLMPBias(cell_voltage_control_panel); // done in resond to websocket text now....
+    // setVoltage(cell_voltage_control_panel);
     delay(sweep_param_delayTime_ms_control_panel);
     //Serial.println(analog_read_avg(num_adc_readings_to_average_control_panel, LMP));
+    analog_read_avg_bits_temp = (float)analog_read_avg(num_adc_readings_to_average_control_panel, LMP);
+    v1_temp = 1000 * (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * analog_read_avg_bits_temp - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
+    v2_temp = dacVout * .5;                                                                                                           //the zero of the internal transimpedance amplifier
+    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6);                                                  //scales to uA
 
-    v1_temp = 1000 * (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * (float)analog_read_avg(num_adc_readings_to_average_control_panel, LMP) - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
-    v2_temp = dacVout * .5;                                                                                                                                                        //the zero of the internal transimpedance amplifier
-    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6);                                                                                               //scales to uA
     //Serial.println(amps_temp, DEC);
 
     temp_json_string = "{\"amps\":";
@@ -3086,7 +3104,14 @@ void loop()
     temp_json_string += String(cell_voltage_control_panel);
     temp_json_string += ",\"time\":";
     temp_json_string += String(millis());
+    temp_json_string += ",\"analog_read_avg_bits\":";
+    temp_json_string += String(analog_read_avg_bits_temp);
+    temp_json_string += ",\"analog_read_avg_mV\":";
+    temp_json_string += String(v1_temp, DEC);
     temp_json_string += "}";
+
+    //  adc reading,  xyzxyz
+
     m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
   }
   else if (Sweep_Mode == MISC_MODE)

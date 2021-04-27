@@ -150,10 +150,23 @@ function onMessage(evt) {
         }
     };
 
+    if ('dacVout' in m_json_obj) {// update dacVout and percentage indicators on browswer page...
+        // do something
+        var m_dacVout = m_json_obj.dacVout;
+        var m_percentage = m_json_obj.percentage;
+        document.getElementById('m_dacVout_id').innerHTML = m_dacVout;
+        document.getElementById('m_percentage_id').innerHTML = m_percentage;
+    };
+
     if ('volts' in m_json_obj) {// next time point, parse and add to graph
         var m_voltage_point = m_json_obj.volts;
         var m_current_point = m_json_obj.amps;
         var m_time_point = m_json_obj.time;
+        var m_analog_read_avg_bits = m_json_obj.analog_read_avg_bits;
+        var m_analog_read_avg_mV = m_json_obj.analog_read_avg_mV;
+        document.getElementById('analog_read_avg_bits_id').innerHTML = m_analog_read_avg_bits;
+        document.getElementById('analog_read_avg_mV_id').innerHTML = m_analog_read_avg_mV;
+
         if (trace_scope_current.x.length > maxDataPoints) {
             trace_scope_current.x.shift();
             trace_scope_current.y.shift();
@@ -166,6 +179,7 @@ function onMessage(evt) {
         trace_scope_voltage.y.push(m_voltage_point);
         var data_IVvsTime_scope = [trace_scope_current, trace_scope_voltage];
         Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+
     };
 
 
@@ -238,6 +252,11 @@ function respond_to_m_control_panel_is_active_id_change() {
     var control_panel_is_active_JSON_command;
     control_panel_is_active_JSON_command = "{\"change_control_panel_is_active_to\":true}";
     doSend(control_panel_is_active_JSON_command);
+    // also send all the parameters for the biasing: 1) TIA gain 2) cell voltage 3) # readings to avg 4) delay...
+    respond_to_delay_between_points_ms_change();
+    respond_to_num_readings_to_average_per_point_change();
+    respond_to_lmpGain_change()
+    respond_to_cell_voltage_input_change();
 }
 
 
