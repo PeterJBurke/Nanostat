@@ -2,7 +2,7 @@
 // Wifitool from https://github.com/oferzv/wifiTool (Not in use as of 4/21/2021, on the to do list...)
 // Libraries from Arduino offical library database.
 
-bool userpause = false;              // pauses for user to press input on serial between each point in npv
+bool userpause = false;             // pauses for user to press input on serial between each point in npv
 bool print_output_to_serial = false; // pauses for user to press input on serial between each point in npv
 
 //Standard Arduino Libraries
@@ -573,6 +573,7 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   float v1;
   v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
   v1 = v1 * 1000;
+
   float v2 = dacVout * .5; //the zero of the internal transimpedance amplifier
   // V2 is not measured in  BurkeLab ESP32Stat Rev 3.5 and assumed to be half dacVout, calibration helps this see above
   float current = 0;
@@ -2548,6 +2549,8 @@ void handle_websocket_text(uint8_t *payload)
       if (Sweep_Mode == CTLPANEL)
       {
         // set cell voltage, send params back to browswer such as percentage and dac settings
+        Serial.println("Calling setLMPBias and setVoltage to:");
+        Serial.println(cell_voltage_control_panel);
         setLMPBias(cell_voltage_control_panel);
         setVoltage(cell_voltage_control_panel);
         // send percent setting, dacvout back to browswer xyzxyz
@@ -3086,15 +3089,19 @@ void loop()
   }
   else if (Sweep_Mode == CTLPANEL)
   {
+
     // take a reading, send to websocket...
     // setLMPBias(cell_voltage_control_panel); // done in resond to websocket text now....
     // setVoltage(cell_voltage_control_panel);
     delay(sweep_param_delayTime_ms_control_panel);
     //Serial.println(analog_read_avg(num_adc_readings_to_average_control_panel, LMP));
     analog_read_avg_bits_temp = (float)analog_read_avg(num_adc_readings_to_average_control_panel, LMP);
-    v1_temp = 1000 * (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * analog_read_avg_bits_temp - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
-    v2_temp = dacVout * .5;                                                                                                           //the zero of the internal transimpedance amplifier
-    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6);                                                  //scales to uA
+    v1_temp = (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * analog_read_avg_bits_temp - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
+    v1_temp = v1_temp* 1000.0;
+   
+
+    v2_temp = dacVout * .5;                                                          //the zero of the internal transimpedance amplifier
+    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
 
     //Serial.println(amps_temp, DEC);
 

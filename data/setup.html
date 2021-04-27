@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Setup</title>
   <link rel="stylesheet" href="/menubarstyle.css">
-  <!-- <link rel="stylesheet" href="/setupstyle.css"> -->
+  <link rel="stylesheet" href="/setupstyle.css">
 
 
   <!-- style from https://gist.github.com/prof3ssorSt3v3/8d0616f4df11dae5233584b0d2a807f6
@@ -15,7 +15,7 @@
 
 </head>
 
-<body style="background-color: lightblue;">
+<body>
 
   <nav class="menu-bar">
     <ul>
@@ -27,25 +27,34 @@
       <li><a href="/about.html">About</a></li>
     </ul>
   </nav>
+
   <header>
     <center>
-      <h2>BurkeLab ESP32 Stat: <i>"NanoStat"</i></h2>
-
-      <p>Rev 3.5</p>
+      <h2>Sweep settings</h2>
     </center>
   </header>
 
   <form action="/actionpage.html" method="POST" enctype="application/json">
 
-    <div class="form-box">
+    <div class="form-box-button">
       <button type="reset">Reset</button>
       <button type="submit">Submit</button>
     </div>
 
+
     <table>
       <tr>
-        <th>
-          <h3> General </h3>
+        <th>General</th>
+        <th>CV </th>
+        <th>NPV</th>
+        <th>SW</th>
+        <th>IV</th>
+        <th>CA</th>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td>
           <div class="form-box">
             <label for="lmpGain_id">TIA gain</label>
             <select name="sweep_param_lmpGain" id="lmpGain_id">
@@ -58,94 +67,101 @@
               <option value=1>2.75 kOhm</option>
               <option value=0>External resistor</option>
             </select>
-
-            <div class="form-box">
-              <label>Set to zero at end?</label>
-              <input type="radio" name="sweep_param_setToZero" id="setToZero_id" value="true">
-            </div>
           </div>
-          <h3> Noise test specific</h3>
-
-
-
-          <div class="form-box">
-            <label>Bias voltage (mV)</label>
-            <input type="number" name="sweep_param_biasV_noisetest" id="sweep_param_biasV_noisetest_id" value=100
-              min=-792 max=792>
-          </div>
-
-          <div class="form-box">
-            <label>Number of points</label>
-            <input type="number" name="sweep_param_numPoints_noisetest" id="sweep_param_numPoints_noisetest_id"
-              value=100 min=1 max=1000000>
-          </div>
-
-          <div class="form-box">
-            <label>Delay time (ms)</label>
-            <input type="number" name="sweep_param_delayTime_ms_noisetest" id="sweep_param_delayTime_ms_noisetest_id"
-              value=50 min=1 max=1000000>
-          </div>
-
-        </th>
-        <th>
-          <h3> CV specific</h3>
-
+        </td>
+        <td>
           <div class="form-box">
             <label># cycles</label>
             <input type="number" name="sweep_param_cycles_CV" id="sweep_param_cycles_CV_id" value=3 min=1>
           </div>
-
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_CV" id="sweep_param_startV_CV_id" value=0 min=-792 max=792>
-          </div>
-
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_CV" id="sweep_param_endV_CV_id" value=0 min=-792 max=792>
-          </div>
-
-          <div class="form-box">
-            <label>Max. voltage (mV)</label>
-            <input type="number" name="sweep_param_vertex1_CV" id="sweep_param_vertex1_CV_id" value=100 min=-792
-              max=792>
-          </div>
-
-          <div class="form-box">
-            <label>Min. voltage (mV)</label>
-            <input type="number" name="sweep_param_vertex2_CV" id="sweep_param_vertex2_CV_id" value=-100 min=-792
-              max=792>
-          </div>
-
-          <div class="form-box">
-            <label>Step voltage (mV)</label>
-            <input type="number" name="sweep_param_stepV_CV" id="sweep_param_stepV_CV_id" value=5 min=1 max=1000>
-          </div>
-
-          <div class="form-box">
-            <label>Scan rate (mV/s)</label>
-            <input type="number" name="sweep_param_rate_CV" id="sweep_param_rate_CV_id" value=100 min=1 max=100000>
-          </div>
-
-        </th>
-        <th>
-
-
-          <h3> NPV specific</h3>
-
-
-
+        </td>
+        <td>
           <div class="form-box">
             <label>Start voltage (mV)</label>
             <input type="number" name="sweep_param_startV_NPV" id="sweep_param_startV_NPV_id" value=-200 min=-792
               max=792>
           </div>
+        </td>
+        <td>
+          <div class="form-box">
+            <label>Start voltage (mV)</label>
+            <input type="number" name="sweep_param_startV_SWV" id="sweep_param_startV_SWV_id" value=-200 min=-792
+              max=792>
+          </div>
+        </td>
+        <td>
+          <div class="form-box">
+            <label>Start voltage (mV)</label>
+            <input type="number" name="sweep_param_startV_IV" id="sweep_param_startV_IV_id" value=-200 min=-792 max=792>
+          </div>
+        </td>
+        <td>
+          <div class="form-box">
+            <label>Step voltage (mV)</label>
+            <input type="number" name="sweep_param_pre_stepV_CA" id="sweep_param_pre_stepV_CA_id" value=50 min=1
+              max=1000>
+          </div>
+        </td>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td>
+          <div class="form-box">
+            <label>Set to zero at end?</label>
+            <input type="radio" name="sweep_param_setToZero" id="setToZero_id" value="true">
+          </div>
+        </td>
+        <td>
+          <div class="form-box">
+            <label>Start voltage (mV)</label>
+            <input type="number" name="sweep_param_startV_CV" id="sweep_param_startV_CV_id" value=0 min=-792 max=792>
+          </div>
+        </td>
+        <td>
 
           <div class="form-box">
             <label>End voltage (mV)</label>
             <input type="number" name="sweep_param_endV_NPV_xyz" id="sweep_param_endV_NPV_id" value=500 min=-792
               max=792>
           </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>End voltage (mV)</label>
+            <input type="number" name="sweep_param_endV_SWV" id="sweep_param_endV_SWV_id" value=500 min=-792 max=792>
+          </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>End voltage (mV)</label>
+            <input type="number" name="sweep_param_endV_IV" id="sweep_param_endV_IV_id" value=500 min=-792 max=792>
+          </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>Quiet time (ms)</label>
+            <input type="number" name="sweep_param_quietTime_CA" id="sweep_param_quietTime_CA_id" value=1000 min=1
+              max=100000>
+          </div>
+        </td>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td><b>Noise:</b></td>
+        <td>
+          <div class="form-box">
+            <label>End voltage (mV)</label>
+            <input type="number" name="sweep_param_endV_CV" id="sweep_param_endV_CV_id" value=0 min=-792 max=792>
+          </div>
+        </td>
+        <td>
+
+
 
 
           <div class="form-box">
@@ -153,127 +169,23 @@
             <input type="number" name="sweep_param_pulseAmp_NPV" id="sweep_param_pulseAmp_NPV_id" value=1 min=1
               max=1000>
           </div>
-
-
-          <div class="form-box">
-            <label>Pulse width (ms)</label>
-            <input type="number" name="sweep_param_width_NPV" id="sweep_param_width_NPV_id" value=50 min=1 max=1000>
-          </div>
-
-
-          <div class="form-box">
-            <label>Pulse period (ms)</label>
-            <input type="number" name="sweep_param_period_NPV" id="sweep_param_period_NPV_id" value=200 min=1 max=1000>
-          </div>
-
-
-          <div class="form-box">
-            <label>Quiet time (ms)</label>
-            <input type="number" name="sweep_param_quietTime_NPV" id="sweep_param_quietTime_NPV_id" value=1000 min=1
-              max=100000>
-          </div>
-
-
-
-
-        </th>
-        <th>
-          <h3> SW specific</h3>
-
-
-
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_SWV" id="sweep_param_startV_SWV_id" value=-200 min=-792
-              max=792>
-          </div>
-
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_SWV" id="sweep_param_endV_SWV_id" value=500 min=-792 max=792>
-          </div>
+        </td>
+        <td>
 
           <div class="form-box">
             <label>Pulse amplitude (mV)</label>
             <input type="number" name="sweep_param_pulseAmp_SWV" id="sweep_param_pulseAmp_SWV_id" value=1 min=1
               max=1000>
           </div>
-
-          <div class="form-box">
-            <label>Step voltage (mV)</label>
-            <input type="number" name="sweep_param_stepV_SWV" id="sweep_param_stepV_SWV_id" value=5 min=1 max=1000>
-          </div>
-
-          <div class="form-box">
-            <label>Frequency (Hz)</label>
-            <input type="number" name="sweep_param_freq_SWV" id="sweep_param_freq_SWV_id" value=10 min=1 max=100000>
-          </div>
-
-
-        </th>
-        <th>
-
-
-
-          <h3> IV test specific</h3>
-
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_IV" id="sweep_param_startV_IV_id" value=-200 min=-792 max=792>
-          </div>
-
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_IV" id="sweep_param_endV_IV_id" value=500 min=-792 max=792>
-          </div>
-
+        </td>
+        <td>
           <div class="form-box">
             <label>Number of points</label>
             <input type="number" name="sweep_param_numPoints_IV" id="sweep_param_numPoints_IV_id" value=701 min=1
               max=1000000>
           </div>
-
-          <div class="form-box">
-            <label>Delay time (ms)</label>
-            <input type="number" name="sweep_param_delayTime_ms_IV" id="sweep_param_delayTime_ms_IV_id" value=50 min=1
-              max=1000000>
-          </div>
-
-          <h3> Calibration test specific</h3>
-          <div class="form-box">
-            <label>Delay time (ms)</label>
-            <input type="number" name="sweep_param_delayTime_ms_CAL" id="sweep_param_delayTime_ms_CAL_id" value=50 min=1
-              max=1000000>
-          </div>
-        </th>
-        <th>
-          <h3> CA specific</h3>
-
-
-          <div class="form-box">
-            <label>Step voltage (mV)</label>
-            <input type="number" name="sweep_param_pre_stepV_CA" id="sweep_param_pre_stepV_CA_id" value=50 min=1
-              max=1000>
-          </div>
-
-
-          <div class="form-box">
-            <label>Quiet time (ms)</label>
-            <input type="number" name="sweep_param_quietTime_CA" id="sweep_param_quietTime_CA_id" value=1000 min=1
-              max=100000>
-          </div>
-
-
-          <div class="form-box">
-            <label>First step voltage (mV)</label>
-            <input type="number" name="sweep_param_V1_CA" id="sweep_param_V1_CA_id" value=100 min=-792 max=792>
-          </div>
-
-
-          <div class="form-box">
-            <label>First step time (mV)</label>
-            <input type="number" name="sweep_param_t1_CA" id="sweep_param_t1_CA_id" value=2000 min=1 max=100000>
-          </div>
+        </td>
+        <td>
 
 
 
@@ -282,28 +194,175 @@
             <input type="number" name="sweep_param_V2_CA" id="sweep_param_V2_CA_id" value=50 min=-792 max=792>
           </div>
 
+        </td>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td>
+          <div class="form-box">
+            <label>Bias voltage (mV)</label>
+            <input type="number" name="sweep_param_biasV_noisetest" id="sweep_param_biasV_noisetest_id" value=100
+              min=-792 max=792>
+          </div>
+        </td>
+        <td>
+
+
+          <div class="form-box">
+            <label>Max. voltage (mV)</label>
+            <input type="number" name="sweep_param_vertex1_CV" id="sweep_param_vertex1_CV_id" value=100 min=-792
+              max=792>
+          </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>Pulse width (ms)</label>
+            <input type="number" name="sweep_param_width_NPV" id="sweep_param_width_NPV_id" value=50 min=1 max=1000>
+          </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>Step voltage (mV)</label>
+            <input type="number" name="sweep_param_stepV_SWV" id="sweep_param_stepV_SWV_id" value=5 min=1 max=1000>
+          </div>
+        </td>
+        <td>
+          <div class="form-box">
+            <label>Delay time (ms)</label>
+            <input type="number" name="sweep_param_delayTime_ms_IV" id="sweep_param_delayTime_ms_IV_id" value=50 min=1
+              max=1000000>
+          </div>
+        </td>
+        <td>
 
           <div class="form-box">
             <label>First step time (mV)</label>
-            <input type="number" name="sweep_param_t2_CA" id="sweep_param_t2_CA_id" value=2000 min=1 max=100000>
+            <input type="number" name="sweep_param_t1_CA" id="sweep_param_t1_CA_id" value=2000 min=1 max=100000>
           </div>
 
 
+        </td>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td>
+          <div class="form-box">
+            <label>Number of points</label>
+            <input type="number" name="sweep_param_numPoints_noisetest" id="sweep_param_numPoints_noisetest_id"
+              value=100 min=1 max=1000000>
+          </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>Min. voltage (mV)</label>
+            <input type="number" name="sweep_param_vertex2_CV" id="sweep_param_vertex2_CV_id" value=-100 min=-792
+              max=792>
+          </div>
+        </td>
+        <td>
+
+          <div class="form-box">
+            <label>Pulse period (ms)</label>
+            <input type="number" name="sweep_param_period_NPV" id="sweep_param_period_NPV_id" value=200 min=1 max=1000>
+          </div>
+        </td>
+        <td>
+          <div class="form-box">
+            <label>Frequency (Hz)</label>
+            <input type="number" name="sweep_param_freq_SWV" id="sweep_param_freq_SWV_id" value=10 min=1 max=100000>
+          </div>
+        </td>
+        <td><b>Calibration test specific</b></td>
+        <td>
+
+          <div class="form-box">
+            <label>2nd step voltage (mV)</label>
+            <input type="number" name="sweep_param_V2_CA" id="sweep_param_V2_CA_id" value=50 min=-792 max=792>
+          </div>
+
+
+        </td>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td>
+          <div class="form-box">
+            <label>Delay time (ms)</label>
+            <input type="number" name="sweep_param_delayTime_ms_noisetest" id="sweep_param_delayTime_ms_noisetest_id"
+              value=50 min=1 max=1000000>
+          </div>
+
+        </td>
+        <td>
+
+
+          <div class="form-box">
+            <label>Step voltage (mV)</label>
+            <input type="number" name="sweep_param_stepV_CV" id="sweep_param_stepV_CV_id" value=5 min=1 max=1000>
+          </div>
+        </td>
+        <td>
+
+
+
+
+          <div class="form-box">
+            <label>Quiet time (ms)</label>
+            <input type="number" name="sweep_param_quietTime_NPV" id="sweep_param_quietTime_NPV_id" value=1000 min=1
+              max=100000>
+          </div>
+        </td>
+        <td>---</td>
+        <td>
+          <div class="form-box">
+            <label>Delay time (ms)</label>
+            <input type="number" name="sweep_param_delayTime_ms_CAL" id="sweep_param_delayTime_ms_CAL_id" value=50 min=1
+              max=1000000>
+          </div>
+        </td>
+        <td>
+
+
+
+          <div class="form-box">
+            <label>2nd step time (mV)</label>
+            <input type="number" name="sweep_param_t2_CA" id="sweep_param_t2_CA_id" value=2000 min=1 max=100000>
+          </div>
+
+        </td>
+      </tr>
+      <!-- ********************************************* -->
+
+      <tr>
+        <td>---</td>
+        <td>
+
+          <div class="form-box">
+            <label>Scan rate (mV/s)</label>
+            <input type="number" name="sweep_param_rate_CV" id="sweep_param_rate_CV_id" value=100 min=1 max=100000>
+          </div>
+        </td>
+        <td>---</td>
+        <td>---</td>
+        <td>---</td>
+        <td>
           <div class="form-box">
             <label>Number of samples</label>
             <input type="number" name="sweep_param_samples_CA" id="sweep_param_samples_CA_id" value=100 min=1
               max=100000>
           </div>
-
-
-        </th>
-        <!-- <th>
-          <p> xyz</p>>
-        </th>
-        <th>
-          <p> xyz</p>>
-        </th> -->
+        </td>
       </tr>
+
+    </table>
+
+
 
 
 

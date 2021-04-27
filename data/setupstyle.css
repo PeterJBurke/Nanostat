@@ -1,16 +1,4 @@
-*, *::after, *:before {
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-}
-
-html {
-    font: normal 14px/1.5 sans-serif;
-}
-
-h1 {
-    margin: 1rem 2rem;
-}
+/* 
 
 form {
     margin: 2rem;
@@ -24,7 +12,6 @@ form {
 .form-box {
     padding: 0.5rem;
     clear: both;
-    /* width: 100%; */
     position: relative;
 }
 
@@ -65,9 +52,9 @@ form {
     color: white;
     background-color: cornflowerblue;
     cursor: pointer;
-}
+} */
 
-.error::after {
+/* .error::after {
     background-color: hsl(10, 60%, 50%);
     color: papayawhip;
     font-size: 1rem;
@@ -78,17 +65,29 @@ form {
     right: 0;
     content: attr(data-errormsg);
 }
+ */
 
+/* .form-box-button button {
+    font-size: 1rem;
+    border: 0.5rem;
+    padding: 0.1 rem 0.5rem;
+    margin-right: auto;
+    margin-left: auto;
+    color: white;
+    background-color: cornflowerblue;
+    cursor: pointer;
+    align-items: center;
+} */
 
 table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: white;
 }
 
-td,
-th {
-  border: 1px solid #dddddd;
-  text-align: left;
-  padding: 8px;
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
 }
