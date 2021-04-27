@@ -103,118 +103,124 @@ function onMessage(evt) {
 
     // Print out our received message
     console.log("Received: " + evt.data);
-
-    // Add data to chart.js plot:
-    // var data = JSON.parse(evt.data); // data is a json object; data.time assumes format it {"value",123456}
-    // var today = new Date();
-    // var t = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    // addData(t, data.value); // add new data points to plot one by one...
-    // console.log("Parsed version: " + data.value);
-    // console.log(t);
-    // console.log(data);
-
-
     var m_json_obj = JSON.parse(evt.data);
-    console.log(m_json_obj);
-    var m_voltage_array = m_json_obj.Voltage;
-    var m_current_array = m_json_obj.Current;
-    var m_time_array = m_json_obj.Time;
-    console.log(m_voltage_array);
-    console.log(m_current_array);
-    console.log(m_time_array);
-
-
-    var trace_IV = {
-        x: m_voltage_array,
-        y: m_current_array,
-        mode: 'markers',
-        type: 'scatter'
-    };
-    var data_IV = [trace_IV];
-
-    var m_IV_layout = {
-        // title: 'IV Curve',
-        showlegend: false,
-        margin: {
-            l: 50,
-            r: 5,
-            b: 50,
-            t: 1,
-            pad: 4
-        },
-        xaxis: {
-            title: { text: 'Voltage (mV)' }
-        },
-        yaxis: {
-            title: { text: 'Current (microA)' }
+    //    console.log(m_json_obj);
+    if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
+        // do something
+        if (m_json_obj.is_sweeping == true) { // mode is sweeping
+            // do something
+            // document.getElementById('sweep_mode_id').innerHTML = "SWEEPING";
+            document.getElementById('sweep_mode_id').innerHTML = "<div style=\"color:red\">SWEEPING</div>";
+            console.log("need to update indicator to true...");
+        }
+        if (m_json_obj.is_sweeping == false) { // mode is sweeping
+            // do something
+            document.getElementById('sweep_mode_id').innerHTML = "<div style=\"color:green\">IDLE</div>";
+            console.log("need to update indicator to false...");
         }
     };
 
+    if ('Voltage' in m_json_obj) {// this is the voltamagram, parse and plot it...
+        var m_voltage_array = m_json_obj.Voltage;
+        var m_current_array = m_json_obj.Current;
+        var m_time_array = m_json_obj.Time;
+        console.log(m_voltage_array);
+        console.log(m_current_array);
+        console.log(m_time_array);
 
-    // Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, {scrollZoom: true}, {editable: true}, {responsive: true});
-    Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, { scrollZoom: true, editable: true, responsive: true });
+
+        var trace_IV = {
+            x: m_voltage_array,
+            y: m_current_array,
+            mode: 'markers',
+            type: 'scatter'
+        };
+        var data_IV = [trace_IV];
+
+        var m_IV_layout = {
+            // title: 'IV Curve',
+            showlegend: false,
+            margin: {
+                l: 50,
+                r: 5,
+                b: 50,
+                t: 1,
+                pad: 4
+            },
+            xaxis: {
+                title: { text: 'Voltage (mV)' }
+            },
+            yaxis: {
+                title: { text: 'Current (microA)' }
+            }
+        };
 
 
-    var trace_IvsTime = {
-        x: m_time_array,
-        y: m_current_array,
-        mode: 'markers',
-        type: 'scatter',
-        name: "Current"
+        // Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, {scrollZoom: true}, {editable: true}, {responsive: true});
+        Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, { scrollZoom: true, editable: true, responsive: true });
+
+
+        var trace_IvsTime = {
+            x: m_time_array,
+            y: m_current_array,
+            mode: 'markers',
+            type: 'scatter',
+            name: "Current"
+        };
+        var trace_VvsTime = {
+            x: m_time_array,
+            y: m_voltage_array,
+            mode: 'markers',
+            yaxis: 'y2',
+            type: 'scatter',
+            name: "Voltage"
+        };
+
+        var data_IVvsTime = [trace_IvsTime, trace_VvsTime];
+
+
+        var m_2yaxis_layout = {
+            margin: {
+                l: 50,
+                r: 5,
+                b: 50,
+                t: 1,
+                pad: 4
+            },
+            xaxis: {
+                title: { text: 'Time (ms)' }
+            },
+            yaxis: { title: 'Current (microA)' },
+            yaxis2: {
+                title: 'Voltage (mV)',
+                titlefont: { color: 'rgb(148, 103, 189)' },
+                tickfont: { color: 'rgb(148, 103, 189)' },
+                overlaying: 'y',
+                side: 'right'
+            }
+        };
+
+        Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
     };
-    var trace_VvsTime = {
-        x: m_time_array,
-        y: m_voltage_array,
-        mode: 'markers',
-        yaxis: 'y2',
-        type: 'scatter',
-        name: "Voltage"
-    };
-
-    var data_IVvsTime = [trace_IvsTime, trace_VvsTime];
 
 
-    var m_2yaxis_layout = {
-        margin: {
-            l: 50,
-            r: 5,
-            b: 50,
-            t: 1,
-            pad: 4
-        },
-        xaxis: {
-            title: { text: 'Time (ms)' }
-        },
-        yaxis: { title: 'Current (microA)' },
-        yaxis2: {
-            title: 'Voltage (mV)',
-            titlefont: { color: 'rgb(148, 103, 189)' },
-            tickfont: { color: 'rgb(148, 103, 189)' },
-            overlaying: 'y',
-            side: 'right'
-        }
-    };
-
-    Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
 
 
-    // var trace_IvsTime = {
-    //     x: m_time_array,
-    //     y: m_current_array,
-    //     mode: 'markers',
-    //     type: 'scatter'
-    // };
-    // var data_IvsTime = [trace_IvsTime];
-    // Plotly.newPlot('plotly-IvsTime', data_IvsTime);
 
-    // var trace_VvsTime = {
-    //     x: m_time_array,
-    //     y: m_voltage_array,
-    //     mode: 'markers',
-    //     type: 'scatter'
-    // };
-    // var data_VvsTime = [trace_VvsTime];
-    // Plotly.newPlot('plotly-VvsTime', data_VvsTime);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }

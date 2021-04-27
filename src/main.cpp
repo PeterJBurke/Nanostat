@@ -241,6 +241,21 @@ void sendStringOverWebsocket(String string_to_send_over_websocket)
   m_websocketserver.broadcastTXT(string_to_send_over_websocket.c_str(), string_to_send_over_websocket.length());
 }
 
+void send_is_sweeping_status_over_websocket(bool is_sweeping)
+{
+  if (is_sweeping)
+  {
+    // send is sweeping
+    temp_json_string = "{\"is_sweeping\":true}";
+  };
+  if (!is_sweeping)
+  {
+    // send is not sweeping
+    temp_json_string = "{\"is_sweeping\":false}";
+  };
+  m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
+}
+
 void sendVoltammogramWebsocketJSON()
 {
   // psuedo code:
@@ -2180,7 +2195,7 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       //Sample and save data
       volts[arr_cur_index] = voltageArray[i];
       // output_time[arr_cur_index] = millis();
-      time_Voltammaogram[arr_cur_index]=millis();
+      time_Voltammaogram[arr_cur_index] = millis();
       amps[arr_cur_index] = current;
 
       //Print data
@@ -2561,10 +2576,12 @@ void handle_websocket_text(uint8_t *payload)
       if (m_new_control_panel_active_state)
       {
         Sweep_Mode = CTLPANEL;
+        send_is_sweeping_status_over_websocket(true);
       }
       if (!m_new_control_panel_active_state)
       {
         Sweep_Mode = dormant;
+        send_is_sweeping_status_over_websocket(false);
       }
       // set control panel to active or inactive, depending on message
     }
@@ -2663,6 +2680,7 @@ void configureserver()
       Serial.println("Button 1 pressed. Running CV sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = CV;
+      send_is_sweeping_status_over_websocket(true);
     }
     request1->send(200, "OK");
   }));
@@ -2674,6 +2692,7 @@ void configureserver()
       Serial.println("Button 2 pressed. Running NPV sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = NPV;
+      send_is_sweeping_status_over_websocket(true);
     }
     request2->send(200, "OK");
   }));
@@ -2685,6 +2704,7 @@ void configureserver()
       Serial.println("Button 3 pressed. Running SQV sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = SQV;
+      send_is_sweeping_status_over_websocket(true);
     }
     request3->send(200, "OK");
   }));
@@ -2696,6 +2716,7 @@ void configureserver()
       Serial.println("Button 4 pressed. Running CA sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = CA;
+      send_is_sweeping_status_over_websocket(true);
     }
     request4->send(200, "OK");
   }));
@@ -2707,6 +2728,7 @@ void configureserver()
       Serial.println("Button 5 pressed. Running DC sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = DCBIAS;
+      send_is_sweeping_status_over_websocket(true);
     }
     request5->send(200, "OK");
   }));
@@ -2718,6 +2740,7 @@ void configureserver()
       Serial.println("Button 6 pressed. Running IV sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = IV;
+      send_is_sweeping_status_over_websocket(true);
     }
     request6->send(200, "OK");
   }));
@@ -2730,6 +2753,7 @@ void configureserver()
       Serial.println("Button 7 pressed. Running CAL sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = CAL;
+      send_is_sweeping_status_over_websocket(true);
     }
     request7->send(200, "OK");
   }));
@@ -2741,6 +2765,7 @@ void configureserver()
       Serial.println("Button 8 pressed. Running MISC_MODE sweep.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = MISC_MODE;
+      send_is_sweeping_status_over_websocket(true);
     }
     request8->send(200, "OK");
   }));
@@ -2752,6 +2777,7 @@ void configureserver()
       Serial.println("Button 9 pressed.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = dormant;
+      send_is_sweeping_status_over_websocket(false);
     }
     request9->send(200, "OK");
   }));
@@ -2763,6 +2789,7 @@ void configureserver()
       Serial.println("Button 10 pressed.");
       // digitalWrite(LEDPIN, HIGH);
       Sweep_Mode = dormant;
+      send_is_sweeping_status_over_websocket(false);
     }
     request10->send(200, "OK");
   }));
@@ -2926,12 +2953,12 @@ void loop()
 
   //will hold the code here until a character is sent over the SerialDebugger port
   //this ensures the experiment will only run when initiated
-
   //  SerialDebugger.println(F("Press enter to begin a sweep."));
   //  while (!SerialDebugger.available())
   //    ;
   //  SerialDebugger.read();
   // Look for and handle WebSocket data
+
   m_websocketserver.loop();
   delay(10); // 10 ms delay
 
@@ -2967,6 +2994,7 @@ void loop()
     writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == CV)
   {
@@ -2981,6 +3009,7 @@ void loop()
     writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == SQV)
   {
@@ -2991,6 +3020,7 @@ void loop()
     writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == CA)
   {
@@ -3002,6 +3032,7 @@ void loop()
     writeVoltsCurrentTimeArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == DCBIAS)
   {
@@ -3015,6 +3046,7 @@ void loop()
     // testDACandADCs(50);
     // testLMP91000(50, 1);
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == IV)
   {
@@ -3025,6 +3057,7 @@ void loop()
     writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == CAL)
   {
@@ -3032,6 +3065,7 @@ void loop()
     // calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
 
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == CTLPANEL)
   {
@@ -3047,7 +3081,7 @@ void loop()
     //Serial.println(amps_temp, DEC);
 
     temp_json_string = "{\"amps\":";
-    temp_json_string += String(amps_temp,DEC);
+    temp_json_string += String(amps_temp, DEC);
     temp_json_string += ",\"volts\":";
     temp_json_string += String(cell_voltage_control_panel);
     temp_json_string += ",\"time\":";
@@ -3076,6 +3110,7 @@ void loop()
 
     // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
+    send_is_sweeping_status_over_websocket(false);
   }
   else
   {

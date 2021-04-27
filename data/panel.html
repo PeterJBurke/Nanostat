@@ -25,6 +25,10 @@
     </ul>
   </nav>
 
+
+
+  <p>Current sweep mode: <div id="sweep_mode_id"> DORMANT</div></p>
+
   <body style="background-color: lightblue;"></body>
   <h3>Control panel status</h3>
   <input type="radio" id="m_control_panel_is_active_id" name="m_control_panel_is_active" value=true>
@@ -56,7 +60,7 @@
 
 
   <div class="form-box">
-    <label>Cell voltage (mV)</label>
+    <label>Cell set voltage (mV)</label>
     <input type="number" name="cell_voltage" id="cell_voltage_id" value=100 min=-792 max=792>
   </div>
   <hr>
@@ -78,6 +82,14 @@
   </div>
   <hr>
 
+   <!-- determined by set voltage: -->
+  <p id="paramxyz_id">paramxyz=xyz</p>
+  <p id="paramxyz_id">percent_setting</p>
+  <p id="paramxyz_id">DACvoutbits</p>
+  <p id="paramxyz_id">DACvoutmV</p>
+<!-- determined at each point reading: -->
+  <p id="paramxyz_id">ADCinbits</p>
+  <p id="paramxyz_id">ADCinmV</p>
 
 
   <!-- <hr>

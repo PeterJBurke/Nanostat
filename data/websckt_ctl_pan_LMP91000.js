@@ -57,7 +57,7 @@ var m_2yaxis_layout = {
     }
 };
 
- Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
 // Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope);
 
 
@@ -133,48 +133,40 @@ function onClose(evt) {
 function onMessage(evt) {
 
     // Print out our received message
-    // console.log("Received: " + evt.data);
+    console.log("Received: " + evt.data);
     var m_json_obj = JSON.parse(evt.data);
     // console.log(m_json_obj);
-    var m_voltage_point = m_json_obj.volts;
-    var m_current_point = m_json_obj.amps;
-    var m_time_point = m_json_obj.time;
-    
-    // if (trace_scope.x.length > maxDataPoints) {
-    //     trace_scope.x.shift();
-    //     trace_scope.y.shift();
-    // }
-    // trace_scope.x.push(m_time_point);
-    // trace_scope.y.push(m_current_point);
-   
-    // var data_scope = [trace_scope];
-    // Plotly.newPlot('plotly-scope', data_scope);
+    if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
+        // do something
+        if (m_json_obj.is_sweeping == true) { // mode is sweeping
+            // do something
+            document.getElementById('sweep_mode_id').innerHTML = "<div style=\"color:red\">SWEEPING</div>";
+            console.log("need to update indicator to true...");
+        }
+        if (m_json_obj.is_sweeping == false) { // mode is sweeping
+            // do something
+            document.getElementById('sweep_mode_id').innerHTML = "<div style=\"color:green\">IDLE</div>";
+            console.log("need to update indicator to false...");
+        }
+    };
 
-
-    // 2 y axis scope:
-    if (trace_scope_current.x.length > maxDataPoints) {
-        trace_scope_current.x.shift();
-        trace_scope_current.y.shift();
-        trace_scope_voltage.x.shift();
-        trace_scope_voltage.y.shift();
-    }
-    trace_scope_current.x.push(m_time_point);
-    trace_scope_current.y.push(m_current_point);
-    trace_scope_voltage.x.push(m_time_point);
-    trace_scope_voltage.y.push(m_voltage_point);
-    // console.log(trace_scope_current);
-    // console.log(trace_scope_voltage);
-
-    var data_IVvsTime_scope = [trace_scope_current, trace_scope_voltage];
-
-
-    
-     Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
-    // Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope);
-    
-
-
-
+    if ('volts' in m_json_obj) {// next time point, parse and add to graph
+        var m_voltage_point = m_json_obj.volts;
+        var m_current_point = m_json_obj.amps;
+        var m_time_point = m_json_obj.time;
+        if (trace_scope_current.x.length > maxDataPoints) {
+            trace_scope_current.x.shift();
+            trace_scope_current.y.shift();
+            trace_scope_voltage.x.shift();
+            trace_scope_voltage.y.shift();
+        }
+        trace_scope_current.x.push(m_time_point);
+        trace_scope_current.y.push(m_current_point);
+        trace_scope_voltage.x.push(m_time_point);
+        trace_scope_voltage.y.push(m_voltage_point);
+        var data_IVvsTime_scope = [trace_scope_current, trace_scope_voltage];
+        Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+    };
 
 
 
