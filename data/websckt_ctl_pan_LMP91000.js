@@ -6,7 +6,7 @@ var m_url_JS = "ws://nanostat.local:81/";
 var button;
 var canvas;
 var context;
-var maxDataPoints=100;
+var maxDataPoints = 100;
 
 // initialize plotly plot
 
@@ -18,6 +18,49 @@ var trace_scope = {
 };
 var data_scope = [trace_scope];
 Plotly.newPlot('plotly-scope', data_scope);
+
+var trace_scope_current = {
+    x: [],
+    y: [],
+    mode: 'markers',
+    type: 'scatter',
+    name: "Current"
+};
+var trace_scope_voltage = {
+    x: [],
+    y: [],
+    mode: 'markers',
+    type: 'scatter',
+    yaxis: 'y2',
+    name: "Voltage"
+};
+
+var data_IVvsTime_scope = [trace_scope_current, trace_scope_voltage];
+var m_2yaxis_layout = {
+    margin: {
+        l: 50,
+        r: 5,
+        b: 50,
+        t: 1,
+        pad: 4
+    },
+    xaxis: {
+        title: { text: 'Time (ms)' }
+    },
+    yaxis: { title: 'Current (microA)' },
+    yaxis2: {
+        title: 'Voltage (mV)',
+        titlefont: { color: 'rgb(148, 103, 189)' },
+        tickfont: { color: 'rgb(148, 103, 189)' },
+        overlaying: 'y',
+        side: 'right'
+    }
+};
+
+ Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+// Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope);
+
+
 
 
 
@@ -102,7 +145,7 @@ function onMessage(evt) {
     // now PUSH onto array m_current_point, m_time_point
     // var fruits = ["Banana", "Orange", "Apple", "Mango"];
     // fruits.push("Kiwi");       //  Adds a new element ("Kiwi") to fruits
-    if (trace_scope.x.length>maxDataPoints){
+    if (trace_scope.x.length > maxDataPoints) {
         trace_scope.x.shift();
         trace_scope.y.shift();
     }
@@ -113,6 +156,35 @@ function onMessage(evt) {
     // then update plotly plot....
     var data_scope = [trace_scope];
     Plotly.newPlot('plotly-scope', data_scope);
+
+
+    // 2 y axis scope:
+    if (trace_scope_current.x.length > maxDataPoints) {
+        trace_scope_current.x.shift();
+        trace_scope_current.y.shift();
+        trace_scope_voltage.x.shift();
+        trace_scope_voltage.y.shift();
+    }
+    trace_scope_current.x.push(m_time_point);
+    trace_scope_current.y.push(m_current_point);
+    trace_scope_voltage.x.push(m_time_point);
+    trace_scope_voltage.y.push(m_voltage_point);
+    // console.log(trace_scope_current);
+    // console.log(trace_scope_voltage);
+
+    var data_IVvsTime_scope = [trace_scope_current, trace_scope_voltage];
+
+
+    
+     Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+    // Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope);
+    
+
+
+
+
+
+
 
 }
 
@@ -196,21 +268,46 @@ function respond_to_m_control_panel_is_inactive_id_change() {
 document.getElementById("max_number_of_points_in_browser_id").addEventListener("change", respond_to_max_number_of_points_in_browser_id_change);
 
 function respond_to_max_number_of_points_in_browser_id_change() {
-    maxDataPoints= document.getElementById("max_number_of_points_in_browser_id").value ;
+    maxDataPoints = document.getElementById("max_number_of_points_in_browser_id").value;
     // console.log("*******************");
     // console.log(maxDataPoints);
     // console.log(trace_scope.x.length);
-    if (trace_scope.x.length>maxDataPoints){
+    if (trace_scope.x.length > maxDataPoints) {
         var num_points_to_delete;
-        num_points_to_delete=trace_scope.x.length-maxDataPoints;
-        for (i = 0; i <num_points_to_delete ; i++) {
+        num_points_to_delete = trace_scope.x.length - maxDataPoints;
+        for (i = 0; i < num_points_to_delete; i++) {
             trace_scope.x.shift();
             trace_scope.y.shift();
             // console.log(i);
-          }
+        }
     }
     // console.log(trace_scope.x.length);
     // console.log("*******************");
+
+
+
+    if (trace_scope_current.x.length > maxDataPoints) {
+        var num_points_to_delete;
+        num_points_to_delete = trace_scope_current.x.length - maxDataPoints;
+        for (i = 0; i < num_points_to_delete; i++) {
+            trace_scope_current.x.shift();
+            trace_scope_current.y.shift();
+            trace_scope_voltage.x.shift();
+            trace_scope_voltage.y.shift();
+            // console.log(i);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 }
 
