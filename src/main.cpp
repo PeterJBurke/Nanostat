@@ -136,7 +136,7 @@ float v1_temp = 0;
 float v2_temp = 0;
 float analog_read_avg_bits_temp = 0;
 String temp_json_string = "";
-int16_t time_Voltammaogram[arr_samples] = {0};
+int32_t time_Voltammaogram[arr_samples] = {0};
 int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
 // unsigned long input_time[arr_samples] = {0};
 // unsigned long output_time[arr_samples] = {0};
@@ -673,7 +673,9 @@ void writeVoltsCurrentArraytoFile()
   file.print(F("\t")); // tab
   file.print("Current_Amps");
   file.print(F("\t")); // tab
-  file.println("Voltage_V");
+  file.print("Voltage_V");
+  file.print(F("\t")); // tab
+  file.println("Time_ms");
 
   //Wrie Arrays
   for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
@@ -682,7 +684,10 @@ void writeVoltsCurrentArraytoFile()
     file.print(F("\t")); // tab
     file.print(amps[i], DEC);
     file.print(F("\t")); // tab
-    file.println(volts[i] / 1e3, DEC);
+    file.print(volts[i] / 1e3, DEC);
+    file.print(F("\t")); // tab
+    file.println(time_Voltammaogram[i]);
+    // Serial.println(time_Voltammaogram[i]);
   }
   file.close();
 }
