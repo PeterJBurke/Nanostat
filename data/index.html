@@ -3,7 +3,7 @@
 <head>
   <title>ESP32Stat
   </title>
-
+  <link rel="stylesheet" href="/menubarstyle.css">
   <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
   <script type="text/javascript" src="websocketcode.js"></script>
   <script type="text/javascript" src="button_handle_JS.js"></script>
@@ -11,16 +11,30 @@
 
 </head>
 
-<body style="background-color: lightblue;">
-  <!-- <body style="background-image: url(http://www.burkelab.com/wp-content/uploads/7.jpg)"> -->
+<body style="background-color: lightblue" ;>
+  <!-- Dropdown menu tutorial: https://www.youtube.com/watch?v=wHFflWvii3M&t=54s -->
+  <!-- https://www.youtube.com/watch?v=mFgltjfVV6A&list=PL0eyrZgxdwhwNC5ppZo_dYGVjerQY3xYU&index=15 -->
+  <!-- http://www.burkelab.com/wp-content/uploads/PXL_20210119_003721863.jpg -->
 
+
+  <nav class="menu-bar">
+    <ul>
+      <li class="active"><a href="/index.html">Home</a></li>
+      <li><a href="/setup.html">Setup</a></li>
+      <li><a href="/panel.html">Panel</a></li>
+      <li><a href="/downloadfile">Download</a></li>
+      <li><a href="/help.html">Help</a></li>
+      <li><a href="/about.html">About</a></li>
+    </ul>
+  </nav>
   <header>
     <center>
       <h2>BurkeLab ESP32 Stat: <i>"NanoStat"</i></h2>
       <p>Rev 3.5</p>
     </center>
   </header>
-  <hr>
+
+
   <p><b>Please</b> <u>choose</u> from the following sweep <i>options</i>:</p>
 
 
@@ -35,9 +49,6 @@
   <!-- <button onclick="on_Button_9_pressed()">9!</button>
   <button onclick="on_Button_10_pressed()">10!</button> -->
 
-  <h3>Instructions:</h3>
-  <p><b>Please</b> click on button to run a <i>sweep</i>. Blue LED on <i>NanoStat</i> will flash during sweep. At end of
-    sweep, file can be downloaded below.</p>
 
   <h3>Sweep modes:</h3>
   <p>CV = Cyclic voltammetry.<br>
@@ -47,61 +58,75 @@
     DC = Fixed DC bias.<br>
     IV = IV curve.<br>
     Cal = calibrate ESP32Stat. </p>
-  <hr>
+  <style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
 
-  <h3>Sweep parameters:</h3>
+    td,
+    th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+  </style>
+  <table>
+    <tr>
+      <th>
+        <div id="plotly-IV"></div>
+      </th>
+      <th>
+        <div id="plotly-IvsTime"></div>
+      </th>
+    </tr>
+
+  </table>
 
 
-  <p><b>Please</b> <u>click</u> <a href="/inputsweepparams.html">here</a>
-    to adjust sweep <i>parameters</i>.</p>
-  <hr>
 
-
-  <h3>Download:</h3>
+  <!-- <h3>Download:</h3>
   <p><b>Please</b> <u>click</u> <a href="/download">here</a>
     to download the sweep file from the most recent sweep.</p>
-  <hr>
+  <hr> -->
 
-  <h3>Charts:</h3>
-  <p><b>Please</b> <u>click</u> <a href="/charts.html">here</a>
-    to see a chart the most recent sweep.</p>
 
-  <h3>LMP91000 control panel:</h3>
-  <p><b>Please</b> <u>click</u> <a href="/control_panel_LMP91000.html">here</a>
-    for the control panel.</p>
 
-  <h3>Calibration instructions:</h3>
-  <p>To calibrate, run "Cal" with WE disconnected from RE/CE. (Short RE/CE).</p>
-  <hr>
+
+
   <!-- slider: -->
-  <div>
+  <!-- <div>
     <input type="range" min="1" max="20" value="5" id="dataRateSlider" oninput="sendDataRate()" />
     <label for="dataRateSlider" id="dataRateLabel">Rate: 0.2Hz</label>
-  </div>
+  </div> -->
 
 
-
+  <!-- 
   <hr>
   <div id="plotly-tester" style="width:800px;height:800px;"></div>
-  <hr>
+  <hr> -->
 
-  <hr>
-  <div id="plotly-IV" style="width:800px;height:800px;"></div>
-  <hr>
+  <!-- <div id="plotly-IV" style="width:800px;height:800px;"></div> -->
+  <!-- <div id="plotly-IV" style="width:fit-content"></div> -->
+  <!-- <div id="plotly-IV"></div>
+  <div id="plotly-IvsTime"></div> -->
 
+  <!-- 
   <hr>
   <div id="plotly-VvsTime" style="width:800px;height:800px;"></div>
   <hr>
   <hr>
   <div id="plotly-IvsTime" style="width:800px;height:800px;"></div>
   <hr>
-
+ -->
   <script type="text/javascr" src="plotlyplot.js"></script>
 
 
-
+  <!-- 
   <canvas id="m_canvas" width="100" height="100" style="border:1px solid #000000;"
-    style="background-color: darkred;"></canvas>
+    style="background-color: darkred;"></canvas> -->
+  <hr>
   <footer>
     <center>
 

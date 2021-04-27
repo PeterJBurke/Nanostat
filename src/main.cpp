@@ -135,12 +135,12 @@ float amps_temp = 0;
 float v1_temp = 0;
 float v2_temp = 0;
 String temp_json_string = "";
-int time_Voltammaogram[arr_samples] = {0};
+int16_t time_Voltammaogram[arr_samples] = {0};
 int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
-unsigned long input_time[arr_samples] = {0};
-unsigned long output_time[arr_samples] = {0};
-float v1_array[arr_samples] = {0};
-float v2_array[arr_samples] = {0};
+// unsigned long input_time[arr_samples] = {0};
+// unsigned long output_time[arr_samples] = {0};
+// // float v1_array[arr_samples] = {0};
+// float v2_array[arr_samples] = {0};
 const float v_tolerance = 0.008;     //0.0075 works every other technique with 1mV step except CV which needs minimum 2mV step
 unsigned long lastTime = 0;          // global variable, last time xyz was called in  ms....
 uint16_t dacVout = 1500;             // desired output of the DAC in mV
@@ -1009,7 +1009,7 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
       //pulseLED_on_off(LEDPIN, 10);
       // Now populate Volts array etc:
       volts[arr_cur_index] = biasV;
-      output_time[arr_cur_index] = millis();
+      // output_time[arr_cur_index] = millis();
       time_Voltammaogram[arr_cur_index] = millis();
       amps[arr_cur_index] = adc_bits_array[j];
       arr_cur_index++;
@@ -2127,8 +2127,8 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
-  for (uint16_t i = 0; i < arr_samples; i++)
-    output_time[i] = 0;
+  // for (uint16_t i = 0; i < arr_samples; i++)
+  //   output_time[i] = 0;
 
   //i = 0 is pre-step voltage
   //i = 1 is first step potential
@@ -2179,13 +2179,15 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
         current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
       //Sample and save data
       volts[arr_cur_index] = voltageArray[i];
-      output_time[arr_cur_index] = millis();
+      // output_time[arr_cur_index] = millis();
+      time_Voltammaogram[arr_cur_index]=millis();
       amps[arr_cur_index] = current;
 
       //Print data
       SerialDebugger.print(volts[arr_cur_index]);
       SerialDebugger.print(F(","));
-      SerialDebugger.print(output_time[arr_cur_index]);
+      SerialDebugger.print(time_Voltammaogram[arr_cur_index]);
+      // SerialDebugger.print(output_time[arr_cur_index]);
       SerialDebugger.print(F(","));
       SerialDebugger.print(amps[arr_cur_index]);
       SerialDebugger.println();
@@ -2767,7 +2769,7 @@ void configureserver()
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
-  server.on("/download", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/downloadfile", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/data.txt", "text/plain", true);
   });
 
@@ -2963,6 +2965,7 @@ void loop()
            sweep_param_quietTime_NPV, 1, sweep_param_setToZero);
 
     writeVoltsCurrentArraytoFile();
+    sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CV)
@@ -2976,6 +2979,7 @@ void loop()
           sweep_param_endV_CV, sweep_param_vertex1_CV, sweep_param_vertex2_CV, sweep_param_stepV_CV,
           sweep_param_rate_CV, sweep_param_setToZero);
     writeVoltsCurrentArraytoFile();
+    sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == SQV)
@@ -2985,6 +2989,7 @@ void loop()
     runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
            sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero);
     writeVoltsCurrentArraytoFile();
+    sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CA)
@@ -2995,6 +3000,7 @@ void loop()
            sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
            sweep_param_samples_CA, 1, sweep_param_setToZero);
     writeVoltsCurrentTimeArraytoFile();
+    sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == DCBIAS)
@@ -3003,6 +3009,7 @@ void loop()
     testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
                           sweep_param_delayTime_ms_noisetest);
     writeVoltsCurrentTimeArraytoFile();
+    sendVoltammogramWebsocketJSON();
     // testNOISE(100);
     // testDACs(50);
     // testDACandADCs(50);
@@ -3016,6 +3023,7 @@ void loop()
     testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
            sweep_param_delayTime_ms_IV);
     writeVoltsCurrentArraytoFile();
+    sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
   }
   else if (Sweep_Mode == CAL)

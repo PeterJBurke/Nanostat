@@ -131,26 +131,90 @@ function onMessage(evt) {
         type: 'scatter'
     };
     var data_IV = [trace_IV];
-    Plotly.newPlot('plotly-IV', data_IV);
+
+    var m_IV_layout = {
+        // title: 'IV Curve',
+        showlegend: false,
+        margin: {
+            l: 50,
+            r: 5,
+            b: 50,
+            t: 1,
+            pad: 4
+        },
+        xaxis: {
+            title: { text: 'Voltage (mV)' }
+        },
+        yaxis: {
+            title: { text: 'Current (microA)' }
+        }
+    };
+
+
+    // Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, {scrollZoom: true}, {editable: true}, {responsive: true});
+    Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, { scrollZoom: true, editable: true, responsive: true });
 
 
     var trace_IvsTime = {
         x: m_time_array,
         y: m_current_array,
         mode: 'markers',
-        type: 'scatter'
+        type: 'scatter',
+        name: "Current"
     };
-    var data_IvsTime = [trace_IvsTime];
-    Plotly.newPlot('plotly-IvsTime', data_IvsTime);
-
     var trace_VvsTime = {
         x: m_time_array,
         y: m_voltage_array,
         mode: 'markers',
-        type: 'scatter'
+        yaxis: 'y2',
+        type: 'scatter',
+        name: "Voltage"
     };
-    var data_VvsTime = [trace_VvsTime];
-    Plotly.newPlot('plotly-VvsTime', data_VvsTime);
+
+    var data_IVvsTime = [trace_IvsTime, trace_VvsTime];
+
+
+    var m_2yaxis_layout = {
+        margin: {
+            l: 50,
+            r: 5,
+            b: 50,
+            t: 1,
+            pad: 4
+        },
+        xaxis: {
+            title: { text: 'Time (ms)' }
+        },
+        yaxis: { title: 'Current (microA)' },
+        yaxis2: {
+            title: 'Voltage (mV)',
+            titlefont: { color: 'rgb(148, 103, 189)' },
+            tickfont: { color: 'rgb(148, 103, 189)' },
+            overlaying: 'y',
+            side: 'right'
+        }
+    };
+
+    Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+
+
+    // var trace_IvsTime = {
+    //     x: m_time_array,
+    //     y: m_current_array,
+    //     mode: 'markers',
+    //     type: 'scatter'
+    // };
+    // var data_IvsTime = [trace_IvsTime];
+    // Plotly.newPlot('plotly-IvsTime', data_IvsTime);
+
+    // var trace_VvsTime = {
+    //     x: m_time_array,
+    //     y: m_voltage_array,
+    //     mode: 'markers',
+    //     type: 'scatter'
+    // };
+    // var data_VvsTime = [trace_VvsTime];
+    // Plotly.newPlot('plotly-VvsTime', data_VvsTime);
 
 
 }

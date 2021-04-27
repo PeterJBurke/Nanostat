@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Set Params</title>
+  <title>Setup</title>
+  <link rel="stylesheet" href="/menubarstyle.css">
+
 
   <!-- style from https://gist.github.com/prof3ssorSt3v3/8d0616f4df11dae5233584b0d2a807f6
    and https://www.youtube.com/watch?v=ikR9DsGMUMc&list=PL4sSjlE6rMIlWr9aFHfosaQt2YB2eIl43&index=18&t=334s -->
@@ -97,6 +99,17 @@
 </head>
 
 <body style="background-color: lightblue;">
+
+  <nav class="menu-bar">
+    <ul>
+      <li><a href="/index.html">Home</a></li>
+      <li class="active"><a href="/setup.html">Setup</a></li>
+      <li><a href="/panel.html">Panel</a></li>
+      <li><a href="/downloadfile">Download</a></li>
+      <li><a href="/help.html">Help</a></li>
+      <li><a href="/about.html">About</a></li>
+    </ul>
+  </nav>
   <header>
     <center>
       <h2>BurkeLab ESP32 Stat: <i>"NanoStat"</i></h2>
@@ -104,11 +117,14 @@
       <p>Rev 3.5</p>
     </center>
   </header>
-  <hr>
-  <p><b>Please</b> <u>input</u> the following sweep <i>parameters</i>:</p>
-  <!-- <center><h2><i>Sweep parameters</i> </h2>
-  </center> -->
+
   <form action="/actionpage.html" method="POST" enctype="application/json">
+
+    <div class="form-box">
+      <button type="reset">Reset</button>
+      <button type="submit">Submit</button>
+
+    </div>
     <!-- format: -->
     <!--  <div class="form-box">
       <label>xyz</label>
@@ -371,188 +387,20 @@
     </div>
 
     <h3> Calibration test specific</h3>
-     <div class="form-box">
+    <div class="form-box">
       <label>Delay time (ms)</label>
       <input type="number" name="sweep_param_delayTime_ms_CAL" id="sweep_param_delayTime_ms_CAL_id" value=50 min=1
-      max=1000000>
+        max=1000000>
     </div>
 
 
- 
-
-    <!-- <form>
-      <input type="radio" id="male" name="gender" value="male">
-      <label for="male">Male</label><br>
-      <input type="radio" id="female" name="gender" value="female">
-      <label for="female">Female</label><br>
-      <input type="radio" id="other" name="gender" value="other">
-      <label for="other">Other</label>
-    </form> -->
-
-
-    <div class="form-box">
-      <button type="reset">Reset</button>
-      <button type="submit">Submit</button>
-
-    </div>
   </form>
 
-  <!-- <a href="http://programminghead.com">  
-      <input type="submit"/>  
-     </a> -->
-
-  <hr>
-  <h3>Sweep modes:</h3>
-  <p>CV = Cyclic voltammetry.<br>
-    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/CycVolt/cv">Bioanalytical Systems, Inc. tutorial on
-      CV</a><br>
-    <img src="/cv_wave_form.gif" alt="CV"><br>
-    NPV = Normal pulsed voltammetry. <br>
-    <a href="https://www.basinc.com/manuals/EC_epsilon/techniques/Pulse/pulse#normal">Bioanalytical Systems, Inc.
-      tutorial on NPV</a><br>
-    <img src="/npv_wave_form.gif" alt="NPV"><br>
-    SWV = Square wave voltammetry.<br>
-    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/Pulse/pulse#square">Bioanalytical Systems, Inc.
-      tutorial on SWV</a><br>
-    <img src="/dpv_wave_form.gif" alt="SWV"><br>
-    CA = Chronoamperometry.<br>
-    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/ChronoI/ca">Bioanalytical Systems, Inc. tutorial on
-      CA</a><br>
-    <img src="/ca_wave_form.gif" alt="CA"><br>
-    DC = Fixed DC bias.<br>
-    IV = IV curve.<br>
-    Cal = calibrate ESP32Stat.
-  </p>
 
 
 
   <hr>
-
-  <!-- svg drawing tool at http://drawsvg.org/drawsvg.html -->
-  <!-- <svg width="200px" height="200px" viewBox="0 0 200 200" preserveAspectRatio="xMinYMin meet">
-    <rect id="svgEditorBackground" x="0" y="0" width="200" height="200" style="fill: none; stroke: none;" />
-    <line id="e1_line" x1="13.00" y1="88.00" x2="167.00" y2="89.00" style="stroke:black;fill:none;stroke-width:1px;" />
-    <line id="e2_line" x1="55.00" y1="167.00" x2="55.00" y2="16.00" style="stroke:black;fill:none;stroke-width:1px;" />
-    <polyline style="stroke:black;fill:none;stroke-width:1px;" id="e3_polyline" points="78,73" />
-    <polyline style="stroke:#FF0000;fill:none;stroke-width:1px;" id="e4_polyline"
-      points="17,133,73,48,124,168,168,51" />
-    <text style="fill:black;font-family:Arial;font-size:20px;kit-user-select: none;-ms-user-select: none;" x="75" y="36"
-      id="e5_texte">
-      <tspan x="75">Vstart</tspan>
-      <tspan x="75" dy="1.25em"></tspan>
-    </text>
-    <text
-      style="fill:black;font-family:Arial;font-size:20px;kit-user-select: none;-ms-user-select: none;ser-select: none;-moz-user-select: none;-webkit-user-select: none;-ms-user-select: none;"
-      x="141" y="158" id="e6_texte">
-      <tspan x="141">Vend</tspan>
-    </text>
-  </svg> -->
-  <!-- <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200px" height="100px"
-    viewBox="0 0 200 100" preserveAspectRatio="xMinYMin meet">
-    <rect id="svgEditorBackground" x="0" y="0" width="200" height="100" style="fill: none; stroke: none;" />
-    <path d="M16,16v75" style="fill:none;stroke:black;stroke-width:1px;" id="e2_pathV" />
-    <path d="M13,50h175" style="fill:none;stroke:black;stroke-width:1px;" id="e4_pathH" />
-    <polyline style="stroke:#FF0000;fill:none;stroke-width:1px;" id="e6_polyline"
-      points="177,65,149,25,93,87,54,23,36,38" /><text
-      style="fill:black;font-family:Arial;font-size:8px;kit-user-select: none;-ms-user-select: none;ser-select: none;er-select: none;ser-select: none;-moz-user-select: none;-webkit-user-select: none;-ms-user-select: none;"
-      x="61" y="14" id="e7_texte">vstart</text>
-  </svg> -->
 
 </body>
 
 </html>
-
-<!-- // // Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
-// int sweep_param_lmpGain = 7;       //  (index) gain setting for LMP91000
-// int sweep_param_cycles = 3;        //  (#)  number of times to run the scan
-// int sweep_param_startV = 0;        //   (mV)  voltage to start the scan
-// int sweep_param_endV = 0;          //     (mV)  voltage to stop the scan
-// int sweep_param_vertex1 = 100;     //  (mV)  edge of the scan
-// int sweep_param_vertex2 = -100;    // (mV)  edge of the scan
-// int sweep_param_stepV = 5;         // (mV)      how much to increment the voltage by
-// int sweep_param_rate = 100;        // (mV/sec)       scanning rate
-// bool sweep_param_setToZero = true; //   Boolean determining whether the bias potential of -->
-
-<!-- //void runCV()
-//
-//@param      lmpGain:    gain setting for LMP91000
-//@param      cycles:     number of times to run the scan
-//@param      startV:     voltage to start the scan
-//@param      endV:       voltage to stop the scan
-//@param      vertex1:    edge of the scan
-//                        If vertex1 is greater than starting voltage, we start
-//                        the experiment by running CV in the forward
-//                        (oxidation) direction.
-//@param      vertex2:    edge of the scan
-//                        If vertex2 is greater than starting voltage, we start
-//                        the experiment by running CV in the reverse
-//                        (reduction) direction.
-//@param      stepV:      how much to increment the voltage by
-//@param      rate:       scanning rate
-//                        in the case of CV, scanning rate is in mV/s
-//@param      setToZero:  Boolean determining whether the bias potential of
-//                        the electrochemical cell should be set to 0 at the
-//                        end of the experiment.
-//
-//Runs the electrochemical technique, Cyclic Voltammetry. In this
-//technique the electrochemical cell is biased at a series of
-//voltages and the current at each subsequent voltage is measured. -->
-
-<!-- void runCV(uint8_t lmpGain, uint8_t cycles, int16_t startV,
-           int16_t endV, int16_t vertex1, int16_t vertex2,
-           int16_t stepV, uint16_t rate, bool setToZero) -->
-
-
-
-<!-- 
-  void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
-  int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
-  uint32_t quietTime, uint8_t range, bool setToZero)
-{
-//@param      lmpGain:      gain setting for LMP91000
-//@param      startV:       voltage to start the scan
-//@param      endV:         voltage to stop the scan
-//@param      pulseAmp:     amplitude of square wave
-//@param      pulse_period: the  of the excitation voltage
-//@param      pulse_width:  the pulse-width of the excitation voltage
-//@param      quietTime:    initial wait time before the first pulse
-//@param      range:        the expected range of the measured current
-//@param      setToZero:    Boolean determining whether the bias potential of
-//                          the electrochemical cell should be set to 0 at the
-//                          end of the experiment. -->
-
-<!-- 
-runCV(sweep_param_lmpGain, sweep_param_cycles, sweep_param_startV, sweep_param_endV, sweep_param_vertex1, sweep_param_vertex2, sweep_param_stepV, sweep_param_rate, sweep_param_setToZero);
-
-
-void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
-           int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
-           uint32_t quietTime, uint8_t range, bool setToZero)
-
-void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
-           int16_t pulseAmp, int16_t stepV, double freq, bool setToZero)
-
-void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
-           int16_t v1, uint32_t t1, int16_t v2, uint32_t t2,
-           uint16_t samples, uint8_t range, bool setToZero)
-
-void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
-                          uint32_t delayTime_ms)
-
-void testIV(int16_t startV, int16_t endV, int16_t numPoints,
-           uint32_t delayTime_ms)
-
-void calibrateDACandADCs(uint32_t delayTime_ms)
- -->
-
-<!-- 
-
-
-
-
-
-
-
-
-
-

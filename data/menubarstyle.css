@@ -1,0 +1,53 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    /* background-image: url(http://www.burkelab.com/wp-content/uploads/PXL_20210119_003721863.jpg); */
+    /* background-image: url(http://www.burkelab.com/wp-content/uploads/PXL_20210404_204521459.MP_.jpg); */
+    /* background-image: url(http://www.burkelab.com/wp-content/uploads/20190922_110932.jpg); */
+    background-color: lightblue;
+    /* background-size: contain;
+    background-repeat: no-repeat; */
+}
+
+.menu-bar, nav {
+    width:100%;
+    height:50px;
+    background: rgb(83, 155, 226);
+    text-align: center;
+}
+
+.menu-bar, nav ul {
+    display: inline-flex;
+    list-style: none;
+    color: #fff;
+}
+
+.menu-bar, nav ul li {
+    list-style: none;
+    display: inline-block;
+    float: left;
+    line-height: 50px;
+    /* width: 120px; */
+    /* margin: 15px;
+    padding: 15px; */
+}
+
+.menu-bar, nav ul li a{
+    display:block;
+    text-decoration: none;
+    /* font-size: 14px;
+    font-family: arial; */
+    color: #fff;
+    padding: 0 20px;
+    display:block;
+
+}
+
+.active, .menu-bar ul li:hover{
+    background-color: rgb(148, 177, 219);
+    border-radius: 3px;
+}
