@@ -1,11 +1,9 @@
 // License: https://github.com/PeterJBurke/ESP32Stat_Rev_3_5_PIO
-// Wifitool from https://github.com/oferzv/wifiTool (Not in use as of 4/21/2021, on the to do list...)
-// Libraries from Arduino offical library database.
 
-bool userpause = false;              // pauses for user to press input on serial between each point in npv
-bool print_output_to_serial = false; // pauses for user to press input on serial between each point in npv
+bool userpause = false;             // pauses for user to press input on serial between each point in sweep
+bool print_output_to_serial = false; // prints verbose output to serial
 
-//Standard Arduino Libraries
+//Libraries
 #include <Wire.h>
 #include <WiFi.h>
 #include "Arduino.h"
@@ -13,15 +11,9 @@ bool print_output_to_serial = false; // pauses for user to press input on serial
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
 #include <AsyncJson.h>
-//#include <AsyncJson.h>
 #include "wifi_credentials.h"
-//Custom Internal Libraries
 #include "LMP91000.h"
-// #include <wifiTool.h>
 #include "WebSocketsServer.h"
-
-// Arduino serial interface
-#define SerialDebugger Serial
 
 // Microcontroller specific info (pinouts, Vcc, etc)
 const uint16_t opVolt = 3300;                 //3300 mV
@@ -60,7 +52,7 @@ Sweep_Mode_Type Sweep_Mode = dormant;
 // (Initialized to their default values)
 // General sweep parameters:
 int sweep_param_lmpGain = 7;       //  (index) gain setting for LMP91000
-bool sweep_param_setToZero = true; //   Boolean determining whether the bias potential of
+bool sweep_param_setToZero = true; //   Boolean
 
 // CV sweep parameters:
 // runCV(sweep_param_lmpGain, sweep_param_cycles_CV, sweep_param_startV_CV,
@@ -79,8 +71,8 @@ int sweep_param_rate_CV = 100;     // (mV/sec)       scanning rate
 //            sweep_param_pulseAmp_NPV, sweep_param_pulseAmp_NPV, sweep_param_period_NPV,
 //            sweep_param_quietTime_NPV, uint8_t range, sweep_param_setToZero)
 int sweep_param_startV_NPV = -200; //   (mV)  voltage to start the scan
-int sweep_param_endV_NPV = 500;    //     (mV)  voltage to stop the scan
-int sweep_param_pulseAmp_NPV = 1;
+int sweep_param_endV_NPV = 200;    //     (mV)  voltage to stop the scan
+int sweep_param_pulseAmp_NPV = 20;
 int sweep_param_width_NPV = 50;
 int sweep_param_period_NPV = 200;
 int sweep_param_quietTime_NPV = 1000;
@@ -89,8 +81,8 @@ int sweep_param_quietTime_NPV = 1000;
 // runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
 //            sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero)
 int sweep_param_startV_SWV = -200; //   (mV)  voltage to start the scan
-int sweep_param_endV_SWV = 500;    //     (mV)  voltage to stop the scan
-int sweep_param_pulseAmp_SWV = 25;
+int sweep_param_endV_SWV = 200;    //     (mV)  voltage to stop the scan
+int sweep_param_pulseAmp_SWV = 20;
 int sweep_param_stepV_SWV = 5; // (mV)      how much to increment the voltage by
 int sweep_param_freq_SWV = 10;
 
@@ -117,7 +109,7 @@ int sweep_param_delayTime_ms_noisetest = 50;
 // testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
 //            sweep_param_delayTime_ms_IV)
 int sweep_param_startV_IV = -200; //   (mV)  voltage to start the scan
-int sweep_param_endV_IV = 500;    //     (mV)  voltage to stop the scan
+int sweep_param_endV_IV = 200;    //     (mV)  voltage to stop the scan
 int sweep_param_numPoints_IV = 701;
 int sweep_param_delayTime_ms_IV = 50;
 
@@ -130,18 +122,16 @@ const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other ex
 uint16_t arr_cur_index = 0;
 int16_t volts[arr_samples] = {0}; // single sweep IV curve "V"
 float amps[arr_samples] = {0};    // single sweep IV curve "I"
+int32_t time_Voltammaogram[arr_samples] = {0};
+int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
+
 int16_t volts_temp = 0;
 float amps_temp = 0;
 float v1_temp = 0;
 float v2_temp = 0;
 float analog_read_avg_bits_temp = 0;
 String temp_json_string = "";
-int32_t time_Voltammaogram[arr_samples] = {0};
-int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
-// unsigned long input_time[arr_samples] = {0};
-// unsigned long output_time[arr_samples] = {0};
-// // float v1_array[arr_samples] = {0};
-// float v2_array[arr_samples] = {0};
+
 const float v_tolerance = 0.008;     //0.0075 works every other technique with 1mV step except CV which needs minimum 2mV step
 unsigned long lastTime = 0;          // global variable, last time xyz was called in  ms....
 uint16_t dacVout = 1500;             // desired output of the DAC in mV
@@ -175,13 +165,13 @@ uint8_t bias_setting = 0; // determines percentage of VREF applied to CE opamp, 
 // from LMP91000.h:
 //const double TIA_BIAS[] = {0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14,
 //    0.16, 0.18, 0.2, 0.22, 0.24};
-float RFB = 2200000; // feedback resistor if using external feedback resistor
+float RFB = 1e6; // feedback resistor if using external feedback resistor
 
 // create pStat object to control LMP91000
 LMP91000 pStat = LMP91000();
 
 // create webserver object for website:
-AsyncWebServer server(80); // wifitools ALSO creates this when it starts in setup; problem???
+AsyncWebServer server(80); //
 
 // Websockets:
 // Tutorial: https://www.youtube.com/watch?v=ZbX-l1Dl4N4&list=PL4sSjlE6rMIlvrllrtOVSBW8WhhMC_oI-&index=8
@@ -199,29 +189,16 @@ float m_websocket_send_rate = 1.0; // Hz, how often to send a test point to webs
 bool m_send_websocket_test_data_in_loop = false;
 
 //WifiTool object
-// WifiTool wifiTool;
-// example code to control LED from browser used here from
-// https://www.youtube.com/watch?v=aNDfsHQ5Gts&list=PL4cUxeGkcC9jx2TTZk3IGWKSbtugYdrlu&index=2
 const char *PARAM_MESSAGE = "message"; // message server receives from client
 
-// Legacy from LMP91000 examples in library:
-bool saveQueues = false;
-
-// Control panel mode settings:
+// Control panel mode settings: (Control panel mode is browser page like a front panel of instrument)
 uint8_t LMPgain_control_panel = 6; // Feedback resistor of TIA.
 int num_adc_readings_to_average_control_panel = 1;
 int sweep_param_delayTime_ms_control_panel = 50;
 int cell_voltage_control_panel = 100;
 //******************* END VARIABLE DECLARATIONS**************************8
 
-void sendTimeOverWebsocket()
-{
-
-  m_websocketserver_text_to_send = String(millis()) + "," + String(millis() - m_time_sent_websocketserver_text);
-  m_websocketserver.broadcastTXT(m_websocketserver_text_to_send.c_str(), m_websocketserver_text_to_send.length());
-  m_time_sent_websocketserver_text = millis();
-}
-void sendTimeOverWebsocketJSON()
+void sendTimeOverWebsocketJSON() // sends current time as JSON object to websocket
 {
   String json = "{\"value\":";
   json += String(millis() / 1e3, 3);
@@ -229,7 +206,7 @@ void sendTimeOverWebsocketJSON()
   m_websocketserver.broadcastTXT(json.c_str(), json.length());
 }
 
-void sendValueOverWebsocketJSON(int value_to_send_over_websocket)
+void sendValueOverWebsocketJSON(int value_to_send_over_websocket) // sends integer as JSON object to websocket
 {
   String json = "{\"value\":";
   json += String(value_to_send_over_websocket);
@@ -301,10 +278,22 @@ void sendVoltammogramWebsocketJSON()
   Voltammogram_JSON += time_array_string;
   Voltammogram_JSON += "}";
 
-  // Serial.println("####################################");
-  // Serial.println(Voltammogram_JSON);
+  if (print_output_to_serial)
+  {
+    Serial.println("####################################");
+    Serial.println("Beginning sending Voltammogram_JSON over websocket.");
+    //    Serial.println(Voltammogram_JSON);
+    Serial.print("Heap free memory (in bytes)= ");
+    Serial.println(ESP.getFreeHeap());
+  }
 
   m_websocketserver.broadcastTXT(Voltammogram_JSON.c_str(), Voltammogram_JSON.length());
+
+  if (print_output_to_serial)
+  {
+    Serial.println("Finished sending Voltammogram_JSON over websocket.");
+    Serial.println("####################################");
+  }
 }
 
 void blinkLED(int pin, int blinkFrequency_Hz, int duration_ms)
@@ -334,22 +323,16 @@ inline void setLMPBias(int16_t voltage)
 {
   //Sets the LMP91000's bias to positive or negative
   signed char sign = (float)voltage / abs(voltage);
-
   if (sign < 0)
     pStat.setNegBias();
   else if (sign > 0)
     pStat.setPosBias();
-  else
-  {
-  } //do nothing
 }
 
 void setOutputsToZero()
 {
   //Sets the electrochemical cell to 0V bias.
-  //  analogWrite(dac,0); // SAMD21
   dacWrite(dac, 0); // ESP32
-
   pStat.setBias(0);
 }
 
@@ -365,8 +348,7 @@ void initLMP(uint8_t lmpGain)
   pStat.setThreeLead();    // 3 lead potentiostat configuration.
   pStat.setBias(0);        // Zero voltage on cell, DAC.
   pStat.setPosBias();      // Positive bias.
-
-  setOutputsToZero(); // Zero voltage on cell, DAC.
+  setOutputsToZero();      // Zero voltage on cell, DAC.
 }
 
 inline uint16_t convertDACVoutToDACVal(uint16_t dacVout)
@@ -386,25 +368,13 @@ inline uint16_t convertDACVoutToDACVal(uint16_t dacVout)
 
 inline float analog_read_avg(int num_points, int pin_num)
 {
-  // Reads adc at pin_num for num_points  and returns average.
+  // Reads adc at pin_num for num_points and returns average.
   float analogRead_result = 0;
-  // SerialDebugger.println("");
-  // SerialDebugger.println("=======================");
 
   for (int16_t j = 0; j < num_points; j += 1)
   {
     analogRead_result += analogRead(pin_num);
-    //SerialDebugger.println(" x x x x x ");
-    // SerialDebugger.print("j=");
-    // SerialDebugger.print(F("\t"));
-    // SerialDebugger.print(j);
-    // SerialDebugger.print(F("\t"));
-    // SerialDebugger.print("analogRead_result=");
-    // SerialDebugger.print(F("\t"));
-    // SerialDebugger.println(analogRead_result);
-    // SerialDebugger.println(" x x x x x ");
   }
-  //  SerialDebugger.println("=======================");
 
   return analogRead_result / num_points;
 }
@@ -488,34 +458,17 @@ inline void setVoltage(int16_t voltage)
   pStat.setBias(bias_setting); // sets percentage voltage divider in LMP910000
   // dacwrite is ESP32 version of analogWrite
   dacWrite(dac, convertDACVoutToDACVal(dacVout)); // sets ESP32 DAC bits
-  //SerialDebugger.println("dacVout=");
-  //SerialDebugger.println(dacVout);
-  //SerialDebugger.println("convertDACVoutToDACVal(dacVout)=");
-  //SerialDebugger.println(convertDACVoutToDACVal(dacVout));
-  //SerialDebugger.println("3300*convertDACVoutToDACVal(dacVout)/255=");
-  //SerialDebugger.println(3300 * convertDACVoutToDACVal(dacVout) / 255);
-
-  // analogWrite(dac,convertDACVoutToDACVal(dacVout));
-
-  //  SerialDebugger.print(dacVout*.5);
-  //  SerialDebugger.print(F("\t"));
-  //  SerialDebugger.print(dacVout);
-  //  SerialDebugger.print(F("\t"));
-
-  //  SerialDebugger.print(TIA_BIAS[bias_setting]);
-  //  SerialDebugger.print(F("\t"));
 }
 
 inline float biasAndSample(int16_t voltage, uint32_t rate)
 {
+  //Sets the bias of the electrochemical cell then samples the resulting current.
   //@param        voltage: Set the bias of the electrochemical cell
   //@param        rate:    How much to time (in ms) should we wait to sample
   //                       current after biasing the cell. This parameter
   //                       sets the scan rate or the excitation frequency
   //                       based on which electrochemical technique
   //                       we're running.
-  //
-  //Sets the bias of the electrochemical cell then samples the resulting current.
 
   // Global variables assumed:
   // lastTime: last time in system ms this function was called (for timing reference)
@@ -527,48 +480,42 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   // dacVout: desired output of the DAC in mV
   // bias_setting: determines percentage of VREF applied to CE opamp, from 1% to 24%
 
-  // int microsbefore=micros();
-  // sendTimeOverWebsocket(); // takes 2.6 ms on average...
-  // Serial.println(micros()-microsbefore);
-
   setLMPBias(voltage); // Sets the LMP91000's bias to positive or negative // voltage is cell voltage
   setVoltage(voltage); // Sets the DAC voltage, LMP91000 bias percentage, and LMP91000 bias sign, to get the desired cell "voltage".
-  if (rate > 10)
+
+  if (rate > 10) // we can afford the time to pulse the LED for 10 ms, just waiting anyways
   {
     pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
   }
-  else if (rate < 10)
+  else if (rate < 10) // we cannot afford the time to pulse the LED for 10 ms, so pulse 1 ms only
   {
     pulseLED_on_off(LEDPIN, 1); // signify start of a new data point
   }
 
   //delay sampling to set scan rate
-  while (millis() - lastTime < rate)
+  while (millis() - lastTime < rate) // wait then sample
     ;
 
   // Read output voltage of the transimpedance amplifier
   int adc_bits; // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
   // hard wired in BurkeLab ESP32Stat Rev 3.5 to LMP i.e ESP32 pin 32 (ADC1_CH7)
-  //adc_bits = analogRead(LMP); // read a single point
   adc_bits = analog_read_avg(num_adc_readings_to_average, LMP); // read a number of points and average them...
+
   // Now convert adc_bits to actual voltage on Vout.
-  // Without calibratoin, we would assume that virtual ground (WE = C1) is 50% of Vref.
-  // Without calibratoin, we would assume that C2-C1=I_WE * RTIA, and C2 is VOUT is ADC reading.
+  // Without calibration, we would assume that virtual ground (WE = C1) is 50% of Vref.
+  // Without calibration, we would assume that C2-C1=I_WE * RTIA, and C2 is VOUT is ADC reading.
   // However, C1 is not 50% of Vref.
   // Calibration takes care of this by reading C2 as a function of ADC set voltage (assuming perfect ADC) and then
   // correcting C2 using Vout_calibrated = (adcbits/4095)*3.3V corrected by slope/offset measured during calibration, as follows:
-  // First, user opens WE so no current flows, then runs the xyz function, which sets LMP cell voltage to Zero and varies Vref i.e. Vdac.
+  // First, user opens WE so no current flows, then runs the cal function, which sets LMP cell voltage to Zero and varies Vref i.e. Vdac.
   // That function measures Vadc as a function of Vdac and fits this formula (defining a,b):
   // adc(bits) = a + b * dac = a + b * dacvoltage * (255/3.3); here dac voltage is assumed correct
-  // Correction from ADC to Vout then given by:
-  // v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
+  // Correction from ADC to Vout then given by (in volts):
+  // v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0);
 
   //  Calibrate coefficients (make a local copy of the global ones):
   float a = a_coeff; // a is local copy of global a_coeff
   float b = b_coeff; // b is local copy of global a_coeff
-  // temporary hard code cal coefficients for noise testing xxx
-  // a = -121.34;
-  // b = 7.67;
 
   float v1;
   v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
@@ -583,70 +530,52 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   //by the feedback resistor
   //current = (V_OUT - V_IN-) / RFB
   //v1 and v2 are in milliVolts
-  if (LMPgain == 0)                                    // using external feedback resistor, not (yet) suppored with BurkeLab ESP32Stat Rev 3.5
+  if (LMPgain == 0)                                    // using external feedback resistor, hard coded to 1e6 for now with BurkeLab ESP32Stat Rev 3.5
     current = (((v1 - v2) / 1000) / RFB) * pow(10, 9); //scales to nA
   else
     current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
 
   if (print_output_to_serial)
   {
-    SerialDebugger.print(int(millis())); // current time in ms
-    SerialDebugger.print(F(","));        // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(voltage); // desired cell voltage
-    SerialDebugger.print(F(","));  // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(dacVout * TIA_BIAS[bias_setting]); // SET cell voltage
+    // Serial.print("******** BIAS AND SAMPLE START********************)");
+    Serial.print(int(millis())); // current time in ms
+    // Serial.print(F(","));        // comma
+    Serial.print(F("\t")); // tab
+    Serial.print(voltage); // desired cell voltage
+    // Serial.print(F(","));  // comma
+    Serial.print(F("\t"));                          // tab
+    Serial.print(dacVout * TIA_BIAS[bias_setting]); // SET cell voltage
     // setV = dacVout * TIA_BIAS[bias_setting]
-    SerialDebugger.print(F(",")); // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(TIA_BIAS[bias_setting], 2); // scale divider
-    SerialDebugger.print(F(","));                    // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(dacVout, DEC); // dacVout a global variable, calculated in setVoltage(voltage);
-    SerialDebugger.print(F(","));       // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(adc_bits, 0); // adc_bits
-    SerialDebugger.print(F(","));      // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(v1, 1);  // Vout
-    SerialDebugger.print(F(",")); // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(v2, 0);  // C1, should be the zero also....
-    SerialDebugger.print(F(",")); // comma
-    //SerialDebugger.print(F("\t"));                          // tab
-    SerialDebugger.print(current, 4);
-    SerialDebugger.print(F(",")); // comma
-    //SerialDebugger.print(F("\t"));                          // tab
+    // Serial.print(F(",")); // comma
+    Serial.print(F("\t"));                   // tab
+    Serial.print(TIA_BIAS[bias_setting], 2); // scale divider
+    // Serial.print(F(","));                    // comma
+    Serial.print(F("\t"));      // tab
+    Serial.print(dacVout, DEC); // dacVout a global variable, calculated in setVoltage(voltage);
+    // Serial.print(F(","));       // comma
+    Serial.print(F("\t"));     // tab
+    Serial.print(adc_bits, 0); // adc_bits
+    // Serial.print(F(","));      // comma
+    Serial.print(F("\t")); // tab
+    Serial.print(v1, 1);   // Vout
+    // Serial.print(F(",")); // comma
+    Serial.print(F("\t")); // tab
+    Serial.print(v2, 0);   // C1, should be the zero also....
+    // Serial.print(F(",")); // comma
+    Serial.print(F("\t")); // tab
+    Serial.print(current, 4);
+    // Serial.print(F(",")); // comma
+    Serial.print(F("\t")); // tab
+    // Serial.print("******** BIAS AND SAMPLE END********************)");
   }
 
   //update timestamp for the next measurement
   lastTime = millis();
-
   return current;
 }
 
 void writeVoltsCurrentArraytoFile()
 {
-  // File file = SPIFFS.open("/file.txt", "w");
-  // if (!file)
-  // {
-  //   Serial.println("Error opening file for writing");
-  //   return;
-  // }
-  // int bytesWritten = file.print("TEST SPIFFS");
-
-  // if (bytesWritten > 0)
-  // {
-  //   Serial.println("File was written");
-  //   Serial.println(bytesWritten);
-  // }
-  // else
-  // {
-  //   Serial.println("File write failed");
-  // }
-  // file.close();
-
   File file = SPIFFS.open("/data.txt", FILE_WRITE);
 
   if (!file)
@@ -662,10 +591,7 @@ void writeVoltsCurrentArraytoFile()
   {
     Serial.println("File write failed");
   }
-  // file.println("Line 2!");
-  // file.println("Line 3!");
-  Serial.println("Writing file. Date in millis() is:");
-  Serial.println(millis());
+  Serial.println("Writing file.");
   Serial.println("number_of_valid_points_in_volts_amps_array=");
   Serial.println(number_of_valid_points_in_volts_amps_array);
 
@@ -687,73 +613,6 @@ void writeVoltsCurrentArraytoFile()
     file.print(volts[i] / 1e3, DEC);
     file.print(F("\t")); // tab
     file.println(time_Voltammaogram[i]);
-    // Serial.println(time_Voltammaogram[i]);
-  }
-  file.close();
-}
-
-void writeVoltsCurrentTimeArraytoFile()
-{
-  // File file = SPIFFS.open("/file.txt", "w");
-  // if (!file)
-  // {
-  //   Serial.println("Error opening file for writing");
-  //   return;
-  // }
-  // int bytesWritten = file.print("TEST SPIFFS");
-
-  // if (bytesWritten > 0)
-  // {
-  //   Serial.println("File was written");
-  //   Serial.println(bytesWritten);
-  // }
-  // else
-  // {
-  //   Serial.println("File write failed");
-  // }
-  // file.close();
-
-  File file = SPIFFS.open("/data.txt", FILE_WRITE);
-
-  if (!file)
-  {
-    Serial.println("There was an error opening the file for writing");
-    return;
-  }
-  if (file.println("BurkeLab Nanostat Rev 3.5 Sweep"))
-  {
-    Serial.println("File was written");
-  }
-  else
-  {
-    Serial.println("File write failed");
-  }
-  // file.println("Line 2!");
-  // file.println("Line 3!");
-  Serial.println("Writing file. Date in millis() is:");
-  Serial.println(millis());
-  Serial.println("number_of_valid_points_in_volts_amps_array=");
-  Serial.println(number_of_valid_points_in_volts_amps_array);
-
-  file.print("Index");
-  file.print(F("\t")); // tab
-  file.print("Time");
-  file.print(F("\t")); // tab
-  file.print("Current_Amps");
-  file.print(F("\t")); // tab
-  file.println("Voltage_V");
-
-  //Write Arrays
-  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
-  {
-    file.print(i);
-    file.print(F("\t")); // tab
-    //file.print(output_time[i]);
-    file.print(time_Voltammaogram[i]); // xxx need to check for all modes especially CA...
-    file.print(F("\t"));               // tab
-    file.print(amps[i], DEC);
-    file.print(F("\t")); // tab
-    file.println(volts[i] / 1e3, DEC);
   }
   file.close();
 }
@@ -779,25 +638,6 @@ void readFileAndPrintToSerial()
   file2.close();
 }
 
-// void downloadfile()
-// {
-
-//   File todownload = SPIFFS.open("/data.txt", "r");
-//   if (todownload)
-//   {
-//     server.sendHeader("Content-Type", "text/text");
-//     server.sendHeader("Content-Disposition", "attachment; filename=" + filename);
-//     server.sendHeader("Connection", "close");
-//     server.streamFile(todownload, "application/octet-stream");
-//     todownload.close();
-//   }
-//   else
-//   {
-//     Serial.println("Couldn't open file data.txt.")
-//   }
-// }
-// }
-
 void listDir(const char *dirname, uint8_t levels)
 {
   // from https://github.com/espressif/arduino-esp32/blob/master/libraries/SPIFFS/examples/SPIFFS_Test/SPIFFS_Test.ino#L9
@@ -819,18 +659,6 @@ void listDir(const char *dirname, uint8_t levels)
   File file = root.openNextFile();
   while (file)
   {
-    // if(file.isDirectory()){
-    //     Serial.print("  DIR : ");
-    //     Serial.println(file.name());
-    //     if(levels){
-    //         listDir(SPIFFS, file.path(), levels -1);
-    //     }
-    // } else {
-    //     Serial.print("  FILE: ");
-    //     Serial.print(file.name());
-    //     Serial.print("\tSIZE: ");
-    //     Serial.println(file.size());
-    // }
 
     Serial.print("  FILE: ");
     Serial.print(file.name());
@@ -857,49 +685,40 @@ inline void saveVoltammogram(float voltage, float current, bool debug)
   //                       voltage for voltammetry, time for time for
   //                       time evolution experiments like chronoamperometry
   //@param        current: current from the electrochemical cell
-  //@param        debug:   flag for determining whether or not to print to
-  //                       serial monitor
+
   //
-  //Save voltammogram data to corresponding arrays.
-  // if (saveQueues && arr_cur_index < arr_samples)
-  // {
-  //   volts[arr_cur_index] = (int16_t)voltage;
-  //   amps[arr_cur_index] = current;
-  //   arr_cur_index++;
-  //   number_of_valid_points_in_volts_amps_array += 1;
-  // }
   volts[arr_cur_index] = (int16_t)voltage;
   amps[arr_cur_index] = current;
   time_Voltammaogram[arr_cur_index] = millis();
   arr_cur_index++;
   number_of_valid_points_in_volts_amps_array++;
 
-  if (print_output_to_serial)
+  if (debug)
   {
-    SerialDebugger.print(voltage);
-    //SerialDebugger.print(F("\t"));
-    SerialDebugger.print(F(","));
-    SerialDebugger.print(current, 5);
-    SerialDebugger.print(F(","));
-    SerialDebugger.print(micros());
+    Serial.println("****************** SAVING TO VOLTAMMOGRAM******************");
+    Serial.print(voltage);
+    Serial.print(F("\t"));
+    Serial.print(current, 5);
+    Serial.print(F("\t"));
+    Serial.println(micros());
+    Serial.println("****************** SAVED TO VOLTAMMOGRAM******************");
   }
 }
 void testIV(int16_t startV, int16_t endV, int16_t numPoints,
             uint32_t delayTime_ms)
 {
-
   //@param      startV:       voltage to start the scan
   //@param      endV:         voltage to stop the scan
   //@param      numPoints:    number of points in the scan
   //@param      delayTime_ms:  settle time after set point
   //
-  // Measures IV curve, dumps output to serial.
+  // Measures IV curve.
+
   float i_forward = 0;
   uint32_t voltage_step;
   lastTime = millis();
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
 
@@ -909,13 +728,16 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
     voltage_step = 1; // 1 mV minimum
   }
 
-  SerialDebugger.println(startV);
-  SerialDebugger.println(endV);
-  SerialDebugger.println(numPoints);
-  SerialDebugger.println(voltage_step);
+  Serial.println("******************************************************");
+  Serial.println("Starting IV sweep with these parameters:");
+  Serial.println(startV);
+  Serial.println(endV);
+  Serial.println(numPoints);
+  Serial.println(voltage_step);
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
 
-  //xxxxxxxxxxxxxxxxxxxxxxxxxx
-
+  // Initialize LMP91000:
   initLMP(LMPgain);
   setLMPBias(startV);
   setVoltage(startV);
@@ -923,60 +745,66 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
   if (print_output_to_serial)
   {
-    SerialDebugger.println("RUNNING TEST IV:");
-    SerialDebugger.println(a_coeff);
-    SerialDebugger.println(b_coeff);
-    SerialDebugger.println(startV);
-    SerialDebugger.println(endV);
-    SerialDebugger.println(numPoints);
-    SerialDebugger.println(delayTime_ms);
-    SerialDebugger.println(voltage_step);
+    Serial.println("RUNNING TEST IV:");
+    Serial.print("a_coeff =");
+    Serial.println(a_coeff);
+    Serial.print("b_coeff =");
+    Serial.println(b_coeff);
+    Serial.print("startV =");
+    Serial.println(startV);
+    Serial.print("endV =");
+    Serial.println(endV);
+    Serial.print("numPoints =");
+    Serial.println(numPoints);
+    Serial.print("delayTime_ms =");
+    Serial.println(delayTime_ms);
+    Serial.print("voltage_step =");
+    Serial.println(voltage_step);
 
-    SerialDebugger.println("Column header meanings:");
-    SerialDebugger.println("BIAS:");
-    SerialDebugger.println("T = time in ms");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
-    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
-    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
-    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
-    SerialDebugger.println("adcbits = analogread(LMP)");
-    SerialDebugger.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
-    SerialDebugger.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
-    SerialDebugger.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+    Serial.println("Column header meanings:");
+    Serial.println("BIAS:");
+    Serial.println("T = time in ms");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    Serial.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    Serial.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    Serial.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    Serial.println("adcbits = analogread(LMP)");
+    Serial.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    Serial.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    Serial.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
 
-    SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
-    SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
+    // Serial.println("xyz = xyz in xyz (internal variable name = xyz)");
+    // Serial.println("xyz = xyz in xyz (internal variable name = v)");
 
-    //    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f");
-    SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f");
+    Serial.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f");
+    // Serial.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f");
   }
 
   for (int16_t this_voltage = startV; this_voltage <= endV; this_voltage += voltage_step)
   {
-    // SerialDebugger.println(this_voltage);
-    // SerialDebugger.println(delayTime_ms);
     i_forward = biasAndSample(this_voltage, delayTime_ms);
     saveVoltammogram(this_voltage, i_forward, false);
-    // saveVoltammogram(this_voltage, i_forward, true);
-    //i_forward = biasAndSample(startV, delayTime_ms);
     if (print_output_to_serial)
     {
-      SerialDebugger.println("EOL");
+      Serial.println("EOL");
     }
-    if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
+    if (userpause) //will hold the code here until a character is sent over the Serial port
     {
-      while (!SerialDebugger.available())
+      while (!Serial.available())
         ;
-      SerialDebugger.read();
+      Serial.read();
     }
   }
   setOutputsToZero();
+  Serial.println("Finished IV sweep.");
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
+  Serial.println("******************************************************");
 }
 
 void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
                            uint32_t delayTime_ms)
 {
-
   // sets call voltage to biasV using  setVoltage(biasV) only at beginning
   // then "reads" ADC numPoints times using analog_read_avg(num_readings_to_average, LMP); where each reading is an average
   // gives std_dev
@@ -985,10 +813,10 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
 
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
   number_of_valid_points_in_volts_amps_array = 0;
   arr_cur_index = 0;
 
+  // local variables for statistics:
   float adc_bits_array[numPoints];
   float adc_bits_array_sum = 0;
   float adc_bits_array_avg = 0;
@@ -996,45 +824,57 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
   float adc_bits_minus_avg_squared_sum = 0;
   int num_readings_to_average = 1;
 
+  // which num point to avg:
   float num_points_to_average[7] = {1, 5, 10, 50, 100, 500, 1000};
 
-  //xxxxxxxxxxxxxxxxxxxxxxxxxx
+  // set LMP91000 and bias
   initLMP(LMPgain);
   setLMPBias(biasV);
   setVoltage(biasV);
-  //xxxxxxxxxxxxxxxxxxxxxxxxxx
 
   if (print_output_to_serial)
   {
-    SerialDebugger.print("num_rdgs");
-    SerialDebugger.print(F("\t"));
+    Serial.print("num_rdgs");
+    Serial.print(F("\t"));
 
-    SerialDebugger.print("adc_avg");
-    SerialDebugger.print(F("\t"));
+    Serial.print("adc_avg");
+    Serial.print(F("\t"));
 
-    SerialDebugger.println("adc_std_dev");
+    Serial.println("adc_std_dev");
   };
 
-  //  for (int16_t i = 1; i < 1000; i += 1)
-  for (int16_t i = 0; i < 7; i += 1)
+  for (int16_t i = 0; i < 7; i += 1) // iterate over # of pts per reading
   {
     adc_bits_array_sum = 0;
     adc_bits_array_avg = 0;
     adc_bits_array_std_dev = 0;
     adc_bits_minus_avg_squared_sum = 0;
     num_readings_to_average = num_points_to_average[i];
-    //num_readings_to_average = i;
-    delay(delayTime_ms);
+
     for (int16_t j = 0; j < numPoints; j += 1) // read the adc data
     {
-
-      pulseLED_on_off(LEDPIN, 1);
-
+      //handle pulsing and delay
+      if (delayTime_ms > 10) // we can afford the time to pulse the LED for 10 ms, just waiting anyways
+      {
+        pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
+        delay(delayTime_ms - 10);
+      }
+      else if (delayTime_ms < 10) // we cannot afford the time to pulse the LED for 10 ms, so pulse 1 ms only
+      {
+        if (delayTime_ms > 2)
+        {
+          pulseLED_on_off(LEDPIN, 1); // signify start of a new data point
+          delay(delayTime_ms - 1);
+        }
+        else if (delayTime_ms < 2)
+        { // no LED pulse too fast....
+          delay(delayTime_ms);
+        }
+      }
       adc_bits_array[j] = analog_read_avg(num_readings_to_average, LMP);
       //pulseLED_on_off(LEDPIN, 10);
       // Now populate Volts array etc:
       volts[arr_cur_index] = biasV;
-      // output_time[arr_cur_index] = millis();
       time_Voltammaogram[arr_cur_index] = millis();
       amps[arr_cur_index] = adc_bits_array[j];
       arr_cur_index++;
@@ -1053,13 +893,13 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
 
     if (print_output_to_serial)
     {
-      SerialDebugger.print(num_readings_to_average);
-      SerialDebugger.print(F("\t"));
+      Serial.print(num_readings_to_average);
+      Serial.print(F("\t"));
 
-      SerialDebugger.print(adc_bits_array_avg);
-      SerialDebugger.print(F("\t"));
+      Serial.print(adc_bits_array_avg);
+      Serial.print(F("\t"));
 
-      SerialDebugger.println(adc_bits_array_std_dev);
+      Serial.println(adc_bits_array_std_dev);
     }
   }
 }
@@ -1076,23 +916,23 @@ void testDACs(uint32_t delayTime_ms)
   setVoltage(100);
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
-  SerialDebugger.println("RUNNING TEST DAC:");
+  Serial.println("RUNNING TEST DAC:");
 
-  SerialDebugger.println("i\tdacgoal");
+  Serial.println("i\tdacgoal");
 
   float dacgoal;
   for (int16_t j = 0; j <= 255; j += 1)
   {
     dacWrite(dac, j); // sets ESP32 DAC bits
     dacgoal = 3300.0 * j / 255;
-    SerialDebugger.print(j); // current time in ms
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(dacgoal); // desired cell voltage
-    if (userpause)                   //will hold the code here until a character is sent over the SerialDebugger port
+    Serial.print(j); // current time in ms
+    Serial.print(F("\t"));
+    Serial.println(dacgoal); // desired cell voltage
+    if (userpause)           //will hold the code here until a character is sent over the Serial port
     {
-      while (!SerialDebugger.available())
+      while (!Serial.available())
         ;
-      SerialDebugger.read();
+      Serial.read();
     }
   }
   setOutputsToZero();
@@ -1113,9 +953,9 @@ void testDACandADCs(uint32_t delayTime_ms)
   setVoltage(100);
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
-  SerialDebugger.println("RUNNING TEST DAC:");
+  Serial.println("RUNNING TEST DAC:");
 
-  SerialDebugger.println("i\tdacgoal\tadc_voltage xyz");
+  Serial.println("i\tdacgoal\tadc_voltage xyz");
 
   float dacgoal;
   for (int16_t j = 0; j <= 255; j += 1)
@@ -1128,17 +968,17 @@ void testDACandADCs(uint32_t delayTime_ms)
     delay(delayTime_ms);
     // read ADC....
     adc_voltage = analogRead(LMP);
-    SerialDebugger.print(j); // current time in ms
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.print(dacgoal); // desired cell voltage
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(adc_voltage); // adc voltage
+    Serial.print(j); // current time in ms
+    Serial.print(F("\t"));
+    Serial.print(dacgoal); // desired cell voltage
+    Serial.print(F("\t"));
+    Serial.println(adc_voltage); // adc voltage
 
-    if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
+    if (userpause) //will hold the code here until a character is sent over the Serial port
     {
-      while (!SerialDebugger.available())
+      while (!Serial.available())
         ;
-      SerialDebugger.read();
+      Serial.read();
     }
   }
   setOutputsToZero();
@@ -1178,9 +1018,9 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
                     //xxxxxxxxxxxxxxxxxxxxxxxxxx
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
-  SerialDebugger.println("RUNNING TEST ADC CAL LMP91000:");
-  SerialDebugger.println("TIA_BIAS[0]=");
-  SerialDebugger.println(TIA_BIAS[0]);
+  Serial.println("RUNNING TEST ADC CAL LMP91000:");
+  Serial.println("TIA_BIAS[0]=");
+  Serial.println(TIA_BIAS[0]);
 
   // int adc_int_from_dac_int[140]; // for dac 116 to 255, what adc reads
   // assuming cell is open, no current, ADC is reading vout which is also WE voltage if no current
@@ -1209,18 +1049,18 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
     dacgoal = 3300.0 * j / 255;
     if (print_output_to_serial)
     {
-      SerialDebugger.print(j);
-      SerialDebugger.print(F("\t"));
-      SerialDebugger.print(dacgoal);
-      SerialDebugger.print(F("\t"));
-      SerialDebugger.println(this_voltage_adc); // desired cell voltage
+      Serial.print(j);
+      Serial.print(F("\t"));
+      Serial.print(dacgoal);
+      Serial.print(F("\t"));
+      Serial.println(this_voltage_adc); // desired cell voltage
     }
 
-    if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
+    if (userpause) //will hold the code here until a character is sent over the Serial port
     {
-      while (!SerialDebugger.available())
+      while (!Serial.available())
         ;
-      SerialDebugger.read();
+      Serial.read();
     }
     // now fill in statistics:
     sumonx += j;
@@ -1246,13 +1086,13 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
   // b= (n*(sumonxy) - (sumonx)*(sumony))/(n*(sumonxsquared)-(sumonx)*(sumonx))
   a = ((sumony) * (sumonxsquared) - (sumonx) * (sumonxy)) / (n * (sumonxsquared) - (sumonx) * (sumonx));
   b = (n * (sumonxy) - (sumonx) * (sumony)) / (n * (sumonxsquared) - (sumonx) * (sumonx));
-  SerialDebugger.println("y=a + bx");
-  SerialDebugger.println("y=dac");
-  SerialDebugger.println("y=adc");
-  SerialDebugger.print("a=");
-  SerialDebugger.println(a);
-  SerialDebugger.print("b=");
-  SerialDebugger.println(b);
+  Serial.println("y=a + bx");
+  Serial.println("y=dac");
+  Serial.println("y=adc");
+  Serial.print("a=");
+  Serial.println(a);
+  Serial.print("b=");
+  Serial.println(b);
   // so adc = a + b * dac
   // dac = bit # (0-255)
   // adc = bit # (0-4095)
@@ -1266,152 +1106,6 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
 
   a_coeff = a;
   b_coeff = b;
-}
-
-void testNOISE(int num_points)
-{
-  // reads adc and gives noise (std deviation, average)
-  // asumes adc pin is LMP (global variable)
-  // note: LMP91000 not effected by this, so make sure it is properly initiallized if you are measuring its output
-  // otherwise you can just disconnect it if circuit allows and put any external voltage into the ADC pin you want...
-  int timer_total;
-  int adc_array[num_points];
-  float time_microS_of_read_array[num_points];
-  float avg_of_adc_array = 0;
-  float std_dev_of_adc_array = 0;
-
-  float avg_of_adc_array_mV = 0;
-  float std_dev_of_adc_array_mV = 0;
-
-  float avg_of_time_microS_per_point = 0;
-  float std_dev_time_microS_per_point = 0;
-  float sum_of_adc_array = 0;
-  float sum_of_time_microS_of_read_array = 0;
-  float sum_of_adc_array_minus_avg_squared = 0;
-  float sum_of_time_microS_of_read_array_minus_avg_squared = 0;
-  int timer;
-  float total_measurement_time_micros = 0;
-  float total_function_time_micros = 0;
-
-  timer_total = micros();
-
-  for (int16_t j = 0; j <= num_points; j += 1)
-  {
-    timer = micros();
-    adc_array[j] = analogRead(LMP);
-    time_microS_of_read_array[j] = micros() - timer;
-  }
-
-  total_measurement_time_micros = micros() - timer_total;
-
-  for (int16_t j = 0; j <= num_points; j += 1)
-  {
-    sum_of_adc_array += adc_array[j];
-    sum_of_time_microS_of_read_array += time_microS_of_read_array[j];
-    //    SerialDebugger.print("j=");
-    //    SerialDebugger.print(F("\t"));
-    //    SerialDebugger.print(j);
-    //    SerialDebugger.print(F("\t"));
-    //    SerialDebugger.print("time_microS_of_read_array[j]=");
-    //    SerialDebugger.print(F("\t"));
-    //    SerialDebugger.print(time_microS_of_read_array[j]);
-    //    SerialDebugger.print(F("\t"));
-    //    SerialDebugger.print("sum_of_time_microS_of_read_array=");
-    //    SerialDebugger.print(F("\t"));
-    //   SerialDebugger.println(sum_of_time_microS_of_read_array);
-  }
-  avg_of_adc_array = sum_of_adc_array / num_points;
-  avg_of_time_microS_per_point = sum_of_time_microS_of_read_array / num_points;
-
-  for (int16_t j = 0; j <= num_points; j += 1)
-  {
-    sum_of_adc_array_minus_avg_squared = (avg_of_adc_array - adc_array[j]) * (avg_of_adc_array - adc_array[j]);
-    sum_of_time_microS_of_read_array_minus_avg_squared = (avg_of_time_microS_per_point - time_microS_of_read_array[j]) * (avg_of_time_microS_per_point - time_microS_of_read_array[j]);
-  }
-  std_dev_of_adc_array = sqrt(sum_of_adc_array_minus_avg_squared / num_points);
-  std_dev_time_microS_per_point = sqrt(sum_of_time_microS_of_read_array_minus_avg_squared / num_points);
-
-  avg_of_adc_array_mV = (3300.0 / 4095.0) * avg_of_adc_array;
-  std_dev_of_adc_array_mV = (3300.0 / 4095.0) * std_dev_of_adc_array;
-
-  total_function_time_micros = micros() - timer_total;
-
-  if (print_output_to_serial)
-  {
-    SerialDebugger.println("****************************************");
-
-    SerialDebugger.print("total_measurement_time_micros in milliseconds");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(total_measurement_time_micros / 1e3);
-
-    SerialDebugger.print("total_function_time_micros in milliseconds");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(total_function_time_micros / 1e3);
-
-    SerialDebugger.print("avg_of_adc_array_mV = ");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(avg_of_adc_array_mV);
-
-    SerialDebugger.print("std_dev_of_adc_array_mV = ");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(std_dev_of_adc_array_mV);
-
-    SerialDebugger.print("ADC average = ");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(avg_of_adc_array);
-
-    SerialDebugger.print("std_dev_of_adc_array = ");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(std_dev_of_adc_array);
-
-    SerialDebugger.print("avg_of_time_microS_per_point = ");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(avg_of_time_microS_per_point);
-
-    SerialDebugger.print("std_dev_time_microS_per_point = ");
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(std_dev_time_microS_per_point);
-
-    SerialDebugger.println("****************************************");
-  }
-}
-
-int read_ADC_and_report_time(uint32_t delayTime_ms)
-{
-  // tests time to read and adc point from esp32, note internal driver settings not clear so this is beta verion of function
-  // esp32 low level adc drivers are confusing (!)
-  /*
-  analogReadResolution(12);             // Sets the sample bits and read resolution, default is 12-bit (0 - 4095), range is 9 - 12 bits
-  analogSetWidth(12);                   // Sets the sample bits and read resolution, default is 12-bit (0 - 4095), range is 9 - 12 bits
-                                        //  9-bit gives an ADC range of 0-511
-                                        // 10-bit gives an ADC range of 0-1023
-                                        // 11-bit gives an ADC range of 0-2047
-                                        // 12-bit gives an ADC range of 0-4095
-  analogSetCycles(8);                   // Set number of cycles per sample, default is 8 and provides an optimal result, range is 1 - 255
-  analogSetSamples(1);                  // Set number of samples in the range, default is 1, it has an effect on sensitivity has been multiplied
-  analogSetClockDiv(1);                 // Set the divider for the ADC clock, default is 1, range is 1 - 255
-  analogSetAttenuation(ADC_11db);       // Sets the input attenuation for ALL ADC inputs, default is ADC_11db, range is ADC_0db, ADC_2_5db, ADC_6db, ADC_11db
-  analogSetPinAttenuation(VP,ADC_11db); // Sets the input attenuation, default is ADC_11db, range is ADC_0db, ADC_2_5db, ADC_6db, ADC_11db
-                                        // ADC_0db provides no attenuation so IN/OUT = 1 / 1 an input of 3 volts remains at 3 volts before ADC measurement
-                                        // ADC_2_5db provides an attenuation so that IN/OUT = 1 / 1.34 an input of 3 volts is reduced to 2.238 volts before ADC measurement
-                                        // ADC_6db provides an attenuation so that IN/OUT = 1 / 2 an input of 3 volts is reduced to 1.500 volts before ADC measurement
-                                        // ADC_11db provides an attenuation so that IN/OUT = 1 / 3.6 an input of 3 volts is reduced to 0.833 volts before ADC measurement
-  adcAttachPin(VP);                     // Attach a pin to ADC (also clears any other analog mode that could be on), returns TRUE/FALSE result 
-  adcStart(VP);                         // Starts an ADC conversion on attached pin's bus
-  adcBusy(VP);                          // Check if conversion on the pin's ADC bus is currently running, returns TRUE/FALSE result 
-  adcEnd(VP);                           // Get the result of the conversion (will wait if it have not finished), returns 16-bit integer result
-  */
-  analogSetClockDiv(255); // 1338mS
-
-  int analogRead_result;
-  int timer = micros();
-  analogRead_result = analogRead(LMP);
-  Serial.print(analogRead_result);
-  Serial.print("  ");
-  Serial.println(micros() - timer);
-  return analogRead_result;
-
-  // See: https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/esp32-hal-adc.h
 }
 
 void testLMP91000(uint32_t delayTime_ms, uint8_t bias_setting_local)
@@ -1455,21 +1149,21 @@ void testLMP91000(uint32_t delayTime_ms, uint8_t bias_setting_local)
   //    0.16, 0.18, 0.2, 0.22, 0.24};
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
 
-  SerialDebugger.println("RUNNING TEST LMP91000:");
-  SerialDebugger.println("TIA_BIAS[bias_setting_local]=");
-  SerialDebugger.println(TIA_BIAS[bias_setting_local]);
+  Serial.println("RUNNING TEST LMP91000:");
+  Serial.println("TIA_BIAS[bias_setting_local]=");
+  Serial.println(TIA_BIAS[bias_setting_local]);
 
   for (int16_t i = 0; i <= 13; i += 1) //loop over percentage of Vref applied to cell
   {
     pStat.setBias(i);
-    SerialDebugger.println("****************************************");
-    SerialDebugger.println("TIA_BIAS[i]=");
-    SerialDebugger.println(TIA_BIAS[i]);
-    if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
+    Serial.println("****************************************");
+    Serial.println("TIA_BIAS[i]=");
+    Serial.println(TIA_BIAS[i]);
+    if (userpause) //will hold the code here until a character is sent over the Serial port
     {
-      while (!SerialDebugger.available())
+      while (!Serial.available())
         ;
-      SerialDebugger.read();
+      Serial.read();
     }
     if (loop_dac)
     {
@@ -1477,14 +1171,14 @@ void testLMP91000(uint32_t delayTime_ms, uint8_t bias_setting_local)
       {
         dacWrite(dac, j); // sets ESP32 DAC bits
         dacgoal = 3300.0 * j / 255;
-        SerialDebugger.print(j); // current time in ms
-        SerialDebugger.print(F("\t"));
-        SerialDebugger.println(dacgoal); // desired cell voltage
-        if (userpause)                   //will hold the code here until a character is sent over the SerialDebugger port
+        Serial.print(j); // current time in ms
+        Serial.print(F("\t"));
+        Serial.println(dacgoal); // desired cell voltage
+        if (userpause)           //will hold the code here until a character is sent over the Serial port
         {
-          while (!SerialDebugger.available())
+          while (!Serial.available())
             ;
-          SerialDebugger.read();
+          Serial.read();
         }
       }
     }
@@ -1503,29 +1197,33 @@ void runNPVForward(int16_t startV, int16_t endV, int8_t pulseAmp,
   //
   //Runs NPV in the forward (oxidation) direction. The bias potential
   //is swept from a more negative voltage to a more positive voltage.
+
   float i_forward = 0;
   float i_backward = 0;
 
   for (int16_t j = startV; j <= endV; j += pulseAmp)
   {
     i_forward = biasAndSample(j, pulse_width);
-    if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
+    if (userpause) //will hold the code here until a character is sent over the Serial port
     {
-      while (!SerialDebugger.available())
+      while (!Serial.available())
         ;
-      SerialDebugger.read();
+      Serial.read();
     }
+    i_backward = biasAndSample(startV, off_time); // xxx comment out to do only forward bias
 
-    i_backward = biasAndSample(startV, off_time);      // xxx comment out to do only forward bias
-    saveVoltammogram(j, i_forward - i_backward, true); // this will print voltage, current
-
-    // SerialDebugger.println();
-    // if (userpause) //will hold the code here until a character is sent over the SerialDebugger port
+    saveVoltammogram(j, i_forward - i_backward, false); // this will print voltage, current
+    if (print_output_to_serial)
     {
-      while (!SerialDebugger.available())
-        ;
-      SerialDebugger.read();
+      Serial.println("EOL");
     }
+    // Serial.println();
+    // if (userpause) //will hold the code here until a character is sent over the Serial port
+    // {
+    //   while (!Serial.available())
+    //     ;
+    //   Serial.read();
+    // }
   }
 }
 
@@ -1547,21 +1245,21 @@ void runNPVBackward(int16_t startV, int16_t endV, int8_t pulseAmp,
   for (int16_t j = startV; j >= endV; j -= pulseAmp)
   {
     i_forward = biasAndSample(j, pulse_width);
-    //will hold the code here until a character is sent over the SerialDebugger port
+    //will hold the code here until a character is sent over the Serial port
     //this ensures the experiment will only run when initiated
-    while (!SerialDebugger.available())
+    while (!Serial.available())
       ;
-    SerialDebugger.read();
+    Serial.read();
     i_backward = biasAndSample(startV, off_time);
-    saveVoltammogram(j, i_forward - i_backward, true); // this will print voltage, current
+    saveVoltammogram(j, i_forward - i_backward, false); // this will print voltage, current
 
-    //will hold the code here until a character is sent over the SerialDebugger port
+    //will hold the code here until a character is sent over the Serial port
     //this ensures the experiment will only run when initiated
-    while (!SerialDebugger.available())
+    while (!Serial.available())
       ;
-    SerialDebugger.read();
+    Serial.read();
     saveVoltammogram(j, i_forward - i_backward, true); // this will print voltage, currnt
-    // SerialDebugger.println();
+    // Serial.println();
   }
 }
 
@@ -1613,64 +1311,64 @@ void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
     // TIA_BIAS[bias_setting]
     // dacVout*TIA_BIAS[bias_setting] is the exact voltage we will get
 
-    SerialDebugger.println("Column header meanings:");
-    SerialDebugger.println("FORWARD BIAS:");
-    SerialDebugger.println("T = time in ms");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
-    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
-    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
-    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
-    SerialDebugger.println("adc_bits = TIA output in adc_bits;");
-    SerialDebugger.println("(V1) Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
-    SerialDebugger.println("(V2) Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
-    SerialDebugger.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+    Serial.println("Column header meanings:");
+    Serial.println("FORWARD BIAS:");
+    Serial.println("T = time in ms");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    Serial.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    Serial.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    Serial.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    Serial.println("adc_bits = TIA output in adc_bits;");
+    Serial.println("(V1) Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    Serial.println("(V2) Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    Serial.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
 
-    SerialDebugger.println("REVERSE BIAS:");
-    SerialDebugger.println("T = time in ms");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
-    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
-    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
-    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
-    SerialDebugger.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
-    SerialDebugger.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
-    SerialDebugger.println("i_R = reverse current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+    Serial.println("REVERSE BIAS:");
+    Serial.println("T = time in ms");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    Serial.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    Serial.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    Serial.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    Serial.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    Serial.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    Serial.println("i_R = reverse current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
 
-    SerialDebugger.println("RESPONSE:");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage FORWARD, should be FORWARD-REVERSE...)");
-    SerialDebugger.println("I = i_f - i_R in uA (internal variable name = i_forward - i_backward)");
-    SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
-    SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
+    Serial.println("RESPONSE:");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage FORWARD, should be FORWARD-REVERSE...)");
+    Serial.println("I = i_f - i_R in uA (internal variable name = i_forward - i_backward)");
+    // Serial.println("xyz = xyz in xyz (internal variable name = xyz)");
+    // Serial.println("xyz = xyz in xyz (internal variable name = v)");
 
-    SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f,T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_R,V,I,T");
+    Serial.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_R\tV\tI\tT");
 
-    //    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
-    //  SerialDebugger.println("T\tVc\tVdac\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
-    //  SerialDebugger.println("T\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
-    //  SerialDebugger.println("T\t\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
-    //  SerialDebugger.println("T(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_f\tT(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_R\tV(mV)\tI");
-    //  SerialDebugger.println(F("Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_forward,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
-    //  SerialDebugger.println(F("T(ms),Vcell(mV),Zero(mV),dacVout,TIA_BIAS,Vout(mV),VC1(mV),i_f,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
+    // Serial.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f,T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_R,V,I,T");
+
+    //    Serial.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
+    //  Serial.println("T\tVc\tVdac\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  Serial.println("T\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  Serial.println("T\t\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  Serial.println("T(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_f\tT(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_R\tV(mV)\tI");
+    //  Serial.println(F("Time(ms)	Cell set voltage (mV)	Zero(mV)	dacVout	TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_forward,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
+    //  Serial.println(F("T(ms),Vcell(mV),Zero(mV),dacVout,TIA_BIAS,Vout(mV),VC1(mV),i_f,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
   }
-
-  //Reset Arrays
-  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   initLMP(lmpGain);
   pulseAmp = abs(pulseAmp);
   uint32_t off_time = pulse_period - pulse_width;
 
-  saveQueues = true;
-
   setLMPBias(startV); // -200 mV to start
   setVoltage(startV); // -200 mV to start
-  // SerialDebugger.println();
+  // Serial.println();
 
   unsigned long time1 = millis();
   while (millis() - time1 < quietTime)
     ;
 
   if (startV < endV)
+  {
+
     runNPVForward(startV, endV, pulseAmp, pulse_width, off_time);
+  }
   else
     runNPVBackward(startV, endV, pulseAmp, pulse_width, off_time);
 
@@ -1703,20 +1401,19 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
 
   for (uint8_t i = 0; i < cycles; i++)
   {
-    if (i == cycles - 2)
-      saveQueues = true;
-    else
-      saveQueues = false;
-
     //j starts at startV
     //    for (j;j <= vertex1; j += stepV)
     for (; j <= vertex1; j += stepV)
     {
       i_cv = biasAndSample(j, rate);
-      // SerialDebugger.print(i + 1);
-      // SerialDebugger.print(F(","));
-      saveVoltammogram(j, i_cv, true);
-      // SerialDebugger.println();
+      // Serial.print(i + 1);
+      // Serial.print(F(","));
+      saveVoltammogram(j, i_cv, false);
+      if (print_output_to_serial)
+      {
+        Serial.println("EOL");
+      }
+      // Serial.println();
     }
     j -= 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
@@ -1725,10 +1422,14 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
     for (; j >= vertex2; j -= stepV)
     {
       i_cv = biasAndSample(j, rate);
-      // SerialDebugger.print(i + 1);
-      // SerialDebugger.print(F(","));
-      saveVoltammogram(j, i_cv, true);
-      // SerialDebugger.println();
+      // Serial.print(i + 1);
+      // Serial.print(F(","));
+      saveVoltammogram(j, i_cv, false);
+      if (print_output_to_serial)
+      {
+        Serial.println("EOL");
+      }
+      // Serial.println();
     }
     j += 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
@@ -1737,10 +1438,14 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
     for (; j <= endV; j += stepV)
     {
       i_cv = biasAndSample(j, rate);
-      // SerialDebugger.print(i + 1);
-      // SerialDebugger.print(F(","));
-      saveVoltammogram(j, i_cv, true);
-      // SerialDebugger.println();
+      // Serial.print(i + 1);
+      // Serial.print(F(","));
+      saveVoltammogram(j, i_cv, false);
+      if (print_output_to_serial)
+      {
+        Serial.println("EOL");
+      }
+      // Serial.println();
     }
     j -= 2 * stepV; //increment j twice to avoid biasing at the vertex twice
   }
@@ -1770,20 +1475,19 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
 
   for (uint8_t i = 0; i < cycles; i++)
   {
-    if (i == cycles - 2)
-      saveQueues = true;
-    else
-      saveQueues = false;
-
     //j starts at startV
     //    for (j; j >= vertex1; j -= stepV)
     for (; j >= vertex1; j -= stepV)
     {
       i_cv = biasAndSample(j, rate);
-      // SerialDebugger.print(i + 1);
-      // SerialDebugger.print(F(","));
-      saveVoltammogram(j, i_cv, true);
-      // SerialDebugger.println();
+      // Serial.print(i + 1);
+      // Serial.print(F(","));
+      saveVoltammogram(j, i_cv, false);
+      if (print_output_to_serial)
+      {
+        Serial.println("EOL");
+      }
+      // Serial.println();
     }
     j += 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
@@ -1792,10 +1496,14 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
     for (; j <= vertex2; j += stepV)
     {
       i_cv = biasAndSample(j, rate);
-      // SerialDebugger.print(i + 1);
-      // SerialDebugger.print(F(","));
-      saveVoltammogram(j, i_cv, true);
-      // SerialDebugger.println();
+      // Serial.print(i + 1);
+      // Serial.print(F(","));
+      saveVoltammogram(j, i_cv, false);
+      if (print_output_to_serial)
+      {
+        Serial.println("EOL");
+      }
+      // Serial.println();
     }
     j -= 2 * stepV; //increment j twice to avoid biasing at the vertex twice
 
@@ -1804,10 +1512,14 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
     for (; j >= endV; j -= stepV)
     {
       i_cv = biasAndSample(j, rate);
-      // SerialDebugger.print(i + 1);
-      // SerialDebugger.print(F(","));
-      saveVoltammogram(j, i_cv, true);
-      // SerialDebugger.println();
+      // Serial.print(i + 1);
+      // Serial.print(F(","));
+      saveVoltammogram(j, i_cv, false);
+      if (print_output_to_serial)
+      {
+        Serial.println("EOL");
+      }
+      // Serial.println();
     }
     j += 2 * stepV; //increment j twice to avoid biasing at the vertex twice
   }
@@ -1844,7 +1556,7 @@ void runCV(uint8_t lmpGain, uint8_t cycles, int16_t startV,
   if (print_output_to_serial)
   {
 
-    SerialDebugger.println(F("Time(ms),Zero,LMP,Current,Cycle,Voltage,Current"));
+    Serial.println(F("Time(ms),Zero,LMP,Current,Cycle,Voltage,Current"));
   }
 
   initLMP(lmpGain);
@@ -1900,9 +1612,12 @@ void runSWVForward(int16_t startV, int16_t endV, int16_t pulseAmp,
 
     //negative pulse
     i_backward = biasAndSample(j - pulseAmp, freq);
-    number_of_valid_points_in_volts_amps_array++;
-    saveVoltammogram(j, i_forward - i_backward, true);
-    // SerialDebugger.println();
+    saveVoltammogram(j, i_forward - i_backward, false);
+    if (print_output_to_serial)
+    {
+      Serial.println("EOL");
+    }
+    // Serial.println();
   }
 }
 
@@ -1930,8 +1645,12 @@ void runSWVBackward(int16_t startV, int16_t endV, int16_t pulseAmp,
     //negative pulse
     i_backward = biasAndSample(j - pulseAmp, freq);
     number_of_valid_points_in_volts_amps_array++;
-    saveVoltammogram(j, i_forward - i_backward, true);
-    // SerialDebugger.println();
+    saveVoltammogram(j, i_forward - i_backward, false);
+    if (print_output_to_serial)
+    {
+      Serial.println("EOL");
+    }
+    // Serial.println();
   }
 }
 
@@ -1956,7 +1675,7 @@ void runSWVBackward(int16_t startV, int16_t endV, int16_t pulseAmp,
 void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
             int16_t pulseAmp, int16_t stepV, double freq, bool setToZero)
 {
-  // SerialDebugger.println(F("Time(ms),Zero,LMP,Time(ms),Zero,LMP,Voltage,Current"));
+  // Serial.println(F("Time(ms),Zero,LMP,Time(ms),Zero,LMP,Voltage,Current"));
 
   initLMP(lmpGain);
   stepV = abs(stepV);
@@ -1973,7 +1692,6 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
   //we subtract 1 ms from the calculated rate to compensate
   freq -= 1;
 
-  saveQueues = true;
   if (print_output_to_serial)
   {
 
@@ -1988,43 +1706,44 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
     // TIA_BIAS[bias_setting]
     // dacVout*TIA_BIAS[bias_setting] is the exact voltage we will get
 
-    SerialDebugger.println("Column header meanings:");
-    SerialDebugger.println("FORWARD BIAS:");
-    SerialDebugger.println("T = time in ms");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
-    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
-    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
-    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
-    SerialDebugger.println("adc_bits = TIA output in adc_bits;");
-    SerialDebugger.println("(V1) Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
-    SerialDebugger.println("(V2) Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
-    SerialDebugger.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+    Serial.println("Column header meanings:");
+    Serial.println("FORWARD BIAS:");
+    Serial.println("T = time in ms");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    Serial.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    Serial.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    Serial.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    Serial.println("adc_bits = TIA output in adc_bits;");
+    Serial.println("(V1) Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    Serial.println("(V2) Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    Serial.println("i_f = forward current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
 
-    SerialDebugger.println("REVERSE BIAS:");
-    SerialDebugger.println("T = time in ms");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
-    SerialDebugger.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
-    SerialDebugger.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
-    SerialDebugger.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
-    SerialDebugger.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
-    SerialDebugger.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
-    SerialDebugger.println("i_R = reverse current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
+    Serial.println("REVERSE BIAS:");
+    Serial.println("T = time in ms");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage)");
+    Serial.println("Vset = set cell voltage in mV (internal variable name = vset = dacVout * TIA_BIAS[bias_setting])");
+    Serial.println("div = percentage scale (internal variable name = TIA_BIAS[bias_setting])");
+    Serial.println("Vdac = ESP32 dac voltage in mV (internal variable name = dacVout)");
+    Serial.println("Vout = TIA output in mV (internal variable name = v1 = pStat.getVoltage(analogRead(LMP), opVolt, adcBits);");
+    Serial.println("Vc1 = internal zero in mV also C1 (internal variable name = v2 = dacVout * .5)");
+    Serial.println("i_R = reverse current in uA (internal variable name = current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA)");
 
-    SerialDebugger.println("RESPONSE:");
-    SerialDebugger.println("Vc = desired cell voltage in mV (internal variable name = voltage FORWARD, should be FORWARD-REVERSE...)");
-    SerialDebugger.println("I = i_f - i_R in uA (internal variable name = i_forward - i_backward)");
-    SerialDebugger.println("xyz = xyz in xyz (internal variable name = xyz)");
-    SerialDebugger.println("xyz = xyz in xyz (internal variable name = v)");
+    Serial.println("RESPONSE:");
+    Serial.println("Vc = desired cell voltage in mV (internal variable name = voltage FORWARD, should be FORWARD-REVERSE...)");
+    Serial.println("I = i_f - i_R in uA (internal variable name = i_forward - i_backward)");
+    Serial.println("xyz = xyz in xyz (internal variable name = xyz)");
+    Serial.println("xyz = xyz in xyz (internal variable name = v)");
 
-    SerialDebugger.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f,T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_R,V,I,T");
+    // Serial.println("T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_f,T,Vc,Vset,div,Vdac,adcbits,Vout,Vc1,i_R,V,I,T");
+    Serial.println("T\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tadcbits\tVout\tVc1\ti_R\tV\tI\tT");
 
-    //    SerialDebugger.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
-    //  SerialDebugger.println("T\tVc\tVdac\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
-    //  SerialDebugger.println("T\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
-    //  SerialDebugger.println("T\t\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
-    //  SerialDebugger.println("T(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_f\tT(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_R\tV(mV)\tI");
-    //  SerialDebugger.println(F("Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_forward,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
-    //  SerialDebugger.println(F("T(ms),Vcell(mV),Zero(mV),dacVout,TIA_BIAS,Vout(mV),VC1(mV),i_f,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
+    //    Serial.println("T\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_f\tT\tVc\tVset\tdiv\tVdac\tVout\tVc1\ti_R\tVc\tI");
+    //  Serial.println("T\tVc\tVdac\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  Serial.println("T\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  Serial.println("T\t\tVc\tVout\tVc1\ti_f\tT\tVc\tZ\tVout\ti_R\tLMP\tI");
+    //  Serial.println("T(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_f\tT(ms)\tVcell(mV)\tZero(mV)\tLMP\ti_R\tV(mV)\tI");
+    //  Serial.println(F("Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_forward,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
+    //  Serial.println(F("T(ms),Vcell(mV),Zero(mV),dacVout,TIA_BIAS,Vout(mV),VC1(mV),i_f,Time(ms),Cell set voltage (mV),Zero(mV),dacVout,TIA_BIAS[bias_setting],LMP i.e. Vout (mV),VC1(mV),i_backward,Voltage(mV),Current"));
   }
 
   //Reset Arrays
@@ -2057,8 +1776,8 @@ void runDPVForward(int16_t startV, int16_t endV, int8_t pulseAmp,
     i_forward = biasAndSample(j + pulseAmp, pulse_width);
     number_of_valid_points_in_volts_amps_array++;
 
-    saveVoltammogram(j, i_forward - i_backward, true);
-    // SerialDebugger.println();
+    saveVoltammogram(j, i_forward - i_backward, false);
+    // Serial.println();
   }
 }
 
@@ -2077,8 +1796,8 @@ void runDPVBackward(int16_t startV, int16_t endV, int8_t pulseAmp,
     i_forward = biasAndSample(j + pulseAmp, pulse_width);
     number_of_valid_points_in_volts_amps_array++;
 
-    saveVoltammogram(j, i_forward - i_backward, true);
-    // SerialDebugger.println();
+    saveVoltammogram(j, i_forward - i_backward, false);
+    // Serial.println();
   }
 }
 
@@ -2086,18 +1805,16 @@ void runDPV(uint8_t lmpGain, int16_t startV, int16_t endV,
             int8_t pulseAmp, int8_t stepV, uint32_t pulse_period,
             uint32_t pulse_width, bool setToZero)
 {
-  //SerialDebugger.println("Time(ms),Zero(mV),LMP,Voltage(mV)," + current);
+  //Serial.println("Time(ms),Zero(mV),LMP,Voltage(mV)," + current);
   if (print_output_to_serial)
   {
-    SerialDebugger.println(F("Time(ms),Zero(mV),LMP,Voltage(mV),Current"));
+    Serial.println(F("Time(ms),Zero(mV),LMP,Voltage(mV),Current"));
   }
 
   initLMP(lmpGain);
   stepV = abs(stepV);
   pulseAmp = abs(pulseAmp);
   uint32_t off_time = pulse_period - pulse_width;
-
-  saveQueues = true;
 
   //Reset Arrays
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
@@ -2186,13 +1903,13 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
     //Print column headers
     if (print_output_to_serial)
     {
-      SerialDebugger.println("Voltage(mV),Time(ms), Current(microA)");
+      Serial.println("Voltage(mV),Time(ms), Current(microA)");
     }
 
     //set bias potential
     setLMPBias(voltageArray[i]);
     setVoltage(voltageArray[i]);
-    //SerialDebugger.println();
+    //Serial.println();
 
     while (millis() - startTime < timeArray[i])
     {
@@ -2231,13 +1948,13 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       if (print_output_to_serial)
       {
         //Print data
-        SerialDebugger.print(volts[arr_cur_index]);
-        SerialDebugger.print(F(","));
-        SerialDebugger.print(time_Voltammaogram[arr_cur_index]);
-        // SerialDebugger.print(output_time[arr_cur_index]);
-        SerialDebugger.print(F(","));
-        SerialDebugger.print(amps[arr_cur_index]);
-        SerialDebugger.println();
+        Serial.print(volts[arr_cur_index]);
+        Serial.print(F(","));
+        Serial.print(time_Voltammaogram[arr_cur_index]);
+        // Serial.print(output_time[arr_cur_index]);
+        Serial.print(F(","));
+        Serial.print(amps[arr_cur_index]);
+        Serial.println();
       }
 
       arr_cur_index++;
@@ -2253,8 +1970,8 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       }
     }
 
-    // SerialDebugger.println();
-    // SerialDebugger.println();
+    // Serial.println();
+    // Serial.println();
   }
 
   arr_cur_index = 0;
@@ -2272,12 +1989,12 @@ void runNPVandPrintToSerial()
   // Run Normal Pulse Voltammetry with gain 350000, -200 to + 500 mV, 10 mV step, 50 microsecond width,
   //  200 microsecond period, 500 microsecond quiet time, range micro amps) // micro or milli???
 
-  SerialDebugger.println(F("Voltage,Current")); // the final array
+  Serial.println(F("Voltage,Current")); // the final array
   for (uint16_t i = 0; i < arr_samples; i++)
   {
-    SerialDebugger.print(volts[i]);
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(amps[i]);
+    Serial.print(volts[i]);
+    Serial.print(F("\t"));
+    Serial.println(amps[i]);
   }
 }
 
@@ -2292,12 +2009,12 @@ void runCVandPrintToSerial()
   //
   // runCV(LMPgain, 1, -100, 100, -100, 100, 1, 50, true);
 
-  SerialDebugger.println(F("Voltage,Current")); // the final array
+  Serial.println(F("Voltage,Current")); // the final array
   for (uint16_t i = 0; i < arr_samples; i++)
   {
-    SerialDebugger.print(volts[i]);
-    SerialDebugger.print(F("\t"));
-    SerialDebugger.println(amps[i]);
+    Serial.print(volts[i]);
+    Serial.print(F("\t"));
+    Serial.println(amps[i]);
   }
 }
 
@@ -2308,12 +2025,12 @@ void runSWVForwardandPrintToSerial()
 
   //  runSWV(LMPgain, -400, 500, 50, 1, 31.25, true);
 
-  SerialDebugger.println(F("Voltage,Current"));
+  Serial.println(F("Voltage,Current"));
   for (uint16_t i = 0; i < arr_samples; i++)
   {
-    SerialDebugger.print(volts[i]);
-    SerialDebugger.print(F(","));
-    SerialDebugger.println(amps[i]);
+    Serial.print(volts[i]);
+    Serial.print(F(","));
+    Serial.println(amps[i]);
   }
 }
 
@@ -2324,12 +2041,12 @@ void runSWVReverseandPrintToSerial()
   //  ##############################SQUARE WAVE VOLTAMMETRY (Reverse -- Reduction)##############################
 
   // runSWV(LMPgain, -30, -500, 50, 66, 62.5, true);
-  SerialDebugger.println(F("Voltage,Current"));
+  Serial.println(F("Voltage,Current"));
   for (uint16_t i = 0; i < arr_samples; i++)
   {
-    SerialDebugger.print(volts[i]);
-    SerialDebugger.print(F(","));
-    SerialDebugger.println(amps[i]);
+    Serial.print(volts[i]);
+    Serial.print(F(","));
+    Serial.println(amps[i]);
   }
 }
 void runCAandPrintToSerial()
@@ -2342,11 +2059,11 @@ void runCAandPrintToSerial()
   // runAmp(LMPgain, 174, 40000, -200, 40000, 200, 40000, 400, 6, true);
   for (uint16_t i = 0; i < arr_samples; i++)
   {
-    SerialDebugger.print(volts[i]);
-    SerialDebugger.print(F(","));
-    SerialDebugger.println(amps[i]);
+    Serial.print(volts[i]);
+    Serial.print(F(","));
+    Serial.println(amps[i]);
   }
-  SerialDebugger.println("Quiet time till next Amp run");
+  Serial.println("Quiet time till next Amp run");
 }
 
 void set_sweep_parameters_from_form_input(String form_id, String form_value)
@@ -2651,7 +2368,7 @@ void onWebSocketEvent(uint8_t num,
                       uint8_t *payload,
                       size_t length)
 {
-  Serial.println("onWebSocketEvent called");
+  // Serial.println("onWebSocketEvent called");
   // Figure out the type of WebSocket event
   switch (type)
   {
@@ -2882,7 +2599,7 @@ void configureserver()
         Serial.print(p->name().c_str());
         Serial.print(F("\t"));
         Serial.println(p->value().c_str());
-        //SerialDebugger.print(F("\t"))
+        //Serial.print(F("\t"))
 
         //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
         // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
@@ -2930,26 +2647,24 @@ void configureserver()
 
 void setup()
 {
+  // blinky pin for diagnostic:
   pinMode(LEDPIN, OUTPUT);
 
+  // Start serial interface:
   Wire.begin(); // uses default microcontroller pins
-  SerialDebugger.begin(115200);
-  while (!SerialDebugger)
+  Serial.begin(115200);
+  while (!Serial)
     ;
 
+  // initialize ADC:
   analogReadResolution(12);
-  //  analogWriteResolution(10); // ESP32 only does 8 bits.
-  // initADC(false); // Will not work for ESP32 boards.
 
-  //enable the potentiostat
+  //############################### ENABLE THE POTENTIOSTAT #######################################
   pStat.setMENB(MENB);
   delay(50);
   pStat.standby();
   delay(50);
-  initLMP(0);                 // Initializes the LMP91000 to the appropriate settings
-  blinkLED(LEDPIN, 15, 1000); // blink LED to show setup is complete, also give settle time to LMP91000
-  SerialDebugger.println(F("Setup complete."));
-  SerialDebugger.print(F(" "));
+  initLMP(0); // Initializes the LMP91000 to the appropriate settings
 
   //############################### SPIFFS STARTUP #######################################
   if (!SPIFFS.begin(true))
@@ -2958,18 +2673,7 @@ void setup()
     return;
   }
 
-  //############################# WEBSERVER & WIFI #####################################
-
-  // wifitool setup:
-  // wifiTool.begin(false);
-  // if (!wifiTool.wifiAutoConnect())  // if autoconnect true, then wifi is connected to an AP from secrets.json or ESP32 memory
-  // { // need to set up access point to get wifi credentials from user....
-  //   Serial.println("fail to connect to wifi!!!!");
-  //   wifiTool.runApPortal();
-  // }
-
   //############################# STATIC WIFI #####################################
-
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
   while (WiFi.waitForConnectResult() != WL_CONNECTED)
@@ -2978,11 +2682,9 @@ void setup()
     delay(1000);
     ESP.restart();
   }
-
   Serial.println("Connected!");
   Serial.println("The local IP address is:");
-  //print the local IP address
-  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.localIP()); //print the local IP address
 
   //############################# DNS #####################################
   MDNS.begin("nanostat");
@@ -2990,30 +2692,31 @@ void setup()
   //############################# WEBSERVER & WIFI #####################################
   configureserver();
 
-  // File root = SPIFFS.open("/"); // Leftover code ???
-  // File file = root.openNextFile(); // Leftover code ???
-
   //############################# WEBSOCKET #####################################
-  // Start WebSocket server and assign callback
   m_websocketserver.begin();
-  m_websocketserver.onEvent(onWebSocketEvent);
+  m_websocketserver.onEvent(onWebSocketEvent); // Start WebSocket server and assign callback
+
+  //############################# BLINK LED TO SHOW SETUP COMPLETE #####################################
+  blinkLED(LEDPIN, 15, 1000); // blink LED to show setup is complete, also give settle time to LMP91000
+  Serial.println(F("Setup complete."));
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
 }
 
 void loop()
 {
 
-  //will hold the code here until a character is sent over the SerialDebugger port
+  //will hold the code here until a character is sent over the Serial port
   //this ensures the experiment will only run when initiated
-  //  SerialDebugger.println(F("Press enter to begin a sweep."));
-  //  while (!SerialDebugger.available())
+  //  Serial.println(F("Press enter to begin a sweep."));
+  //  while (!Serial.available())
   //    ;
-  //  SerialDebugger.read();
+  //  Serial.read();
   // Look for and handle WebSocket data
 
   m_websocketserver.loop();
-  delay(10); // 10 ms delay
 
-  if (m_send_websocket_test_data_in_loop == true)
+  if (m_send_websocket_test_data_in_loop == true) // do things here in loop at full speed
   {
     // Pseudocode: xxx_period_in_ms_xxx=period_in_s * 1e3 = (1/freqHz)*1e3
     if (millis() - last_time_sent_websocket_server > (1000 / m_websocket_send_rate)) // every half second, print
@@ -3023,25 +2726,18 @@ void loop()
       last_time_sent_websocket_server = millis();
     }
     // m_microsbefore_websocketsendcalled=micros();
-    // sendTimeOverWebsocket(); // takes 2.5 ms on average, when client is connected, else 45 microseconds...
+    // sendTimeOverWebsocketJSON(); // takes 2.5 ms on average, when client is connected, else 45 microseconds...
     // Serial.println(micros()-m_microsbefore_websocketsendcalled);
   }
 
   if (Sweep_Mode == NPV)
   {
-
-    // testNoiseAtABiasPoint(-100, 100, 50);
-
-    // testNOISE(100);
-    // testDACs(50);
-    // testDACandADCs(50);
-    //testLMP91000(50, 1);
-    // runNPV(6, -200, 500, 10, 50, 200, 1000, 1, true);
-
+    // void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
+    //         int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
+    //         uint32_t quietTime, uint8_t range, bool setToZero)
     runNPV(sweep_param_lmpGain, sweep_param_startV_NPV, sweep_param_endV_NPV,
-           sweep_param_pulseAmp_NPV, sweep_param_pulseAmp_NPV, sweep_param_period_NPV,
+           sweep_param_pulseAmp_NPV, sweep_param_width_NPV, sweep_param_period_NPV,
            sweep_param_quietTime_NPV, 1, sweep_param_setToZero);
-
     writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
@@ -3049,11 +2745,6 @@ void loop()
   }
   else if (Sweep_Mode == CV)
   {
-
-    // testLMP91000(50, 1);
-
-    // runCV(LMPgain, 2, 0, 0, 450, -200, 5, 1000, true);
-
     runCV(sweep_param_lmpGain, sweep_param_cycles_CV, sweep_param_startV_CV,
           sweep_param_endV_CV, sweep_param_vertex1_CV, sweep_param_vertex2_CV, sweep_param_stepV_CV,
           sweep_param_rate_CV, sweep_param_setToZero);
@@ -3064,8 +2755,6 @@ void loop()
   }
   else if (Sweep_Mode == SQV)
   {
-    // runSWV(LMPgain, -200, 500, 25, 5, 10, true);
-
     runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
            sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero);
     writeVoltsCurrentArraytoFile();
@@ -3075,34 +2764,25 @@ void loop()
   }
   else if (Sweep_Mode == CA)
   {
-    // runAmp(LMPgain, 50, 2000, 100, 2000, 50, 200, 100, 1, true);
-
     runAmp(sweep_param_lmpGain, sweep_param_pre_stepV_CA, sweep_param_quietTime_CA,
            sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
            sweep_param_samples_CA, 1, sweep_param_setToZero);
-    writeVoltsCurrentTimeArraytoFile();
+    writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == DCBIAS)
   {
-    // testNoiseAtABiasPoint(-100, 100, 50); //  bias at -100 mV on cell. Read 100 readings and calculate std dev and avg of adc for different reading avgs.
     testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
                           sweep_param_delayTime_ms_noisetest);
-    writeVoltsCurrentTimeArraytoFile();
+    writeVoltsCurrentArraytoFile();
     sendVoltammogramWebsocketJSON();
-    // testNOISE(100);
-    // testDACs(50);
-    // testDACandADCs(50);
-    // testLMP91000(50, 1);
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == IV)
   {
-    //testIV(-200, 500, 701, 50);
-
     testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
            sweep_param_delayTime_ms_IV);
     writeVoltsCurrentArraytoFile();
@@ -3112,29 +2792,20 @@ void loop()
   }
   else if (Sweep_Mode == CAL)
   {
-    // calibrateDACandADCs(50);
-    // calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
-
+    calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == CTLPANEL)
   {
-
-    // take a reading, send to websocket...
-    // setLMPBias(cell_voltage_control_panel); // done in resond to websocket text now....
-    // setVoltage(cell_voltage_control_panel);
     delay(sweep_param_delayTime_ms_control_panel);
-    //Serial.println(analog_read_avg(num_adc_readings_to_average_control_panel, LMP));
+    // read adc and convert to current:
     analog_read_avg_bits_temp = (float)analog_read_avg(num_adc_readings_to_average_control_panel, LMP);
     v1_temp = (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * analog_read_avg_bits_temp - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
     v1_temp = v1_temp * 1000.0;
-
     v2_temp = dacVout * .5;                                                          //the zero of the internal transimpedance amplifier
     amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
-
-    //Serial.println(amps_temp, DEC);
-
+    // create json string to send to broswer:
     temp_json_string = "{\"amps\":";
     temp_json_string += String(amps_temp, DEC);
     temp_json_string += ",\"volts\":";
@@ -3146,30 +2817,14 @@ void loop()
     temp_json_string += ",\"analog_read_avg_mV\":";
     temp_json_string += String(v1_temp, DEC);
     temp_json_string += "}";
-
-    //  adc reading,  xyzxyz
-
+    // send json string to browswer
     m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
   }
-  else if (Sweep_Mode == MISC_MODE)
+  else if (Sweep_Mode == MISC_MODE) // list directory to serial
   {
-    // testNoiseAtABiasPoint(-100, 100, 50);
     listDir("/", 3);
-    // writeVoltsCurrentArraytoFile();
-    //sleep(1);
     delay(250);
-
     sendVoltammogramWebsocketJSON();
-
-    if (m_send_websocket_test_data_in_loop == true)
-    {
-      m_websocketserver.broadcastTXT("Hello world websocket from main.cpp!!!"); // broadcast sends to all connected clients
-      String m_temp_string = "{\"value\":";
-      m_temp_string += String(millis() / 1e3, 3);
-      m_temp_string += "}";
-      m_websocketserver.broadcastTXT(m_temp_string.c_str(), m_temp_string.length());
-    }
-
     // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
