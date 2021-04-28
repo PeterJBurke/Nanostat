@@ -242,11 +242,16 @@ void sendVoltammogramWebsocketJSON()
   // { "Current" : [3,2,6,...], "Voltage": [8,6,7,....], "Time": [3,4,5,...]}
   // 2) Send JSON over websocket...
 
+  Serial.println("sendVoltammogramWebsocketJSON called");
+  Serial.print("number_of_valid_points_in_volts_amps_array=");
+  Serial.println(number_of_valid_points_in_volts_amps_array);
+
   String current_array_string = "[";
   String voltage_array_string = "[";
   String time_array_string = "[";
   for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
   {
+
     current_array_string += amps[i];
     if (i != (number_of_valid_points_in_volts_amps_array - 1))
     {
@@ -282,7 +287,10 @@ void sendVoltammogramWebsocketJSON()
   {
     Serial.println("####################################");
     Serial.println("Beginning sending Voltammogram_JSON over websocket.");
-    //    Serial.println(Voltammogram_JSON);
+    if (print_output_to_serial)
+    {
+      Serial.println(Voltammogram_JSON);
+    }
     Serial.print("Heap free memory (in bytes)= ");
     Serial.println(ESP.getFreeHeap());
   }
@@ -585,7 +593,7 @@ void writeVoltsCurrentArraytoFile()
   }
   if (file.println("BurkeLab Nanostat Rev 3.5 Sweep"))
   {
-    Serial.println("File was written");
+    Serial.println("Header of file was written");
   }
   else
   {
@@ -695,13 +703,17 @@ inline void saveVoltammogram(float voltage, float current, bool debug)
 
   if (debug)
   {
+    Serial.println(" ");
     Serial.println("****************** SAVING TO VOLTAMMOGRAM******************");
+    Serial.print("arr_cur_index=");
+    Serial.println(arr_cur_index);
     Serial.print(voltage);
     Serial.print(F("\t"));
     Serial.print(current, 5);
     Serial.print(F("\t"));
     Serial.println(micros());
     Serial.println("****************** SAVED TO VOLTAMMOGRAM******************");
+    Serial.println(" ");
   }
 }
 void testIV(int16_t startV, int16_t endV, int16_t numPoints,
@@ -1398,6 +1410,7 @@ void runCVForward(uint8_t cycles, int16_t startV, int16_t endV,
   int16_t j = startV;
   float i_cv = 0;
   number_of_valid_points_in_volts_amps_array = 0;
+  arr_cur_index = 0;
 
   for (uint8_t i = 0; i < cycles; i++)
   {
@@ -1472,6 +1485,7 @@ void runCVBackward(uint8_t cycles, int16_t startV, int16_t endV,
   int16_t j = startV;
   float i_cv = 0;
   number_of_valid_points_in_volts_amps_array = 0;
+  arr_cur_index = 0;
 
   for (uint8_t i = 0; i < cycles; i++)
   {
@@ -1750,6 +1764,7 @@ void runSWV(uint8_t lmpGain, int16_t startV, int16_t endV,
   reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
 
   number_of_valid_points_in_volts_amps_array = 0;
+  arr_cur_index = 0;
 
   if (startV < endV)
     runSWVForward(startV, endV, pulseAmp, stepV, freq);
