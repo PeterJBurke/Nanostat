@@ -133,7 +133,7 @@ function onClose(evt) {
 function onMessage(evt) {
 
     // Print out our received message
-    console.log("Received: " + evt.data);
+   // console.log("Received: " + evt.data);
     var m_json_obj = JSON.parse(evt.data);
     // console.log(m_json_obj);
     if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
