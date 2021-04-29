@@ -1,7 +1,7 @@
-// test git push new name
+//https://github.com/PeterJBurke/Nanostat
 
-bool userpause = false;             // pauses for user to press input on serial between each point in sweep
-bool print_output_to_serial = true; // prints verbose output to serial
+bool userpause = false;              // pauses for user to press input on serial between each point in sweep
+bool print_output_to_serial = false; // prints verbose output to serial
 
 //Libraries
 #include <Wire.h>
@@ -1899,13 +1899,13 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
 
   // default samples=100
   //  if (samples > arr_samples / 3){ // max 2500/3=833; default 100
-  if (samples > 830) // somewhat arbitrary limit for memory management of JSON obejct,
+  if (samples > 500) // somewhat arbitrary limit for memory management of JSON obejct,
   //could be larger of JSON voltammogram was delivered in binary.
   { // max 2500/3=833; default 100
     // samples = (float)arr_samples / 3.0;
-    samples = 830;
-    Serial.print("Samples>arr_samples, adjusting accordingly to samples=.");
-    Serial.print(samples);
+    samples = 500;
+    Serial.print("Samples>arr_samples, adjusting accordingly to samples = ");
+    Serial.println(samples);
   }
 
   int16_t voltageArray[3] = {pre_stepV, v1, v2}; // default 50, 50, 50
@@ -1921,9 +1921,16 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
     uint32_t fs = (double)timeArray[i] / samples; // default 2000/100=20
     unsigned long startTime = millis();
 
+    Serial.print("samples=");
+    Serial.println(samples);
+    Serial.print("fs=");
+    Serial.println(fs);
+
     //Print column headers
     if (print_output_to_serial)
+    {
       Serial.println("Voltage(mV),Time(ms), Current(microA)");
+    }
 
     //set bias potential
     setLMPBias(voltageArray[i]);
@@ -1931,6 +1938,18 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
 
     while (millis() - startTime < timeArray[i]) // default 2000, so for 2 seconds
     {
+      // Serial.print("arr_cur_index = ");
+      // Serial.print(arr_cur_index);
+      // Serial.print(F("\t")); // tab
+      // Serial.print("millis = ");
+      // Serial.print(millis());
+      // Serial.print(F("\t")); // tab
+      // Serial.print("startTime = ");
+      // Serial.print(startTime);
+      // Serial.print(F("\t")); // tab
+      // Serial.print("timeArray[i] = ");
+      // Serial.print(timeArray[i]);
+      // Serial.println(F("\t")); // tab
 
       // Read output voltage of the transimpedance amplifier
       int adc_bits;                                                 // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
@@ -1950,28 +1969,30 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       time_Voltammaogram[arr_cur_index] = millis();
       amps[arr_cur_index] = current;
       number_of_valid_points_in_volts_amps_array++;
-
-      // if (print_output_to_serial)
-      if (false)
+      if (print_output_to_serial)
+      // if (false)
       {
         Serial.println("************BEGIN CA POINT:*******************");
-        Serial.print("adc_bits= ");
-        Serial.print(adc_bits);
-        Serial.print(F("\t")); // tab
-        Serial.print("v1= ");
-        Serial.print(v1);
-        Serial.print(F("\t")); // tab
-        Serial.print("dacVout= ");
-        Serial.print(dacVout);
-        Serial.print(F("\t")); // tab
-        Serial.print("v2= ");
-        Serial.print(v2);
-        Serial.print(F("\t")); // tab
-        Serial.print("current= ");
-        Serial.print(current);
-        Serial.print(F("\t")); // tab
-        Serial.print("lmpGain= ");
-        Serial.print(lmpGain);
+        // Serial.print("adc_bits= ");
+        // Serial.print(adc_bits);
+        // Serial.print(F("\t")); // tab
+        // Serial.print("v1= ");
+        // Serial.print(v1);
+        // Serial.print(F("\t")); // tab
+        // Serial.print("dacVout= ");
+        // Serial.print(dacVout);
+        // Serial.print(F("\t")); // tab
+        // Serial.print("v2= ");
+        // Serial.print(v2);
+        // Serial.print(F("\t")); // tab
+        // Serial.print("current= ");
+        // Serial.print(current);
+        // Serial.print(F("\t")); // tab
+        // Serial.print("lmpGain= ");
+        // Serial.print(lmpGain);
+        // Serial.print(F("\t")); // tab
+        Serial.print("arr_cur_index = ");
+        Serial.print(arr_cur_index);
         Serial.print(F("\t")); // tab
         Serial.print("Volts = ");
         Serial.print(volts[arr_cur_index]);
@@ -1981,14 +2002,14 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
         Serial.print(F("\t")); // tab
         Serial.print("Time = ");
         Serial.print(time_Voltammaogram[arr_cur_index]);
-        Serial.print(F("\t")); // tab
-        Serial.print("TIA_BIAS[bias_setting] = ");
-        Serial.print(TIA_BIAS[bias_setting]);
-        Serial.print(F("\t")); // tab
-        Serial.println();
-        Serial.print("TIA_GAIN[lmpGain - 1] = ");
-        Serial.print(TIA_GAIN[lmpGain - 1]);
-        Serial.print(F("\t")); // tab
+        // Serial.print(F("\t")); // tab
+        // Serial.print("TIA_BIAS[bias_setting] = ");
+        // Serial.print(TIA_BIAS[bias_setting]);
+        // Serial.print(F("\t")); // tab
+        // Serial.println();
+        // Serial.print("TIA_GAIN[lmpGain - 1] = ");
+        // Serial.print(TIA_GAIN[lmpGain - 1]);
+        // Serial.print(F("\t")); // tab
         Serial.println();
 
         Serial.println("**************END CA POINT*****************");
@@ -2010,7 +2031,7 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       }
 
       arr_cur_index++;
-      delay(fs - 1);
+      delay(fs);
     }
     digitalWrite(LEDPIN, HIGH); // off at end of sweep
   }
