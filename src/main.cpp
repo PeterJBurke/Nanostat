@@ -1,7 +1,7 @@
 // License: https://github.com/PeterJBurke/ESP32Stat_Rev_3_5_PIO
 
-bool userpause = false;              // pauses for user to press input on serial between each point in sweep
-bool print_output_to_serial = false; // prints verbose output to serial
+bool userpause = false;             // pauses for user to press input on serial between each point in sweep
+bool print_output_to_serial = true; // prints verbose output to serial
 
 //Libraries
 #include <Wire.h>
@@ -1898,8 +1898,15 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   float b = b_coeff; //    //  Calibrate coefficients (make a local copy of the global ones):
 
   // default samples=100
-  if (samples > arr_samples / 3) // max 2500/3=833; default 100
-    samples = arr_samples / 3;
+  //  if (samples > arr_samples / 3){ // max 2500/3=833; default 100
+  if (samples > 830) // somewhat arbitrary limit for memory management of JSON obejct,
+  //could be larger of JSON voltammogram was delivered in binary.
+  { // max 2500/3=833; default 100
+    // samples = (float)arr_samples / 3.0;
+    samples = 830;
+    Serial.print("Samples>arr_samples, adjusting accordingly to samples=.");
+    Serial.print(samples);
+  }
 
   int16_t voltageArray[3] = {pre_stepV, v1, v2}; // default 50, 50, 50
   uint32_t timeArray[3] = {quietTime, t1, t2};   // default 2000,2000,2000
@@ -1944,7 +1951,8 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
       amps[arr_cur_index] = current;
       number_of_valid_points_in_volts_amps_array++;
 
-      if (print_output_to_serial)
+      // if (print_output_to_serial)
+      if (false)
       {
         Serial.println("************BEGIN CA POINT:*******************");
         Serial.print("adc_bits= ");
