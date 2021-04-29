@@ -1,4 +1,4 @@
-// License: https://github.com/PeterJBurke/ESP32Stat_Rev_3_5_PIO
+// test git push new name
 
 bool userpause = false;             // pauses for user to press input on serial between each point in sweep
 bool print_output_to_serial = true; // prints verbose output to serial
