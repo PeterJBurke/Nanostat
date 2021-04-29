@@ -1,6 +1,6 @@
 // License: https://github.com/PeterJBurke/ESP32Stat_Rev_3_5_PIO
 
-bool userpause = false;             // pauses for user to press input on serial between each point in sweep
+bool userpause = false;              // pauses for user to press input on serial between each point in sweep
 bool print_output_to_serial = false; // prints verbose output to serial
 
 //Libraries
@@ -95,7 +95,7 @@ int sweep_param_quietTime_CA = 2000;
 int sweep_param_V1_CA = 100;
 int sweep_param_t1_CA = 2000;
 int sweep_param_V2_CA = 50;
-int sweep_param_t2_CA = 200;
+int sweep_param_t2_CA = 2000;
 int sweep_param_samples_CA = 100;
 
 // Noise test sweep parameters:
@@ -149,7 +149,7 @@ int num_adc_readings_to_average = 1; // when reading ADC, how many points to ave
 // Bias 1%-24%
 // FET_Short (keep off)
 // Mode (keep at 3-lead)
-uint8_t LMPgain = 6; // Feedback resistor of TIA.
+uint8_t LMPgainGLOBAL = 7; // Feedback resistor of TIA.
 //void LMP91000::setGain(uint8_t gain) const
 //@param            gain: the gain to be set to
 //param - value - gain resistor
@@ -538,10 +538,10 @@ inline float biasAndSample(int16_t voltage, uint32_t rate)
   //by the feedback resistor
   //current = (V_OUT - V_IN-) / RFB
   //v1 and v2 are in milliVolts
-  if (LMPgain == 0)                                    // using external feedback resistor, hard coded to 1e6 for now with BurkeLab ESP32Stat Rev 3.5
+  if (LMPgainGLOBAL == 0)                              // using external feedback resistor, hard coded to 1e6 for now with BurkeLab ESP32Stat Rev 3.5
     current = (((v1 - v2) / 1000) / RFB) * pow(10, 9); //scales to nA
   else
-    current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
+    current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgainGLOBAL - 1]) * pow(10, 6); //scales to uA
 
   if (print_output_to_serial)
   {
@@ -750,7 +750,7 @@ void testIV(int16_t startV, int16_t endV, int16_t numPoints,
   Serial.println(ESP.getFreeHeap());
 
   // Initialize LMP91000:
-  initLMP(LMPgain);
+  initLMP(LMPgainGLOBAL);
   setLMPBias(startV);
   setVoltage(startV);
 
@@ -830,6 +830,8 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
 
   // local variables for statistics:
   float adc_bits_array[numPoints];
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
   float adc_bits_array_sum = 0;
   float adc_bits_array_avg = 0;
   float adc_bits_array_std_dev = 0;
@@ -840,7 +842,7 @@ void testNoiseAtABiasPoint(int16_t biasV, int16_t numPoints,
   float num_points_to_average[7] = {1, 5, 10, 50, 100, 500, 1000};
 
   // set LMP91000 and bias
-  initLMP(LMPgain);
+  initLMP(LMPgainGLOBAL);
   setLMPBias(biasV);
   setVoltage(biasV);
 
@@ -923,7 +925,7 @@ void testDACs(uint32_t delayTime_ms)
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
 
-  initLMP(LMPgain);
+  initLMP(LMPgainGLOBAL);
   setLMPBias(100);
   setVoltage(100);
 
@@ -960,7 +962,7 @@ void testDACandADCs(uint32_t delayTime_ms)
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
 
-  initLMP(LMPgain);
+  initLMP(LMPgainGLOBAL);
   setLMPBias(100);
   setVoltage(100);
 
@@ -1015,7 +1017,7 @@ void calibrateDACandADCs(uint32_t delayTime_ms)
 
   //xxxxxxxxxxxxxxxxxxxxxxxxxx
   pStat.disableFET();
-  pStat.setGain(LMPgain); // TIA feedback resistor , global variable
+  pStat.setGain(LMPgainGLOBAL); // TIA feedback resistor , global variable
   pStat.setRLoad(0);
   pStat.setExtRefSource();
   pStat.setIntZ(1);
@@ -1885,25 +1887,22 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   //    current = "Current(mA)";
   //  else
   //    current = "SOME ERROR";
-  pulseLED_on_off(LEDPIN, 10);
-  //Reset Arrays
-  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
+  digitalWrite(LEDPIN, HIGH); // just leave it on during sweep
+  initLMP(lmpGain);
 
+  reset_Voltammogram_arrays(); // Reset Arrays volt[i], amps[i],time_Voltammaogram[i]=0 all
   arr_cur_index = 0;
   number_of_valid_points_in_volts_amps_array = 0;
 
-  if (samples > arr_samples / 3)
+  float a = a_coeff; //    //  Calibrate coefficients (make a local copy of the global ones):
+  float b = b_coeff; //    //  Calibrate coefficients (make a local copy of the global ones):
+
+  // default samples=100
+  if (samples > arr_samples / 3) // max 2500/3=833; default 100
     samples = arr_samples / 3;
-  initLMP(lmpGain);
 
-  int16_t voltageArray[3] = {pre_stepV, v1, v2};
-  uint32_t timeArray[3] = {quietTime, t1, t2};
-
-  //Reset Arrays
-  reset_Voltammogram_arrays(); // sets volt[i], amps[i],time_Voltammaogram[i]=0 all
-
-  // for (uint16_t i = 0; i < arr_samples; i++)
-  //   output_time[i] = 0;
+  int16_t voltageArray[3] = {pre_stepV, v1, v2}; // default 50, 50, 50
+  uint32_t timeArray[3] = {quietTime, t1, t2};   // default 2000,2000,2000
 
   //i = 0 is pre-step voltage
   //i = 1 is first step potential
@@ -1912,81 +1911,100 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
   {
     //the time between samples is determined by the
     //number of samples inputted by the user
-    uint32_t fs = (double)timeArray[i] / samples;
+    uint32_t fs = (double)timeArray[i] / samples; // default 2000/100=20
     unsigned long startTime = millis();
 
     //Print column headers
     if (print_output_to_serial)
-    {
       Serial.println("Voltage(mV),Time(ms), Current(microA)");
-    }
 
     //set bias potential
     setLMPBias(voltageArray[i]);
     setVoltage(voltageArray[i]);
-    //Serial.println();
 
-    while (millis() - startTime < timeArray[i])
+    while (millis() - startTime < timeArray[i]) // default 2000, so for 2 seconds
     {
-      //  Calibrate coefficients (make a local copy of the global ones):
-      float a = a_coeff; // a is local copy of global a_coeff
-      float b = b_coeff; // b is local copy of global a_coeff
-      // Read output voltage of the transimpedance amplifier
-      int adc_bits; // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
-      // hard wired in BurkeLab ESP32Stat Rev 3.5 to LMP i.e ESP32 pin 32 (ADC1_CH7)
-      //adc_bits = analogRead(LMP); // read a single point
 
-      number_of_valid_points_in_volts_amps_array++;
-      adc_bits = analog_read_avg(num_adc_readings_to_average, LMP); // read a number of points and average them...
+      // Read output voltage of the transimpedance amplifier
+      int adc_bits;                                                 // will be output voltage of TIA amplifier, "VOUT" on LMP91000 diagram, also C2
+      adc_bits = analog_read_avg(num_adc_readings_to_average, LMP); //  hard wired in BurkeLab ESP32Stat Rev 3.5 to LMP i.e ESP32 pin 32 (ADC1_CH7)
       float v1;
       v1 = (3.3 / 255.0) * (1 / (2.0 * b)) * (float)adc_bits - (a / (2.0 * b)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
-      v1 = v1 * 1000;
+      v1 = v1 * 1000.0;
       float v2 = dacVout * .5; //the zero of the internal transimpedance amplifier
       // V2 is not measured in  BurkeLab ESP32Stat Rev 3.5 and assumed to be half dacVout, calibration helps this see above
       float current = 0;
-
-      //the current is determined by the zero of the transimpedance amplifier
-      //from the output of the transimpedance amplifier, then dividing
-      //by the feedback resistor
-      //current = (V_OUT - V_IN-) / RFB
-      //v1 and v2 are in milliVolts
-      if (LMPgain == 0)                                    // using external feedback resistor, not (yet) suppored with BurkeLab ESP32Stat Rev 3.5
+      if (lmpGain == 0)                                    // using external feedback resistor, not (yet) suppored with BurkeLab ESP32Stat Rev 3.5
         current = (((v1 - v2) / 1000) / RFB) * pow(10, 9); //scales to nA
       else
-        current = (((v1 - v2) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
-      //Sample and save data
+        current = (((v1 - v2) / 1000) / TIA_GAIN[lmpGain - 1]) * pow(10, 6); //scales to uA
+                                                                             //Sample and save data
       volts[arr_cur_index] = voltageArray[i];
-      // output_time[arr_cur_index] = millis();
       time_Voltammaogram[arr_cur_index] = millis();
       amps[arr_cur_index] = current;
+      number_of_valid_points_in_volts_amps_array++;
 
       if (print_output_to_serial)
       {
-        //Print data
+        Serial.println("************BEGIN CA POINT:*******************");
+        Serial.print("adc_bits= ");
+        Serial.print(adc_bits);
+        Serial.print(F("\t")); // tab
+        Serial.print("v1= ");
+        Serial.print(v1);
+        Serial.print(F("\t")); // tab
+        Serial.print("dacVout= ");
+        Serial.print(dacVout);
+        Serial.print(F("\t")); // tab
+        Serial.print("v2= ");
+        Serial.print(v2);
+        Serial.print(F("\t")); // tab
+        Serial.print("current= ");
+        Serial.print(current);
+        Serial.print(F("\t")); // tab
+        Serial.print("lmpGain= ");
+        Serial.print(lmpGain);
+        Serial.print(F("\t")); // tab
+        Serial.print("Volts = ");
         Serial.print(volts[arr_cur_index]);
-        Serial.print(F(","));
-        Serial.print(time_Voltammaogram[arr_cur_index]);
-        // Serial.print(output_time[arr_cur_index]);
-        Serial.print(F(","));
+        Serial.print(F("\t")); // tab
+        Serial.print("Amps = ");
         Serial.print(amps[arr_cur_index]);
+        Serial.print(F("\t")); // tab
+        Serial.print("Time = ");
+        Serial.print(time_Voltammaogram[arr_cur_index]);
+        Serial.print(F("\t")); // tab
+        Serial.print("TIA_BIAS[bias_setting] = ");
+        Serial.print(TIA_BIAS[bias_setting]);
+        Serial.print(F("\t")); // tab
+        Serial.println();
+        Serial.print("TIA_GAIN[lmpGain - 1] = ");
+        Serial.print(TIA_GAIN[lmpGain - 1]);
+        Serial.print(F("\t")); // tab
+        Serial.println();
+
+        Serial.println("**************END CA POINT*****************");
+      }
+
+      // if (print_output_to_serial)
+      if (false)
+      {
+        Serial.print("Volts = ");
+        Serial.print(volts[arr_cur_index]);
+        Serial.print(F("\t")); // tab
+        Serial.print("Amps = ");
+        Serial.print(amps[arr_cur_index]);
+        Serial.print(F("\t")); // tab
+        Serial.print("Time = ");
+        Serial.print(time_Voltammaogram[arr_cur_index]);
+        Serial.print(F("\t")); // tab
         Serial.println();
       }
 
       arr_cur_index++;
-      if (fs > 10)
-      {                              // time between points is over 10 ms, we can blink LED for 10 ms
-        pulseLED_on_off(LEDPIN, 10); // signify start of a new data point
-        delay(fs - 10 - 1);          //the -1 is for adjusting for a slight offset; 10 is for the LED blink time
-      }
-      else if (fs < 10)
-      {                             // time between points is under 10 ms, we can blink LED for 1 ms
-        pulseLED_on_off(LEDPIN, 1); // signify start of a new data point
-        delay(fs - 1 - 1);          //the -1 is for adjusting for a slight offset; 1 is for the LED blink time
-      }
+      delay(fs - 1);
     }
-
-    // Serial.println();
-    // Serial.println();
+    digitalWrite(LEDPIN, HIGH); // off at end of sweep
   }
 
   arr_cur_index = 0;
@@ -1999,8 +2017,8 @@ void runNPVandPrintToSerial()
 {
 
   //##############################NORMAL PULSE VOLTAMMETRY##############################
-  LMPgain = 7;
-  runNPV(LMPgain, -200, 500, 10, 50, 200, 500, 6, true);
+  LMPgainGLOBAL = 7;
+  runNPV(LMPgainGLOBAL, -200, 500, 10, 50, 200, 500, 6, true);
   // Run Normal Pulse Voltammetry with gain 350000, -200 to + 500 mV, 10 mV step, 50 microsecond width,
   //  200 microsecond period, 500 microsecond quiet time, range micro amps) // micro or milli???
 
@@ -2343,11 +2361,11 @@ void handle_websocket_text(uint8_t *payload)
     {
       Serial.println("change_lmpGain_to called");
       int m_new_lmpGain = m_JSONdoc_from_payload["change_lmpGain_to"];
-      LMPgain = m_new_lmpGain;
+      LMPgainGLOBAL = m_new_lmpGain;
       if (Sweep_Mode == CTLPANEL)
       {
-        Serial.println(LMPgain);
-        pStat.setGain(LMPgain);
+        Serial.println(LMPgainGLOBAL);
+        pStat.setGain(LMPgainGLOBAL);
       }
     }
     // change_control_panel_is_active_to
@@ -2750,6 +2768,7 @@ void loop()
     // void runNPV(uint8_t lmpGain, int16_t startV, int16_t endV,
     //         int8_t pulseAmp, uint32_t pulse_width, uint32_t pulse_period,
     //         uint32_t quietTime, uint8_t range, bool setToZero)
+    LMPgainGLOBAL = sweep_param_lmpGain;
     runNPV(sweep_param_lmpGain, sweep_param_startV_NPV, sweep_param_endV_NPV,
            sweep_param_pulseAmp_NPV, sweep_param_width_NPV, sweep_param_period_NPV,
            sweep_param_quietTime_NPV, 1, sweep_param_setToZero);
@@ -2760,6 +2779,7 @@ void loop()
   }
   else if (Sweep_Mode == CV)
   {
+    LMPgainGLOBAL = sweep_param_lmpGain;
     runCV(sweep_param_lmpGain, sweep_param_cycles_CV, sweep_param_startV_CV,
           sweep_param_endV_CV, sweep_param_vertex1_CV, sweep_param_vertex2_CV, sweep_param_stepV_CV,
           sweep_param_rate_CV, sweep_param_setToZero);
@@ -2770,6 +2790,8 @@ void loop()
   }
   else if (Sweep_Mode == SQV)
   {
+    LMPgainGLOBAL = sweep_param_lmpGain;
+
     runSWV(sweep_param_lmpGain, sweep_param_startV_SWV, sweep_param_endV_SWV,
            sweep_param_pulseAmp_SWV, sweep_param_stepV_SWV, sweep_param_freq_SWV, sweep_param_setToZero);
     writeVoltsCurrentArraytoFile();
@@ -2779,6 +2801,7 @@ void loop()
   }
   else if (Sweep_Mode == CA)
   {
+    LMPgainGLOBAL = sweep_param_lmpGain;
     runAmp(sweep_param_lmpGain, sweep_param_pre_stepV_CA, sweep_param_quietTime_CA,
            sweep_param_V1_CA, sweep_param_t1_CA, sweep_param_V2_CA, sweep_param_t2_CA,
            sweep_param_samples_CA, 1, sweep_param_setToZero);
@@ -2789,6 +2812,8 @@ void loop()
   }
   else if (Sweep_Mode == DCBIAS)
   {
+    LMPgainGLOBAL = sweep_param_lmpGain;
+
     testNoiseAtABiasPoint(sweep_param_biasV_noisetest, sweep_param_numPoints_noisetest,
                           sweep_param_delayTime_ms_noisetest);
     writeVoltsCurrentArraytoFile();
@@ -2798,6 +2823,8 @@ void loop()
   }
   else if (Sweep_Mode == IV)
   {
+    LMPgainGLOBAL = sweep_param_lmpGain;
+
     testIV(sweep_param_startV_IV, sweep_param_endV_IV, sweep_param_numPoints_IV,
            sweep_param_delayTime_ms_IV);
     writeVoltsCurrentArraytoFile();
@@ -2807,19 +2834,24 @@ void loop()
   }
   else if (Sweep_Mode == CAL)
   {
+    LMPgainGLOBAL = sweep_param_lmpGain;
+
     calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
   }
   else if (Sweep_Mode == CTLPANEL)
   {
+
+    pStat.setGain(LMPgainGLOBAL);
+
     delay(sweep_param_delayTime_ms_control_panel);
     // read adc and convert to current:
     analog_read_avg_bits_temp = (float)analog_read_avg(num_adc_readings_to_average_control_panel, LMP);
     v1_temp = (3.3 / 255.0) * (1 / (2.0 * b_coeff)) * analog_read_avg_bits_temp - (a_coeff / (2.0 * b_coeff)) * (3.3 / 255.0); // LMP is wired to Vout of the LMP91000
     v1_temp = v1_temp * 1000.0;
-    v2_temp = dacVout * .5;                                                          //the zero of the internal transimpedance amplifier
-    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgain - 1]) * pow(10, 6); //scales to uA
+    v2_temp = dacVout * .5;                                                                //the zero of the internal transimpedance amplifier
+    amps_temp = (((v1_temp - v2_temp) / 1000) / TIA_GAIN[LMPgainGLOBAL - 1]) * pow(10, 6); //scales to uA
     // create json string to send to broswer:
     temp_json_string = "{\"amps\":";
     temp_json_string += String(amps_temp, DEC);

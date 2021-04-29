@@ -7,6 +7,10 @@ var button;
 var canvas;
 var context;
 var maxDataPoints = 100;
+var sum = 0;
+var avg_current = 0;
+var std_dev_current =0;
+var total_number_of_points_recieved_so_far = 0;
 
 // initialize plotly plot
 
@@ -133,7 +137,7 @@ function onClose(evt) {
 function onMessage(evt) {
 
     // Print out our received message
-   // console.log("Received: " + evt.data);
+    // console.log("Received: " + evt.data);
     var m_json_obj = JSON.parse(evt.data);
     // console.log(m_json_obj);
     if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
@@ -179,7 +183,11 @@ function onMessage(evt) {
         trace_scope_voltage.y.push(m_voltage_point);
         var data_IVvsTime_scope = [trace_scope_current, trace_scope_voltage];
         Plotly.newPlot('plotly-scope-2yaxis', data_IVvsTime_scope, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
-
+        total_number_of_points_recieved_so_far++;
+        update_average_current();
+        // if (Number.isInteger(total_number_of_points_recieved_so_far/100)) { // update every 100 points 
+        //     update_average_current();
+        // };
     };
 
 
@@ -323,3 +331,39 @@ function addData(label, data) {
     dataPlot.data.datasets[0].data.push(data);
     dataPlot.update();
 }
+
+
+// PSUEDO CODE:
+
+function update_average_current() {
+    avg_current = 0;
+    sum = 0;
+    // trace_scope_current.y = [2,3,4,1,...]
+    trace_scope_current.y.forEach(add_item_to_sum);
+
+    avg_current = (1 / trace_scope_current.y.length) * sum
+    document.getElementById("AVG_current_ID").innerHTML = avg_current;
+    // console.log("updated avg current is =",avg_current);
+
+    // now calculate standard deviatoin:
+    sum=0;
+    trace_scope_current.y.forEach(add_difference_between_item_and_average_squared_to_sum);
+    std_dev_current=Math.sqrt(sum/trace_scope_current.y.length);
+    document.getElementById("STD_DEV_current_ID").innerHTML = std_dev_current;
+
+
+}
+
+function add_item_to_sum(item) {
+    sum += item;
+}
+
+function add_difference_between_item_and_average_squared_to_sum(item) {
+    sum += (avg_current-item)*(avg_current-item);
+}
+
+
+
+
+
+
