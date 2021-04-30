@@ -264,7 +264,7 @@ void sendVoltammogramWebsocketJSON()
       voltage_array_string += ",";
     }
 
-    time_array_string += time_Voltammaogram[i];
+    time_array_string += (time_Voltammaogram[i] - time_Voltammaogram[0]); // normalize to start of sweep time
     if (i != (number_of_valid_points_in_volts_amps_array - 1))
     {
       time_array_string += ",";
@@ -619,8 +619,8 @@ void writeVoltsCurrentArraytoFile()
     file.print(amps[i], DEC);
     file.print(F("\t")); // tab
     file.print(volts[i] / 1e3, DEC);
-    file.print(F("\t")); // tab
-    file.println(time_Voltammaogram[i]);
+    file.print(F("\t"));                                         // tab
+    file.println(time_Voltammaogram[i] - time_Voltammaogram[0]); // normalize to start of sweep
   }
   file.close();
 }
@@ -644,6 +644,81 @@ void readFileAndPrintToSerial()
   }
 
   file2.close();
+}
+
+void writeCalFile()
+{
+  File m_cal_file_to_write_name = SPIFFS.open("/calibration.JSON", FILE_WRITE);
+
+  if (!m_cal_file_to_write_name)
+  {
+    Serial.println("There was an error opening the file for writing");
+    return;
+  }
+
+  String m_calibration_string_to_write_JSON = "";
+  m_calibration_string_to_write_JSON += "{\"acoeff\":";
+  m_calibration_string_to_write_JSON += a_coeff;
+  m_calibration_string_to_write_JSON += ",\"bcoeff\":";
+  m_calibration_string_to_write_JSON += b_coeff;
+  m_calibration_string_to_write_JSON += "}";
+
+  Serial.println("Writing this JSON string to cal file:");
+  Serial.println(m_calibration_string_to_write_JSON);
+
+  if (!m_cal_file_to_write_name.println(m_calibration_string_to_write_JSON))
+  {
+    Serial.println("File write failed");
+  }
+  m_cal_file_to_write_name.close();
+}
+
+void readCalFile()
+{
+  File m_cal_file_name = SPIFFS.open("/calibration.JSON");
+
+  if (!m_cal_file_name)
+  {
+    Serial.println("Failed to open cal file file for reading");
+    return;
+  }
+
+  if (!SPIFFS.exists("/calibration.JSON"))
+  {
+    Serial.println("calibration.JSON does not exist, creating one.");
+    writeCalFile();
+    return;
+  }
+
+  // Serial.println("Cal file opened.");
+  // Serial.println("File Content:");
+
+  String secretsJson;
+  while (m_cal_file_name.available()) // read json from file
+  {
+    secretsJson += char(m_cal_file_name.read());
+  } //end while
+
+  // Serial.println("Parsing cal file: ");
+  // Serial.println(secretsJson);
+  StaticJsonDocument<1000> m_JSONdoc_from_payload;
+  DeserializationError m_error = deserializeJson(m_JSONdoc_from_payload, secretsJson); // m_JSONdoc is now a json object
+  if (m_error)
+  {
+    Serial.println("deserializeJson() failed with code ");
+    Serial.println(m_error.c_str());
+  }
+  //JsonObject m_JsonObject_from_payload = m_JSONdoc_from_payload.as<JsonObject>();
+  a_coeff = m_JSONdoc_from_payload["acoeff"];
+  b_coeff = m_JSONdoc_from_payload["bcoeff"];
+  Serial.println("Cal file loaded with these parameters:");
+  Serial.print("a_coeff = ");
+  Serial.print(a_coeff);
+  Serial.print(F("\t")); // tab
+  Serial.print("b_coeff = ");
+  Serial.println(b_coeff);
+
+  m_cal_file_name.close();
 }
 
 void listDir(const char *dirname, uint8_t levels)
@@ -2758,11 +2833,16 @@ void setup()
   m_websocketserver.begin();
   m_websocketserver.onEvent(onWebSocketEvent); // Start WebSocket server and assign callback
 
+  //############################# READ CALIBRATION FILE IF THERE IS ONE #####################################
+
+  // SPIFFS.remove("/calibration.JSON"); // manual delete to test code.
+  readCalFile();
+
   //############################# BLINK LED TO SHOW SETUP COMPLETE #####################################
-  blinkLED(LEDPIN, 15, 1000); // blink LED to show setup is complete, also give settle time to LMP91000
-  Serial.println(F("Setup complete."));
   Serial.print("Heap free memory (in bytes)= ");
   Serial.println(ESP.getFreeHeap());
+  Serial.println(F("Setup complete."));
+  blinkLED(LEDPIN, 15, 1000); // blink LED to show setup is complete, also give settle time to LMP91000
 }
 
 void loop()
@@ -2868,6 +2948,7 @@ void loop()
     calibrateDACandADCs(sweep_param_delayTime_ms_CAL);
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
+    writeCalFile();
   }
   else if (Sweep_Mode == CTLPANEL)
   {
@@ -2899,8 +2980,8 @@ void loop()
   else if (Sweep_Mode == MISC_MODE) // list directory to serial
   {
     listDir("/", 3);
-    delay(250);
-    sendVoltammogramWebsocketJSON();
+    //    delay(250);
+    // sendVoltammogramWebsocketJSON();
     // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);

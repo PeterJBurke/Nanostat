@@ -201,6 +201,11 @@ function onMessage(evt) {
         };
 
         Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+        // Since data is fresh, might as well force a download for user....
+        // if (download button is on) // not yet impelmented
+        // xxxyyyzzz       <li><a href="downloadfile">Download</a></li>
+        window.open("http://nanostat.local/downloadfile");
+
     };
 
 
