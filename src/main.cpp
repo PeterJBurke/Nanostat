@@ -891,16 +891,16 @@ void process()
   yield();
   delay(10);
   // Reset flag/timer
-  // if (restartSystem)
-  // {
-  //   if (restartSystem + 1000 < millis())
-  //   {
-  //     ESP.restart();
-  //   } //end if
-  // }   //end if
+  if (restartSystem)
+  {
+    if (restartSystem + 1000 < millis())
+    {
+      ESP.restart();
+    } //end if
+  }   //end if
 }
 
-void junk(AsyncWebServerRequest *request)
+void handleGetSavSecreteJson(AsyncWebServerRequest *request)
 {
   String message;
 
@@ -1019,50 +1019,10 @@ void junk(AsyncWebServerRequest *request)
     Serial.println("File write failed");
   }
   m_ssid_pwd_file_to_write_name.close();
+
+  request->send(200, "text/html", "<h1>Restarting .....</h1>");
+  restartSystem = millis();
 }
-
-// void handleGetSavSecreteJson(AsyncWebServerRequest *request)
-// {
-//   AsyncWebParameter *p;
-//   String jsonString = "{";
-//   jsonString.concat("\"ssid1\":\"");
-//   p = request->getParam("ssid1", true);
-//   jsonString.concat(p->value());
-//   jsonString.concat("\",");
-
-//   jsonString.concat("\"pass1\":\"");
-//   p = request->getParam("pass1", true);
-//   jsonString.concat(p->value().c_str());
-//   jsonString.concat("\",");
-
-//   jsonString.concat("\"ssid2\":\"");
-//   p = request->getParam("ssid2", true);
-//   jsonString.concat(p->value().c_str());
-//   jsonString.concat("\",");
-
-//   jsonString.concat("\"pass2\":\"");
-//   p = request->getParam("pass2", true);
-//   jsonString.concat(p->value().c_str());
-//   jsonString.concat("\",");
-
-//   jsonString.concat("\"ssid3\":\"");
-//   p = request->getParam("ssid3", true);
-//   jsonString.concat(p->value().c_str());
-//   jsonString.concat("\",");
-
-//   jsonString.concat("\"pass3\":\"");
-//   p = request->getParam("pass3", true);
-//   jsonString.concat(p->value().c_str());
-
-//   jsonString.concat("\"}");
-
-//   File file = SPIFFS.open(SECRETS_PATH, "w");
-//   file.print(jsonString);
-//   file.close();
-
-//   request->send(200, "text/html", "<h1>Restarting .....</h1>");
-//   restartSystem = millis();
-// }
 
 void runWifiPortal()
 {
@@ -1087,7 +1047,7 @@ void runWifiPortal()
   // });
 
   m_wifitools_server->on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
-    junk(request);
+    handleGetSavSecreteJson(request);
   });
 
   //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
@@ -3191,7 +3151,7 @@ void configureserver()
   // Send a POST request to <IP>/actionpage with a form field message set to <message>
   server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
     String message;
-    Serial.println("server.on bla bla bla called");
+    Serial.println("Wifi credentials saved. Restarting....");
 
     //**********************************************
 
