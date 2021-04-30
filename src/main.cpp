@@ -14,6 +14,7 @@ bool print_output_to_serial = false; // prints verbose output to serial
 #include "wifi_credentials.h"
 #include "LMP91000.h"
 #include "WebSocketsServer.h"
+#include "DNSServer.h"
 
 // Microcontroller specific info (pinouts, Vcc, etc)
 const uint16_t opVolt = 3300;                 //3300 mV
@@ -171,14 +172,14 @@ float RFB = 1e6; // feedback resistor if using external feedback resistor
 LMP91000 pStat = LMP91000();
 
 // create webserver object for website:
-AsyncWebServer server(80); // 
+AsyncWebServer server(80); //
 
 // Websockets:
 // Tutorial: https://www.youtube.com/watch?v=ZbX-l1Dl4N4&list=PL4sSjlE6rMIlvrllrtOVSBW8WhhMC_oI-&index=8
 // Tutorial: https://www.youtube.com/watch?v=mkXsmCgvy0k
 // Code tutorial: https://shawnhymel.com/1882/how-to-create-a-web-server-with-websockets-using-an-esp32-in-arduino/
 // Github: https://github.com/Links2004/arduinoWebSockets
- WebSocketsServer m_websocketserver = WebSocketsServer(81); 
+WebSocketsServer m_websocketserver = WebSocketsServer(81);
 String m_websocketserver_text_to_send = "";
 String m_websocketserver_text_to_send_2 = "";
 int m_time_sent_websocketserver_text = millis();
@@ -189,14 +190,77 @@ float m_websocket_send_rate = 1.0; // Hz, how often to send a test point to webs
 bool m_send_websocket_test_data_in_loop = false;
 
 //WifiTool object
+int WAIT_FOR_WIFI_TIME_OUT = 6000;
 const char *PARAM_MESSAGE = "message"; // message server receives from client
+std::unique_ptr<DNSServer> dnsServer;
+std::unique_ptr<AsyncWebServer> m_wifitools_server;
+const byte DNS_PORT = 53;
+bool restartSystem = false;
 
 // Control panel mode settings: (Control panel mode is browser page like a front panel of instrument)
 uint8_t LMPgain_control_panel = 6; // Feedback resistor of TIA.
 int num_adc_readings_to_average_control_panel = 1;
 int sweep_param_delayTime_ms_control_panel = 50;
 int cell_voltage_control_panel = 100;
+
 //******************* END VARIABLE DECLARATIONS**************************8
+
+boolean connectAttempt(String ssid, String password)
+{
+  boolean isWiFiConnected = false;
+  // set mode
+  WiFi.mode(WIFI_STA);
+  // if no SSID is passed we attempt last connected wifi (from WIFI object)
+  if (ssid == "")
+  {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      WiFi.begin();
+    }
+  }
+  else
+  {
+    int ssidSize = ssid.length() + 1;
+    int passwordSize = password.length() + 1;
+    char ssidArray[ssidSize];
+    char passwordArray[passwordSize];
+    ssid.toCharArray(ssidArray, ssidSize);
+    password.toCharArray(passwordArray, passwordSize);
+    WiFi.begin(ssidArray, passwordArray);
+  } //end if
+
+  if (ssid == "")
+  {
+    Serial.print(F("Connecting Wifi default SSID ..."));
+  }
+  else if (ssid != "")
+  {
+    Serial.print(F("Connecting Wifi SSID = "));
+    Serial.print(ssid);
+    Serial.print(F(" ..."));
+  }
+  unsigned long now = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() < now + WAIT_FOR_WIFI_TIME_OUT)
+  {
+    Serial.print(".");
+    delay(250);
+  }
+  // Serial.print(F("\nStatus:"));
+  // Serial.println(WiFi.status());
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println(F("\nWiFi connected"));
+    Serial.println(F("IP address: "));
+    Serial.println(WiFi.localIP());
+    Serial.print(F("ssid: "));
+    Serial.println(WiFi.SSID());
+    //Serial.print(F("password: "));
+    //Serial.println(WiFi.psk());
+    isWiFiConnected = true;
+  }
+
+  return isWiFiConnected;
+}
 
 void sendTimeOverWebsocketJSON() // sends current time as JSON object to websocket
 {
@@ -719,6 +783,413 @@ void readCalFile()
   Serial.println(b_coeff);
 
   m_cal_file_name.close();
+}
+
+bool readSSIDPWDfile(String m_pwd_filename_to_read)
+{
+  File m_pwd_file_to_read = SPIFFS.open(m_pwd_filename_to_read);
+
+  if (!m_pwd_file_to_read)
+  {
+    Serial.println("Failed to open PWD file file for reading");
+    return false;
+  }
+
+  if (!SPIFFS.exists(m_pwd_filename_to_read))
+  {
+    Serial.print(m_pwd_filename_to_read);
+    Serial.println("  does not exist.");
+    return false;
+  }
+
+  String m_pwd_file_string;
+  while (m_pwd_file_to_read.available()) // read json from file
+  {
+    m_pwd_file_string += char(m_pwd_file_to_read.read());
+  } //end while
+  // Serial.print("m_pwd_file_string = ");
+  // Serial.println(m_pwd_file_string);
+  m_pwd_file_to_read.close();
+
+  //parse
+  StaticJsonDocument<1000> m_JSONdoc_from_pwd_file;
+  DeserializationError m_error = deserializeJson(m_JSONdoc_from_pwd_file, m_pwd_file_string); // m_JSONdoc is now a json object
+  if (m_error)
+  {
+    Serial.println("deserializeJson() failed with code ");
+    Serial.println(m_error.c_str());
+  }
+  // m_JSONdoc_from_pwd_file is the JSON object now we can use it.
+  String m_SSID1_name = m_JSONdoc_from_pwd_file["SSID1"];
+  String m_SSID2_name = m_JSONdoc_from_pwd_file["SSID2"];
+  String m_SSID3_name = m_JSONdoc_from_pwd_file["SSID3"];
+  String m_PWD1_name = m_JSONdoc_from_pwd_file["PWD1"];
+  String m_PWD2_name = m_JSONdoc_from_pwd_file["PWD1"];
+  String m_PWD3_name = m_JSONdoc_from_pwd_file["PWD1"];
+  // Serial.print("m_SSID1_name = ");
+  // Serial.print(m_SSID1_name);
+  // Serial.print(F("\t")); // tab
+  // Serial.print("m_PWD1_name = ");
+  // Serial.print(F("\t")); // tab
+  // Serial.print("m_SSID2_name = ");
+  // Serial.print(m_SSID2_name);
+  // Serial.print(F("\t")); // tab
+  // Serial.print("m_PWD2_name = ");
+  // Serial.print(m_PWD2_name);
+  // Serial.print(F("\t")); // tab
+  // Serial.print("m_SSID3_name = ");
+  // Serial.print(m_SSID3_name);
+  // Serial.print(F("\t")); // tab
+  // Serial.print("m_PWD3_name = ");
+  // Serial.println(m_PWD3_name);
+
+  // Try connecting:
+  //****************************8
+  if (connectAttempt(m_SSID1_name, m_PWD1_name))
+  {
+    return true;
+  }
+  Serial.println("Failed to connect.");
+  if (connectAttempt(m_SSID2_name, m_PWD2_name))
+  {
+    return true;
+  }
+  Serial.println("Failed to connect.");
+
+  if (connectAttempt(m_SSID3_name, m_PWD3_name))
+  {
+    return true;
+  }
+  Serial.println("Failed to connect.");
+
+  return false;
+}
+
+void setUpAPService()
+{
+  Serial.println(F("Starting Access Point server."));
+
+  // DNSServer dnsServer;
+  // dnsServer.reset(new DNSServer());
+  WiFi.mode(WIFI_AP);
+  // WiFi.softAPConfig(IPAddress(172, 217, 28, 1), IPAddress(172, 217, 28, 1), IPAddress(255, 255, 255, 0));
+  WiFi.softAP("NanoStatAP");
+  delay(500);
+
+  /* Setup the DNS server redirecting all the domains to the apIP */
+  // dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
+  // dnsServer->start(DNS_PORT, "*", IPAddress(172, 217, 28, 1));
+
+  //Serial.println("dns server config done");
+}
+
+void process()
+{
+  ///DNS
+  // dnsServer->processNextRequest();
+  //yield
+  yield();
+  delay(10);
+  // Reset flag/timer
+  // if (restartSystem)
+  // {
+  //   if (restartSystem + 1000 < millis())
+  //   {
+  //     ESP.restart();
+  //   } //end if
+  // }   //end if
+}
+
+void junk(AsyncWebServerRequest *request)
+{
+  String message;
+
+  String m_SSID1_name;
+  String m_SSID2_name;
+  String m_SSID3_name;
+  String m_PWD1_name;
+  String m_PWD2_name;
+  String m_PWD3_name;
+  String m_temp_string;
+  int params = request->params();
+  for (int i = 0; i < params; i++)
+  {
+    AsyncWebParameter *p = request->getParam(i);
+    if (p->isPost())
+    {
+      Serial.print(i);
+      Serial.print(F("\t"));
+      Serial.print(p->name().c_str());
+      Serial.print(F("\t"));
+      Serial.println(p->value().c_str());
+      m_temp_string = p->name().c_str();
+      if (m_temp_string == "ssid1")
+      {
+        m_SSID1_name = p->value().c_str();
+      }
+      else if (m_temp_string == "pass1")
+      {
+        m_PWD1_name = p->value().c_str();
+      }
+      else if (m_temp_string == "ssid2")
+      {
+        m_SSID2_name = p->value().c_str();
+      }
+      else if (m_temp_string == "pass2")
+      {
+        m_PWD2_name = p->value().c_str();
+      }
+      else if (m_temp_string == "ssid3")
+      {
+        m_SSID3_name = p->value().c_str();
+      }
+      else if (m_temp_string == "pass3")
+      {
+        m_PWD3_name = p->value().c_str();
+      }
+    }
+  }
+  if (request->hasParam(PARAM_MESSAGE, true))
+  {
+    message = request->getParam(PARAM_MESSAGE, true)->value();
+    Serial.println(message);
+  }
+  else
+  {
+    message = "No message sent";
+  }
+  request->send(200, "text/HTML", "bla bla bla bla bla xyz xyz xyz xyz xyz ");
+
+  // {"SSID1":"myssid1xyz","PWD1":"mypwd1xyz",
+  //     "SSID2":"myssid2xyz","PWD2":"mypwd2xyz",
+  //     "SSID3":"myssid3xyz","PWD3":"mypwd3xyz"}
+
+  String SSID_and_pwd_JSON = "";
+  SSID_and_pwd_JSON += "{\"SSID1\":\"";
+  SSID_and_pwd_JSON += m_SSID1_name;
+  SSID_and_pwd_JSON += "\",\"PWD1\":\"";
+  SSID_and_pwd_JSON += m_PWD1_name;
+
+  SSID_and_pwd_JSON += "\",\"SSID2\":\"";
+  SSID_and_pwd_JSON += m_SSID2_name;
+  SSID_and_pwd_JSON += "\",\"PWD2\":\"";
+  SSID_and_pwd_JSON += m_PWD2_name;
+
+  SSID_and_pwd_JSON += "\",\"SSID3\":\"";
+  SSID_and_pwd_JSON += m_SSID3_name;
+  SSID_and_pwd_JSON += "\",\"PWD3\":\"";
+  SSID_and_pwd_JSON += m_PWD3_name;
+
+  SSID_and_pwd_JSON += "\"}";
+
+  Serial.println("JSON string to write to file = ");
+  Serial.println(SSID_and_pwd_JSON);
+
+  Serial.print("m_SSID1_name = ");
+  Serial.print(m_SSID1_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_PWD1_name = ");
+  Serial.print(m_PWD1_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_SSID2_name = ");
+  Serial.print(m_SSID2_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_PWD2_name = ");
+  Serial.print(m_PWD2_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_SSID3_name = ");
+  Serial.print(m_SSID3_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_PWD3_name = ");
+  Serial.println(m_PWD3_name);
+
+  File m_ssid_pwd_file_to_write_name = SPIFFS.open("/credentials.JSON", FILE_WRITE);
+
+  if (!m_ssid_pwd_file_to_write_name)
+  {
+    Serial.println("There was an error opening the pwd/ssid file for writing");
+    return;
+  }
+
+  Serial.println("Writing this JSON string to pwd/ssid file:");
+  Serial.println(SSID_and_pwd_JSON);
+
+  if (!m_ssid_pwd_file_to_write_name.println(SSID_and_pwd_JSON))
+  {
+    Serial.println("File write failed");
+  }
+  m_ssid_pwd_file_to_write_name.close();
+}
+
+// void handleGetSavSecreteJson(AsyncWebServerRequest *request)
+// {
+//   AsyncWebParameter *p;
+//   String jsonString = "{";
+//   jsonString.concat("\"ssid1\":\"");
+//   p = request->getParam("ssid1", true);
+//   jsonString.concat(p->value());
+//   jsonString.concat("\",");
+
+//   jsonString.concat("\"pass1\":\"");
+//   p = request->getParam("pass1", true);
+//   jsonString.concat(p->value().c_str());
+//   jsonString.concat("\",");
+
+//   jsonString.concat("\"ssid2\":\"");
+//   p = request->getParam("ssid2", true);
+//   jsonString.concat(p->value().c_str());
+//   jsonString.concat("\",");
+
+//   jsonString.concat("\"pass2\":\"");
+//   p = request->getParam("pass2", true);
+//   jsonString.concat(p->value().c_str());
+//   jsonString.concat("\",");
+
+//   jsonString.concat("\"ssid3\":\"");
+//   p = request->getParam("ssid3", true);
+//   jsonString.concat(p->value().c_str());
+//   jsonString.concat("\",");
+
+//   jsonString.concat("\"pass3\":\"");
+//   p = request->getParam("pass3", true);
+//   jsonString.concat(p->value().c_str());
+
+//   jsonString.concat("\"}");
+
+//   File file = SPIFFS.open(SECRETS_PATH, "w");
+//   file.print(jsonString);
+//   file.close();
+
+//   request->send(200, "text/html", "<h1>Restarting .....</h1>");
+//   restartSystem = millis();
+// }
+
+void runWifiPortal()
+{
+
+  m_wifitools_server.reset(new AsyncWebServer(80));
+
+  IPAddress myIP;
+  myIP = WiFi.softAPIP();
+  // myIP = WiFi.localIP();
+  Serial.print(F("AP IP address: "));
+  Serial.println(myIP);
+
+  // Need to tell server to accept packets from any source with any header via http methods GET, PUT:
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, PUT");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
+
+  m_wifitools_server->serveStatic("/", SPIFFS, "/").setDefaultFile("wifi_index.html");
+
+  // m_wifitools_server->on("/saveSecret/", HTTP_ANY, [&, this](AsyncWebServerRequest *request) {
+  //   handleGetSavSecreteJson(request);
+  // });
+
+  m_wifitools_server->on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
+    junk(request);
+  });
+
+  //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
+
+  // m_wifitools_server->on("/saveSecret/", HTTP_ANY, [&, this](AsyncWebServerRequest *request) {
+  //   handleGetSavSecreteJson(request);
+  // });
+
+  // m_wifitools_server->on("/list", HTTP_ANY, [&, this](AsyncWebServerRequest *request) {
+  //   handleFileList(request);
+  // });
+
+  // // spiff delete
+  // m_wifitools_server->on("/edit", HTTP_DELETE, [&, this](AsyncWebServerRequest *request) {
+  //   handleFileDelete(request);
+  // });
+
+  // // spiff upload
+  // m_wifitools_server->on(
+  //     "/edit", HTTP_POST, [&, this](AsyncWebServerRequest *request) {},
+  //     [&, this](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+  //               size_t len, bool final) {
+  //       handleUpload(request, filename, "/wifi_spiffs_admin.html", index, data, len, final);
+  //     });
+
+  // m_wifitools_server->on("/wifiScan.json", HTTP_GET, [&, this](AsyncWebServerRequest *request) {
+  //   getWifiScanJson(request);
+  // });
+
+  // // Simple Firmware Update Form
+  // m_wifitools_server->on("/update", HTTP_GET, [&, this](AsyncWebServerRequest *request) {
+  //   request->send(SPIFFS, "/wifi_upload.html");
+  // });
+  // m_wifitools_server->on(
+  //     "/update", HTTP_POST, [&, this](AsyncWebServerRequest *request) {
+  //       uint8_t isSuccess = !Update.hasError();
+  //       if (isSuccess)
+  //         restartSystem = millis();
+  //       AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", isSuccess ? "OK" : "FAIL");
+  //       response->addHeader("Connection", "close");
+  //       request->send(response); },
+  //     [&, this](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+  //       if (!index)
+  //       {
+  //         Serial.printf("Update Start: %s\n", filename.c_str());
+
+  //         if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+  //         {
+  //           Update.printError(Serial);
+  //         }
+  //       }
+  //       if (!Update.hasError())
+  //       {
+  //         if (Update.write(data, len) != len)
+  //         {
+  //           Update.printError(Serial);
+  //         }
+  //       }
+  //       if (final)
+  //       {
+  //         if (Update.end(true))
+  //         {
+  //           Serial.printf("Update Success: %uB\n", index + len);
+  //         }
+  //         else
+  //         {
+  //           Update.printError(Serial);
+  //         }
+  //       }
+  //     });
+
+  // m_wifitools_server->on("/restart", HTTP_GET, [&, this](AsyncWebServerRequest *request) {
+  //   request->send(200, "text/html", "OK");
+  //   restartSystem = millis();
+  // });
+
+  // m_wifitools_server->onNotFound([](AsyncWebServerRequest *request) {
+  //   Serial.println("handle not found");
+  //   request->send(404);
+  // });
+
+  // m_wifitools_server->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); //only when requested from AP
+
+  //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
+
+  Serial.println(F("HTTP server started"));
+  m_wifitools_server->begin();
+  if (!MDNS.begin("nanostat")) // see https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
+  {
+    Serial.println("Error setting up MDNS responder !");
+    while (1)
+      ;
+    {
+      delay(1000);
+    }
+  }
+  Serial.println("MDNS started.");
+  // MDNS.begin("nanostat");
+  while (1) // loop until user hits restart... Once credentials saved, won't end up here again unless wifi not connecting!
+  {
+    process();
+  }
 }
 
 void listDir(const char *dirname, uint8_t levels)
@@ -2767,8 +3238,6 @@ void configureserver()
   server.begin();
 }
 
-
-
 void setup()
 {
   // blinky pin for diagnostic:
@@ -2798,17 +3267,56 @@ void setup()
   }
 
   //############################# STATIC WIFI #####################################
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASSWORD);
-  while (WiFi.waitForConnectResult() != WL_CONNECTED)
+
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin(SSID, PASSWORD);
+  // while (WiFi.waitForConnectResult() != WL_CONNECTED)
+  // {
+  //   Serial.println("Connected Failed! Rebooting...");
+  //   delay(1000);
+  //   ESP.restart();
+  // }
+  // Serial.println("Connected!");
+  // Serial.println("The local IP address is:");
+  // Serial.println(WiFi.localIP()); //print the local IP address
+
+  //#############################  WIFITOOL CUSTOMIZED #####################################
+
+  bool m_autoconnected_attempt_succeeded = false;
+  m_autoconnected_attempt_succeeded = connectAttempt("", ""); // uses SSID/PWD stored in ESP32 secret memory.....
+  // Serial.print("m_autoconnected_attempt_succeeded = ");
+  // Serial.println(m_autoconnected_attempt_succeeded);
+  if (!m_autoconnected_attempt_succeeded)
   {
-    Serial.println("Connected Failed! Rebooting...");
-    delay(1000);
-    ESP.restart();
+    // try SSID/PWD from file...
+    Serial.println("Failed to connect.");
+    String m_filenametopass = "/credentials.JSON";
+    m_autoconnected_attempt_succeeded = readSSIDPWDfile(m_filenametopass);
   }
-  Serial.println("Connected!");
-  Serial.println("The local IP address is:");
-  Serial.println(WiFi.localIP()); //print the local IP address
+  if (!m_autoconnected_attempt_succeeded)
+  {
+    // start AP server
+    // Serial.println("connect failed, starting AP server");
+    setUpAPService();
+    runWifiPortal();
+
+    // MDNS.begin("nanostat"); // see https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
+  }
+
+  // connectAttempt(SSID,PASSWORD); // uses SSID/PWD stored in ESP32 secret memory.....
+
+  //#############################  WIFITOOL #####################################
+
+  // wifiTool.begin(false);
+  // if (!wifiTool.wifiAutoConnect())
+  // {
+  //   Serial.println("fail to connect to wifi!!!!");
+  //   wifiTool.runApPortal();
+  // }
+
+  // Serial.println("wifitools called ");
+  // delete &wifiTool;
+  // delay(2000);
 
   //############################# DNS #####################################
   MDNS.begin("nanostat");

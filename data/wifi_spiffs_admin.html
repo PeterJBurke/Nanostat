@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>ESP8266 & ESP32 Management Portal - SPIFFS Admin </title>
+<script src='/jquery.min.js'></script> 
+</head>
+<body>
+<h1>ESP8266 & ESP32 Management Portal  - SPIFFS Admin</h1>
+<div id="filelist"></div>
+<div>
+
+	<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>
+	   <input type='file' name='update'>
+	   <input type='submit' value='Upload'>
+	</form>
+	<div id='prg'>progress: 0%</div>
+ </div>
+
+ 
+ <script>
+
+ $('form').submit(function(e){
+  e.preventDefault();
+  var form = $('#upload_form')[0];
+  var data = new FormData(form);
+   $.ajax({
+  url: '/edit',
+  type: 'POST',
+  data: data,
+  contentType: false,
+  processData:false,
+  xhr: function() {
+  var xhr = new window.XMLHttpRequest();
+  xhr.upload.addEventListener('progress', function(evt) {
+  if (evt.lengthComputable) {
+  var per = evt.loaded / evt.total;
+  $('#prg').html('progress: ' + Math.round(per*100) + '%');
+  }
+  }, false);
+  return xhr;
+  },
+  success:function(d, s) {
+  console.log('success!') 
+  getFileList();
+ },
+ error: function (a, b, c) {
+ }
+ });
+ });
+
+
+ function deleteFile(fileName) {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+	  //var obj =  JSON.parse();
+	  //console.log(this.responseText);
+	  getFileList();
+    }
+  };
+  if (confirm('Are you sure you want to delete the file ?')) {
+	  xhttp.open("DELETE", "/edit?file=/" + fileName, true);
+	  xhttp.send();
+  }
+ 
+	
+ }
+ 
+function getFileList() {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+	  var obj =  JSON.parse(this.responseText);
+	  
+	  if (obj.length) {
+		var htmlSrc = '<ul>';
+		for (var i=0; i< obj.length; i++) {
+			if(obj[i].type == 'file') {
+				htmlSrc += '<li>' + obj[i].name + ' <a href="#" onclick="deleteFile(\'' + obj[i].name + '\')">X</a></li>'; 
+			}
+		}
+		htmlSrc += '</ul>';
+		document.getElementById("filelist").innerHTML = htmlSrc;
+	  }
+	  console.log(obj);
+    }
+  };
+  xhttp.open("GET", "/list?dir=/", true);
+  xhttp.send();
+ }
+
+</script>
+<script> getFileList(); </script>
+</body>
+</html>
