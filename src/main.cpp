@@ -1024,6 +1024,56 @@ void handleGetSavSecreteJson(AsyncWebServerRequest *request)
   restartSystem = millis();
 }
 
+
+
+void handleFileList(AsyncWebServerRequest *request) {
+  Serial.println("handle fle list");
+  if (!request -> hasParam("dir")) {
+    request->send(500, "text/plain", "BAD ARGS");
+    return;
+  }
+
+  AsyncWebParameter* p = request->getParam("dir");
+  String path = p->value().c_str();
+  Serial.println("handleFileList: " + path);
+  String output = "[";
+
+  File root = SPIFFS.open("/", "r");
+  if (root.isDirectory()) {
+    Serial.println("here ??");
+    File file = root.openNextFile();
+    while (file) {
+      if (output != "[") {
+        output += ',';
+      }
+      output += "{\"type\":\"";
+      output += (file.isDirectory()) ? "dir" : "file";
+      output += "\",\"name\":\"";
+      output += String(file.name()).substring(1);
+      output += "\"}";
+      file = root.openNextFile();
+    }
+  }
+
+  path = String();
+  output += "]";
+  Serial.println(output);
+  request->send(200, "application/json", output);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void runWifiPortal()
 {
 
@@ -1049,6 +1099,11 @@ void runWifiPortal()
   m_wifitools_server->on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
     handleGetSavSecreteJson(request);
   });
+
+  m_wifitools_server->on("/list", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    handleFileList(request);
+  });
+
 
   //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
 
