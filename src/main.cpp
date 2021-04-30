@@ -171,14 +171,14 @@ float RFB = 1e6; // feedback resistor if using external feedback resistor
 LMP91000 pStat = LMP91000();
 
 // create webserver object for website:
-AsyncWebServer server(80); //
+AsyncWebServer server(80); // 
 
 // Websockets:
 // Tutorial: https://www.youtube.com/watch?v=ZbX-l1Dl4N4&list=PL4sSjlE6rMIlvrllrtOVSBW8WhhMC_oI-&index=8
 // Tutorial: https://www.youtube.com/watch?v=mkXsmCgvy0k
 // Code tutorial: https://shawnhymel.com/1882/how-to-create-a-web-server-with-websockets-using-an-esp32-in-arduino/
 // Github: https://github.com/Links2004/arduinoWebSockets
-WebSocketsServer m_websocketserver = WebSocketsServer(81);
+ WebSocketsServer m_websocketserver = WebSocketsServer(81); 
 String m_websocketserver_text_to_send = "";
 String m_websocketserver_text_to_send_2 = "";
 int m_time_sent_websocketserver_text = millis();
@@ -2767,20 +2767,7 @@ void configureserver()
   server.begin();
 }
 
-// void configuresweepparamssever(){
-// // configures server to parse html post messages that allow the user to set the sweep parameters
-// // Sweep parameters (to be set by user through HTML form posts but defaults on initialization)
-// // int sweep_param_lmpGain=7; //  (index) gain setting for LMP91000
-// // int sweep_param_cycles=3;  //  (#)  number of times to run the scan
-// // int sweep_param_startV=0; //   (mV)  voltage to start the scan
-// // int sweep_param_endV=0; //     (mV)  voltage to stop the scan
-// // int sweep_param_vertex1=100;//  (mV)  edge of the scan
-// // int sweep_param_vertex2=-100; // (mV)  edge of the scan
-// // int sweep_param_stepV=5; // (mV)      how much to increment the voltage by
-// // int sweep_param_rate=100; // (mV/sec)       scanning rate
-// // bool sweep_param_setToZero=true;//   Boolean determining whether the bias potential of
 
-// }
 
 void setup()
 {
@@ -2827,9 +2814,12 @@ void setup()
   MDNS.begin("nanostat");
 
   //############################# WEBSERVER & WIFI #####################################
+
+  server.reset(); // try putting this in setup
   configureserver();
 
   //############################# WEBSOCKET #####################################
+
   m_websocketserver.begin();
   m_websocketserver.onEvent(onWebSocketEvent); // Start WebSocket server and assign callback
 
