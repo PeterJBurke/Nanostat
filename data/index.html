@@ -1,108 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NanoStat
   </title>
-<!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
   <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
   <script type="text/javascript" src="websocketcode.js"></script>
   <script type="text/javascript" src="button_handle_JS.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <link rel="stylesheet" href="menubarstyle.css">
+  <!-- <link rel="stylesheet" href="menubarstyle.css"> -->
   <!-- <link rel="stylesheet" href="CSS-Reset.css"> -->
-
+  <!-- Google font: -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
 </head>
+
 
 <body>
 
-
-  <nav class="menu-bar">
-    <ul>
-      <li class="active"><a href="index.html">Sweep</a></li>
-      <li><a href="setup.html">Setup</a></li>
-      <li><a href="panel.html">Panel</a></li>
-      <li><a href="downloadfile">Download</a></li>
-      <li><a href="help.html">Help</a></li>
-      <li><a href="about.html">System</a></li>
-      <li><a href="about.html">About</a></li>
-    </ul>
-  </nav>
-  <header>
-    <center>
-      <h2>BurkeLab ESP32 Stat: <i>"NanoStat"</i></h2>
-      <p>Rev 3.5</p>
-    </center>
-  </header>
-
-  <p>Current sweep mode:
-  <div id="sweep_mode_id"> UNKNOWN</div>
-  </p>
-  <p><b>Please</b> <u>choose</u> from the following sweep <i>options</i>:</p>
-
-
-  <button onclick="on_Button_1_pressed()">CV!</button>
-  <button onclick="on_Button_2_pressed()">NPV!</button>
-  <button onclick="on_Button_3_pressed()">SWV!</button>
-  <button onclick="on_Button_4_pressed()">CA!</button>
-  <button onclick="on_Button_5_pressed()">DC!</button>
-  <button onclick="on_Button_6_pressed()">IV!</button>
-  <button onclick="on_Button_7_pressed()">Cal!</button>
-  <button onclick="on_Button_8_pressed()">Misc!</button>
-  <!-- <button onclick="on_Button_9_pressed()">9!</button>
-  <button onclick="on_Button_10_pressed()">10!</button> -->
-
-
-  <h3>Sweep modes:</h3>
-  <p>CV = Cyclic voltammetry.<br>
-    NPV = Normal pulsed voltammetry.<br>
-    SWV = Square wave voltammetry.<br>
-    CA = Chronoamperometry.<br>
-    DC = Fixed DC bias.<br>
-    IV = IV curve.<br>
-    Cal = calibrate ESP32Stat. </p>
-  <style>
-    table {
-      font-family: arial, sans-serif;
-      border-collapse: collapse;
-      width: 100%;
-    }
-
-    td,
-    th {
-      border: 1px solid #dddddd;
-      text-align: left;
-      padding: 8px;
-    }
-  </style>
-  <table>
-    <tr>
-      <th>
-        <div id="plotly-IV"></div>
-      </th>
-      <th>
-        <div id="plotly-IvsTime"></div>
-      </th>
-    </tr>
-
-  </table>
+  <!-- Navigation bar -->
+  <!-- https://www.youtube.com/watch?v=akXfF066MY0&list=PL4sSjlE6rMIk5lhQkXGwhPKR1DeIVJXyZ&index=2&t=306s -->
+  <div class="container">
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+    <!-- <nav class="navbar navbar-expand-md navbar-light"> -->
+      <!-- Brand icon: -->
+      <a href="#" class="navbar-brand" style="font-family: 'Leckerli One', cursive;">NanoStat</a>
+      <!-- Hamburger button: -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#toggleMobileMenu"
+        aria-controls="toggleMobileMenu" aria-expanded="false" aria-table="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <!-- Menu items: -->
+      <div class="collapse navbar-collapse" id="toggleMobileMenu">
+        <ul class="navbar-nav ms-auto text-center">
+          <li>
+            <a class="nav-link" href="index.html">Sweep</a>
+          </li>
+          <li>
+            <a class="nav-link" href="setup.html">Setup</a>
+          </li>
+          <li>
+            <a class="nav-link" href="panel.html">Panel</a>
+          </li>
+          <li>
+            <a class="nav-link" href="downloadfile">Download</a>
+          </li>
+          <li>
+            <a class="nav-link" href="help.html">Help</a>
+          </li>
+          <li>
+            <a class="nav-link" href="about.html">System</a>
+          </li>
+          <li>
+            <a class="nav-link" href="about.html">About</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
 
 
-  <script type="text/javascr" src="plotlyplot.js"></script>
-
-
-
-  <hr>
-  <footer>
-    <center>
-
-      <p> @2021 BurkeLab </p>
-    </center>
-  </footer>
-
-<!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+    crossorigin="anonymous"></script>
 </body>
