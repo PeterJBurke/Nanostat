@@ -5,374 +5,80 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup</title>
-  <link rel="stylesheet" href="/menubarstyle.css">
-  <link rel="stylesheet" href="/setupstyle.css">
-
-
-  <!-- style from https://gist.github.com/prof3ssorSt3v3/8d0616f4df11dae5233584b0d2a807f6
-   and https://www.youtube.com/watch?v=ikR9DsGMUMc&list=PL4sSjlE6rMIlWr9aFHfosaQt2YB2eIl43&index=18&t=334s -->
-
+  <title>NanoStat
+  </title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+  <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
+  <script type="text/javascript" src="websocketcode.js"></script>
+  <script type="text/javascript" src="button_handle_JS.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <!-- <link rel="stylesheet" href="menubarstyle.css"> -->
+  <!-- <link rel="stylesheet" href="CSS-Reset.css"> -->
+  <!-- Google font: -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
 </head>
+
 
 <body>
 
-  <nav class="menu-bar">
-    <ul>
-      <li><a href="/index.html">Home</a></li>
-      <li class="active"><a href="/setup.html">Setup</a></li>
-      <li><a href="/panel.html">Panel</a></li>
-      <li><a href="downloadfile">Download</a></li>
-      <li><a href="/help.html">Help</a></li>
-      <li><a href="/about.html">About</a></li>
-    </ul>
+  <!-- Navigation bar -->
+  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+    <div class="container">
+      <!-- <nav class="navbar navbar-expand-md navbar-light"> -->
+      <!-- Brand icon: -->
+      <a href="#" class="navbar-brand" style="font-family: 'Leckerli One', cursive;">NanoStat</a>
+      <!-- Hamburger button: -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#toggleMobileMenu"
+        aria-controls="toggleMobileMenu" aria-expanded="false" aria-table="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <!-- Menu items: -->
+      <div class="collapse navbar-collapse" id="toggleMobileMenu">
+        <ul class="navbar-nav ms-auto text-center">
+          <li>
+            <a class="nav-link" href="index.html">Sweep</a>
+          </li>
+          <li>
+            <a class="nav-link active" href="setup.html">Setup</a>
+          </li>
+          <li>
+            <a class="nav-link" href="panel.html">Panel</a>
+          </li>
+          <li>
+            <a class="nav-link" href="download.html">Download</a>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">System</a>
+            <ul class="dropdown-menu" aria-labeledby="navbarDropdown">
+              <li><a href="files.html" class="dropdown-item">Files</a></li>
+              <li><a href="wifi.html" class="dropdown-item">Wifi</a></li>
+              <li><a href="firmware.html" class="dropdown-item">Firmware</a></li>
+              <li><a href="reboot.html" class="dropdown-item">Reboot</a></li>
+
+            </ul>
+
+          </li>
+
+
+
+          <li>
+            <a class="nav-link" href="help.html">Help</a>
+          </li>
+          <li>
+            <a class="nav-link" href="about.html">About</a>
+          </li>
+        </ul>
+      </div>
   </nav>
+<div class="container"><h1>Setup</h1></div>
 
-  <header>
-    <center>
-      <h2>Sweep settings</h2>
-    </center>
-  </header>
-
-  <form action="/actionpage.html" method="POST" enctype="application/json">
-
-    <div class="form-box-button">
-      <button type="reset">Reset</button>
-      <button type="submit">Submit</button>
-    </div>
-
-
-    <table>
-      <tr>
-        <th>General</th>
-        <th>CV </th>
-        <th>NPV</th>
-        <th>SW</th>
-        <th>IV</th>
-        <th>CA</th>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td>
-          <div class="form-box">
-            <label for="lmpGain_id">TIA gain</label>
-            <select name="sweep_param_lmpGain" id="lmpGain_id">
-              <option value=7>350 kOhm</option>
-              <option value=6>120 kOhm</option>
-              <option value=5>35 kOhm</option>
-              <option value=4>14 kOhm</option>
-              <option value=3>7 kOhm</option>
-              <option value=2>3.5 kOhm</option>
-              <option value=1>2.75 kOhm</option>
-              <option value=0>External resistor</option>
-            </select>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label># cycles</label>
-            <input type="number" name="sweep_param_cycles_CV" id="sweep_param_cycles_CV_id" value=3 min=1>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_NPV" id="sweep_param_startV_NPV_id" value=-200 min=-500
-              max=500>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_SWV" id="sweep_param_startV_SWV_id" value=-200 min=-500
-              max=500>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_IV" id="sweep_param_startV_IV_id" value=-200 min=-500 max=500>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Step voltage (mV)</label>
-            <input type="number" name="sweep_param_pre_stepV_CA" id="sweep_param_pre_stepV_CA_id" value=50 min=1
-              max=1000>
-          </div>
-        </td>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td>
-          <div class="form-box">
-            <label>Set to zero at end?</label>
-            <input type="radio" name="sweep_param_setToZero" id="setToZero_id" value="true">
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Start voltage (mV)</label>
-            <input type="number" name="sweep_param_startV_CV" id="sweep_param_startV_CV_id" value=0 min=-500 max=500>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_NPV" id="sweep_param_endV_NPV_id" value=200 min=-500
-              max=500>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_SWV" id="sweep_param_endV_SWV_id" value=200 min=-500 max=500>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_IV" id="sweep_param_endV_IV_id" value=200 min=-500 max=500>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>Quiet time (ms)</label>
-            <input type="number" name="sweep_param_quietTime_CA" id="sweep_param_quietTime_CA_id" value=2000 min=1
-              max=100000>
-          </div>
-        </td>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td><b>Noise:</b></td>
-        <td>
-          <div class="form-box">
-            <label>End voltage (mV)</label>
-            <input type="number" name="sweep_param_endV_CV" id="sweep_param_endV_CV_id" value=0 min=-500 max=500>
-          </div>
-        </td>
-        <td>
-
-
-
-
-          <div class="form-box">
-            <label>Pulse amplitude (mV)</label>
-            <input type="number" name="sweep_param_pulseAmp_NPV" id="sweep_param_pulseAmp_NPV_id" value=20 min=1
-              max=1000>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>Pulse amplitude (mV)</label>
-            <input type="number" name="sweep_param_pulseAmp_SWV" id="sweep_param_pulseAmp_SWV_id" value=20 min=1
-              max=1000>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Number of points</label>
-            <input type="number" name="sweep_param_numPoints_IV" id="sweep_param_numPoints_IV_id" value=701 min=1
-              max=2500>
-          </div>
-        </td>
-        <td>
-
-
-
-          <div class="form-box">
-            <label>First step voltage (mV)</label>
-            <input type="number" name="sweep_param_V2_CA" id="sweep_param_V2_CA_id" value=50 min=-500 max=500>
-          </div>
-
-        </td>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td>
-          <div class="form-box">
-            <label>Bias voltage (mV)</label>
-            <input type="number" name="sweep_param_biasV_noisetest" id="sweep_param_biasV_noisetest_id" value=100
-              min=-500 max=500>
-          </div>
-        </td>
-        <td>
-
-
-          <div class="form-box">
-            <label>Max. voltage (mV)</label>
-            <input type="number" name="sweep_param_vertex1_CV" id="sweep_param_vertex1_CV_id" value=100 min=-500
-              max=500>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>Pulse width (ms)</label>
-            <input type="number" name="sweep_param_width_NPV" id="sweep_param_width_NPV_id" value=50 min=1 max=1000>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>Step voltage (mV)</label>
-            <input type="number" name="sweep_param_stepV_SWV" id="sweep_param_stepV_SWV_id" value=5 min=1 max=1000>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Delay time (ms)</label>
-            <input type="number" name="sweep_param_delayTime_ms_IV" id="sweep_param_delayTime_ms_IV_id" value=50 min=1
-              max=1000000>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>First step time (mV)</label>
-            <input type="number" name="sweep_param_t1_CA" id="sweep_param_t1_CA_id" value=2000 min=1 max=100000>
-          </div>
-
-
-        </td>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td>
-          <div class="form-box">
-            <label>Number of points</label>
-            <input type="number" name="sweep_param_numPoints_noisetest" id="sweep_param_numPoints_noisetest_id"
-              value=100 min=1 max=100000>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>Min. voltage (mV)</label>
-            <input type="number" name="sweep_param_vertex2_CV" id="sweep_param_vertex2_CV_id" value=-100 min=-500
-              max=500>
-          </div>
-        </td>
-        <td>
-
-          <div class="form-box">
-            <label>Pulse period (ms)</label>
-            <input type="number" name="sweep_param_period_NPV" id="sweep_param_period_NPV_id" value=200 min=1 max=1000>
-          </div>
-        </td>
-        <td>
-          <div class="form-box">
-            <label>Frequency (Hz)</label>
-            <input type="number" name="sweep_param_freq_SWV" id="sweep_param_freq_SWV_id" value=10 min=1 max=100000>
-          </div>
-        </td>
-        <td><b>Calibration test specific</b></td>
-        <td>
-
-          <div class="form-box">
-            <label>2nd step voltage (mV)</label>
-            <input type="number" name="sweep_param_V2_CA" id="sweep_param_V2_CA_id" value=50 min=-500 max=500>
-          </div>
-
-
-        </td>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td>
-          <div class="form-box">
-            <label>Delay time (ms)</label>
-            <input type="number" name="sweep_param_delayTime_ms_noisetest" id="sweep_param_delayTime_ms_noisetest_id"
-              value=50 min=1 max=1000000>
-          </div>
-
-        </td>
-        <td>
-
-
-          <div class="form-box">
-            <label>Step voltage (mV)</label>
-            <input type="number" name="sweep_param_stepV_CV" id="sweep_param_stepV_CV_id" value=5 min=1 max=1000>
-          </div>
-        </td>
-        <td>
-
-
-
-
-          <div class="form-box">
-            <label>Quiet time (ms)</label>
-            <input type="number" name="sweep_param_quietTime_NPV" id="sweep_param_quietTime_NPV_id" value=1000 min=1
-              max=100000>
-          </div>
-        </td>
-        <td>---</td>
-        <td>
-          <div class="form-box">
-            <label>Delay time (ms)</label>
-            <input type="number" name="sweep_param_delayTime_ms_CAL" id="sweep_param_delayTime_ms_CAL_id" value=50 min=1
-              max=1000000>
-          </div>
-        </td>
-        <td>
-
-
-
-          <div class="form-box">
-            <label>2nd step time (mV)</label>
-            <input type="number" name="sweep_param_t2_CA" id="sweep_param_t2_CA_id" value=2000 min=1 max=100000>
-          </div>
-
-        </td>
-      </tr>
-      <!-- ********************************************* -->
-
-      <tr>
-        <td>---</td>
-        <td>
-
-          <div class="form-box">
-            <label>Scan rate (mV/s)</label>
-            <input type="number" name="sweep_param_rate_CV" id="sweep_param_rate_CV_id" value=100 min=1 max=100000>
-          </div>
-        </td>
-        <td>---</td>
-        <td>---</td>
-        <td>---</td>
-        <td>
-          <div class="form-box">
-            <label>Number of samples</label>
-            <input type="number" name="sweep_param_samples_CA" id="sweep_param_samples_CA_id" value=100 min=1
-              max=500>
-          </div>
-        </td>
-      </tr>
-
-    </table>
-
-
-
-
-
-  </form>
-
-
-
-
-  <hr>
-
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+    crossorigin="anonymous"></script>
 </body>
-
-</html>
