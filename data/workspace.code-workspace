@@ -1,0 +1,50 @@
+{
+	"folders": [
+		{
+			"path": "../../../../Code/PlatformIOCode"
+		},
+		{
+			"name": "PIOBlinky",
+			"path": "../../PIOBlinky"
+		},
+		{
+			"name": "ESP32_Blinky_PIO",
+			"path": "../../ESP32_Blinky_PIO"
+		},
+		{
+			"name": "ESP32Stat_Rev_3_5_PIO",
+			"path": ".."
+		},
+		{
+			"path": "../../ESP32webserver-demo"
+		},
+		{
+			"name": "esp32-adc-calibrate",
+			"path": "../../ADCCal/esp32-adc-calibrate"
+		},
+		{
+			"name": "ESP32WroomWebFileServer",
+			"path": "../../ESP32WroomWebFileServer"
+		},
+		{
+			"name": "ESP32PicoKitWebFileServer",
+			"path": "../../ESP32PicoKitWebFileServer"
+		},
+		{
+			"name": "TestESP32FileServer",
+			"path": "../../TestESP32FileServer"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"chrono": "cpp",
+			"functional": "cpp",
+			"netfwd": "cpp",
+			"cmath": "cpp",
+			"thread": "cpp",
+			"string": "cpp",
+			"ratio": "cpp"
+		},
+		"liveServer.settings.multiRootWorkspaceName": "ESP32Stat_Rev_3_5_PIO"
+	}
+}
