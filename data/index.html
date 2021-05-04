@@ -25,10 +25,9 @@
 <body>
 
   <!-- Navigation bar -->
-  <!-- https://www.youtube.com/watch?v=akXfF066MY0&list=PL4sSjlE6rMIk5lhQkXGwhPKR1DeIVJXyZ&index=2&t=306s -->
-  <div class="container">
-    <nav class="navbar navbar-expand-md navbar-dark bg-primary">
-    <!-- <nav class="navbar navbar-expand-md navbar-light"> -->
+  <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+    <div class="container">
+      <!-- <nav class="navbar navbar-expand-md navbar-light"> -->
       <!-- Brand icon: -->
       <a href="#" class="navbar-brand" style="font-family: 'Leckerli One', cursive;">NanoStat</a>
       <!-- Hamburger button: -->
@@ -51,18 +50,31 @@
           <li>
             <a class="nav-link" href="downloadfile">Download</a>
           </li>
+
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">System</a>
+            <ul class="dropdown-menu" aria-labeledby="navbarDropdown">
+              <li><a href="#" class="dropdown-item">Files</a></li>
+              <li><a href="#" class="dropdown-item">Wifi</a></li>
+              <li><a href="#" class="dropdown-item">Firmware</a></li>
+              <li><a href="#" class="dropdown-item">Reboot</a></li>
+
+            </ul>
+
+            </li>
+
+
+
           <li>
             <a class="nav-link" href="help.html">Help</a>
-          </li>
-          <li>
-            <a class="nav-link" href="about.html">System</a>
           </li>
           <li>
             <a class="nav-link" href="about.html">About</a>
           </li>
         </ul>
       </div>
-    </nav>
+  </nav>
   </div>
 
 
