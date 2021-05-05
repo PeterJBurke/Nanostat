@@ -11,18 +11,25 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
   <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
-  <script type="text/javascript" src="websocketcode.js"></script>
-  <script type="text/javascript" src="button_handle_JS.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <!-- <link rel="stylesheet" href="menubarstyle.css"> -->
   <!-- <link rel="stylesheet" href="CSS-Reset.css"> -->
   <!-- Google font: -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
-    <!-- Custom style: -->
-    <link rel="stylesheet" href="nanostatstyle.css">
+  <!-- MDB Bootstrap CSS -->
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+  <!-- MDB -->
+  <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.3.0/mdb.min.css" rel="stylesheet" /> -->
+  <!-- Custom style: -->
+  <link rel="stylesheet" href="nanostatstyle.css">
 </head>
 
+
+<!-- <body style="background-color: lightblue;"> -->
 
 <body>
 
@@ -78,11 +85,82 @@
       </div>
   </nav>
 
-  <div class="container"><h1>Help</h1></div>
+  <!-- #0D6EFD is color of Bootstrap menubar "primary" -->
+  <!-- 	hsl(216, 98%, 52%) -->
 
+  <!-- Page title -->
+  <!-- <header class="container text-center mybox1"> -->
+  <header class="container text-center ">
+    <h1>Help</h1>
+  </header>
+
+  <div class="container">
+
+    <h3>Instructions:</h3>
+    <p>On bootup, blue LED flashes until setup complete.</p>
+    <p>To run a sweep, go to SWEEP page and click button for sweep type. (See below for sweep type explanations.) During
+      sweep, blue LED flashes.</p>
+    <p>To set sweep parameters, goto setup page. Click a button to run a sweep. Sweep is plotted on webpage at end of
+      sweep, and automatically downloaded.</p>
+    <p>To bias at a specific point and monitor voltages, goto panel page.</p>
+    <p>Zero bias: Minimum cell voltage with LMP91000 is 1% of 1.5V = 15 mV, gives slight discontinuity at origin.</p>
+    <h3>Network:</h3>
+    <p>If no WIFI connection is made with stored credentials, NanoStat goes into access point mode. Use the SSID
+      "Nanostat" and enter credentials on website at 192.168.4.1.</p>
+    <p>Once connected, on a laptop goto http://nanostat.local. On an Android mobile device, you need the actual IP
+      address of the nanostat from your router. Contact your network administrator to find this from the router.</p>
+
+    <h3>Calibration:</h3>
+    <p>To calibrate, run "Cal" with WE disconnected from RE/CE. (Short RE/CE). Calibrations saved to flash, persist
+      after reboot.</p>
+
+    <h3>Sweep modes:</h3>
+
+    <h6 class="mt-3">CV = Cyclic voltammetry.</h6>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/CycVolt/cv">Bioanalytical Systems, Inc. tutorial on
+      CV</a><br>
+    <img class="img-fluid" src="cv_wave_form.gif" alt="CV">
+
+    <h6 class="mt-3">NPV = Normal pulsed voltammetry.</h6>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/techniques/Pulse/pulse#normal">Bioanalytical Systems, Inc.
+      tutorial on NPV</a><br>
+    <img class="img-fluid" src="npv_wave_form.gif" alt="NPV">
+
+    <h6 class="mt-3">SWV = Square wave voltammetry.</h6>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/Pulse/pulse#square">Bioanalytical Systems, Inc.
+      tutorial on SWV</a><br>
+    <img class="img-fluid" src="dpv_wave_form.gif" alt="SWV">
+
+    <h6 class="mt-3">CA = Chronoamperometry.</h6>
+    <a href="https://www.basinc.com/manuals/EC_epsilon/Techniques/ChronoI/ca">Bioanalytical Systems, Inc. tutorial on
+      CA</a><br>
+    <img class="img-fluid" src="ca_wave_form.gif" alt="CA">
+
+    <h6 class="mt-3">DC = Fixed DC bias.</h6>
+    <p>
+      Sets dc bias voltage, reads ADC with various # readings per point {1, 5, 10, 50, 100, 500, 1000}, gives avg and
+      std deviation of ADC value in bits.
+    </p>
+
+    <h6 class="mt-3"6>IV = IV curve. </h6>
+
+    <h6 class="mt-3">Cal = Calibrate NanoStat.</h6>
+
+
+  </div>
+
+
+  <!-- Page footer -->
+  <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
+  <footer class="container text-center  fs-6 fw-lighter pt-3 fst-italic">
+    <p>NanoStat Rev. 3.5 @ BurkeLab 2021</p>
+  </footer>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
     crossorigin="anonymous"></script>
+  <!-- MDB Bootstrap JS -->
+  <!-- MDB -->
+  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.3.0/mdb.min.js"></script> -->
 </body>
