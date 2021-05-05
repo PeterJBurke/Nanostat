@@ -146,13 +146,20 @@
           </div>
         </div>
 
+
         <div class="div mybox6">
-          <div class="form-check">
-            <label class="form-check-label" for="sweep_param_setToZero">Set to zero at end?</label>
-            <input type="radio" class="form-check-input p-0 border border-secondary" name="sweep_param_setToZero"
-              id="setToZero_id" checked>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input p-0 border border-secondary" type="radio"  name="sweep_param_setToZero"
+              id="setToZero_id" value="true" checked>
+            <label class="form-check-label" for="setToZero_id">Zero at end.</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input p-0 border border-secondary" type="radio"  name="sweep_param_setToZero"
+              id="setToZero_id" value="false">
+            <label class="form-check-label" for="setToZero_id">Not 0 at end.</label>
           </div>
         </div>
+
 
         <!-- SWV -->
         <div class="div mybox7 ps-1 pt-1 ">
@@ -160,7 +167,7 @@
         </div>
 
         <div class="div mybox6  ">
-     
+
           <div class="form-box ms-5 ms-md-0">
             <!-- <div class="form-box ms-5 ms-md-0  d-flex justify-content-center text-center"> -->
             <label class="form-label mb-0   ">Start voltage (mV)</label>

@@ -144,12 +144,12 @@ function onMessage(evt) {
         // do something
         if (m_json_obj.is_sweeping == true) { // mode is sweeping
             // do something
-            document.getElementById('sweep_mode_id').innerHTML = "<div style=\"color:red\">SWEEPING</div>";
+            document.getElementById('sweep_mode_id').innerHTML = "<span style=\"color:red\">SWEEPING</span>";
             console.log("need to update indicator to true...");
         }
         if (m_json_obj.is_sweeping == false) { // mode is sweeping
             // do something
-            document.getElementById('sweep_mode_id').innerHTML = "<div style=\"color:green\">IDLE</div>";
+            document.getElementById('sweep_mode_id').innerHTML = "<span style=\"color:green\">IDLE</span>";
             console.log("need to update indicator to false...");
         }
     };
