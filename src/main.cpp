@@ -3206,7 +3206,7 @@ void configureserver()
   // Send a POST request to <IP>/actionpage with a form field message set to <message>
   server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
     String message;
-    Serial.println("Wifi credentials saved. Restarting....");
+    Serial.println("actionpage.html, HTTP_POST actionpage received , processing....");
 
     //**********************************************
 
@@ -3244,7 +3244,19 @@ void configureserver()
       message = "No message sent";
     }
     // request->send(200, "text/HTML", "Hello, POST: " + message);
-    request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
+    // request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
+     request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Settings saved! </h1> <p> Returning to main page. </p> </body>");
+    // request->send(200, "OK");
+
+
+//   <head>
+//   <meta http-equiv="refresh" content="5; URL=https://www.bitdegree.org/" />
+// </head>
+// <body>
+//   <p>If you are not redirected in five seconds, <a href="https://www.bitdegree.org/">click here</a>.</p>
+// </body>
+
+
     // request->send(200, "text/URL", "www.google.com");
     // request->send(200, "text/URL", "<meta http-equiv=\"Refresh\" content=\"0; URL=https://google.com/\">");
     // <meta http-equiv="Refresh" content="0; URL=https://example.com/">
