@@ -3191,6 +3191,13 @@ void configureserver()
     request->send(SPIFFS, "/data.txt", "text/plain", true);
   });
 
+  server.on("/rebootnanostat", HTTP_GET, [](AsyncWebServerRequest *request) {
+    // reboot the ESP32
+    request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"5; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Rebooting! </h1>  </body>");
+    delay(500);
+    ESP.restart();
+  });
+
   server.onNotFound([](AsyncWebServerRequest *request) {
     if (request->method() == HTTP_OPTIONS)
     {
