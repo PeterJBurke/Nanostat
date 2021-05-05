@@ -19,8 +19,8 @@
   <!-- Google font: -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
-    <!-- Custom style: -->
-    <link rel="stylesheet" href="nanostatstyle.css">
+  <!-- Custom style: -->
+  <link rel="stylesheet" href="nanostatstyle.css">
 </head>
 
 
@@ -78,11 +78,152 @@
       </div>
   </nav>
 
-  <div class="container"><h1>Panel</h1></div>
+  <header class="container text-center ">
+    <h1>Control panel</h1>
+    <h2>LMP91000</h2>
+  </header>
 
 
+  <div class="container">
+    <div class="row mybox1">
+      <!-- <div class="col-md p-0 text-center mybox1"> -->
+      <div class="  col-md p-0 ">
+        <h2> Controls </h2>
+
+
+        <!-- Active -->
+        <div class="div mybox6 mx-3">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input p-0 border border-secondary" type="radio" name="m_control_panel_is_active"
+              id="m_control_panel_is_active_id" value="true" >
+            <label class="form-check-label" for="m_control_panel_is_active_id">Active.</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input p-0 border border-secondary" type="radio" name="m_control_panel_is_active"
+              id="m_control_panel_is_inactive_id" value="false" checked>
+            <label class="form-check-label" for="m_control_panel_is_inactive_id">Inactive.</label>
+          </div>
+        </div>
+
+        <!-- 
+        <input type="radio" id="m_control_panel_is_active_id" name="m_control_panel_is_active" value=true>
+        <label for="m_control_panel_is_active_id">Active.</label><br>
+        <input type="radio" id="m_control_panel_is_inactive_id" checked="checked" name="m_control_panel_is_active"
+          value=false>
+        <label for="m_control_panel_is_inactive_id">Inactive.</label><br> -->
+
+
+        <!-- TIA gain -->
+        <div class="div mybox6 mx-3">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">TIA gain</label>
+            <select class="form-control p-0 border border-secondary" name="sweep_param_lmpGain" id="lmpGain_id">
+              <option value=7>350 kOhm</option>
+              <option value=6>120 kOhm</option>
+              <option value=5>35 kOhm</option>
+              <option value=4>14 kOhm</option>
+              <option value=3>7 kOhm</option>
+              <option value=2>3.5 kOhm</option>
+              <option value=1>2.75 kOhm</option>
+              <option value=0>External resistor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="div mybox6 mx-3">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">Cell set voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="cell_voltage"
+              id="cell_voltage_id" value=100 min=-792 max=792>
+          </div>
+        </div>
+
+
+        <div class="div mybox6 mx-3">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0"># of readings to average per point.</label>
+            <input type="number" class="form-control p-0 border border-secondary"
+              name="num_readings_to_average_per_point" id="num_readings_to_average_per_point_id" value=1 min=1
+              max=1000000>
+          </div>
+        </div>
+
+        <div class="div mybox6 mx-3">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">delay between points (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="delay_between_points_ms"
+              id="delay_between_points_ms_id" value=500 min=1 max=1000>
+          </div>
+        </div>
+
+        <div class="div mybox6 mx-3">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">Max # of points to plot</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="max_number_of_points_in_browser"
+              id="max_number_of_points_in_browser_id" value=100 min=1 max=10000>
+          </div>
+        </div>
+
+
+      </div>
+      <div class="col-md  mybox2">
+        <h2>Status</h2>
+
+        <p>Current sweep mode:
+          <span id="sweep_mode_id"> DORMANT</span>
+        </p>
+
+        <!-- determined by set voltage: -->
+        <p>LMP91000 % setting =
+          <span id="m_percentage_id">percent_setting</span>
+        </p>
+        <p>DAC voltage setting (mV) =
+          <span id="m_dacVout_id">DACvoutmV</span>
+        </p>
+        <!-- determined at each point reading: -->
+        <p> ADC average (bits) =
+          <span id="analog_read_avg_bits_id">analog_read_avg_bits</span>
+        </p>
+
+        <p>ADC average (mV) =
+          <span id="analog_read_avg_mV_id">analog_read_avg_mV</span>
+        </p>
+        <!-- for all the points on the browswer plot: -->
+        <p>Average current (microA) =
+          <span id="AVG_current_ID">UNKNOWN</span>
+        </p>
+        <p>Std. dev. current (microA) =
+          <span id="STD_DEV_current_ID">UNKNOWN</span>
+        </p>
+
+      </div>
+
+    </div>
+  </div>
+
+
+
+
+  </div>
+
+  <!-- Scope -->
+  <div class="container mybox3 text-center">
+    <h2>Scope display</h2>
+    <div id="plotly-scope-2yaxis"></div>
+  </div>
+
+    <!-- Page footer -->
+  <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
+    <footer class="container text-center  fs-6 fw-lighter pt-3 fst-italic">
+      <p>NanoStat Rev. 3.5 @ BurkeLab 2021</p>
+    </footer>
+
+  <!-- Plotly JS -->
+  <script type="text/javascr" src="plotlyscope.js"></script>
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
     crossorigin="anonymous"></script>
+  <!-- Control panel JS -->
+  <script type="text/javascript" src="websckt_ctl_pan_LMP91000.js"></script>
 </body>
