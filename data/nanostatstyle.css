@@ -1,3 +1,50 @@
-body{
-    background-color: hsl(216,99%,90%);
+body {
+    background-color: hsl(216, 99%, 90%);
 }
+
+.mybox1 {
+    border: 1px white solid;
+    background-color: aquamarine;
+}
+
+.mybox2 {
+    border: 1px white solid;
+    background-color: lightpink;
+}
+
+
+.mybox3 {
+    border: 1px white solid;
+    background-color: lightgray;
+}
+.mybox5 {
+    border: 1px white solid;
+    background-color: beige;
+}
+.mybox4 {
+    border: 1px white solid;
+    background-color: lightslategrey;
+}
+.mybox6 {
+    border: 1px purple solid;
+    background-color: beige;
+    min-height: 55px;
+}
+.mybox7 {
+    border: 1px purple solid;
+    background-color: lightsalmon;
+    min-height: 55px;
+}
+
+
+.myfooter {
+    border: 1px white solid;
+    background-color: pink;
+}
+
+
+input[type=number] {
+  width: 6.375rem;
+  border-radius: 0;
+}
+

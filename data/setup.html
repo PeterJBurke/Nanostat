@@ -19,8 +19,8 @@
   <!-- Google font: -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
-    <!-- Custom style: -->
-    <link rel="stylesheet" href="nanostatstyle.css">
+  <!-- Custom style: -->
+  <link rel="stylesheet" href="nanostatstyle.css">
 </head>
 
 
@@ -77,7 +77,533 @@
         </ul>
       </div>
   </nav>
-<div class="container"><h1>Setup</h1></div>
+
+  <!-- Page title -->
+  <!-- <header class="container text-center mybox1"> -->
+  <header class="container text-center ">
+    <h1>Setup</h1>
+    <h2>Sweep settings</h2>
+  </header>
+
+
+  <!-- First buttons: -->
+  <!-- <div class="container mybox2"> -->
+  <div class="container">
+
+    <form action="/actionpage.html" method="POST" enctype="application/json">
+
+      <!-- <div class="form-box-button">
+          
+          
+        </div> -->
+
+
+
+
+      <div class="container">
+        <div class="row">
+
+          <!-- <div class="col text-center border border-secondary"> -->
+          <div class="col text-center ">
+            <button type="reset" class="btn btn-primary my-2">Reset</button>
+          </div>
+          <div class="col text-center ">
+            <button type="submit" class="btn btn-primary my-2">Submit</button>
+          </div>
+
+        </div>
+      </div>
+
+  </div>
+
+  <!-- Inputs -->
+  <!-- <div class="container mybox3"> -->
+  <div class="container">
+
+    <div class="row">
+
+      <div class="col-md p-0">
+
+        <!-- General -->
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>General</h6>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">TIA gain</label>
+            <select class="form-control p-0 border border-secondary" name="sweep_param_lmpGain" id="lmpGain_id">
+              <option value=7>350 kOhm</option>
+              <option value=6>120 kOhm</option>
+              <option value=5>35 kOhm</option>
+              <option value=4>14 kOhm</option>
+              <option value=3>7 kOhm</option>
+              <option value=2>3.5 kOhm</option>
+              <option value=1>2.75 kOhm</option>
+              <option value=0>External resistor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-check">
+            <label class="form-check-label" for="sweep_param_setToZero">Set to zero at end?</label>
+            <input type="radio" class="form-check-input p-0 border border-secondary" name="sweep_param_setToZero"
+              id="setToZero_id" checked>
+          </div>
+        </div>
+
+        <!-- SWV -->
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>Square wave voltammetry</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Start voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_startV_SWV"
+              id="sweep_param_startV_SWV_id" value=-200 min=-500 max=500>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">End voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_endV_SWV"
+              id="sweep_param_endV_SWV_id" value=200 min=-500 max=500>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Pulse ampl. (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_pulseAmp_SWV"
+              id="sweep_param_pulseAmp_SWV_id" value=20 min=1 max=200>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Step voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_stepV_SWV"
+              id="sweep_param_stepV_SWV_id" value=5 min=1 max=1000>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Frequency (Hz)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_freq_SWV"
+              id="sweep_param_freq_SWV_id" value=10 min=1 max=100000>
+          </div>
+        </div>
+
+
+      </div>
+      <!-- CV -->
+      <div class="col-md p-0">
+
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>Cyclic voltammetry</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0"># cycles</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_cycles_CV"
+              id="sweep_param_startV_CV_id" value=3 min=1>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Start voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_startV_CV"
+              id="sweep_param_startV_CV_id" value=0 min=-500 max=500>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">End voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_endV_CV"
+              id="sweep_param_endV_CV_id" value=0 min=-500 max=500>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Max. voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_vertex1_CV"
+              id="sweep_param_vertex1_CV_id" value=100 min=-500 max=500>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Min. voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_vertex2_CV"
+              id="sweep_param_vertex1_CV_id" value=-100 min=-500 max=500>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Step voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_stepV_CV"
+              id="sweep_param_stepV_CV_id" value=5 min=1 max=100>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Scan rate (mV/s)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_rate_CV"
+              id="sweep_param_rate_CV_id" value=100 min=1 max=10000>
+          </div>
+        </div>
+
+      </div>
+      <!-- IV curve -->
+
+
+
+
+
+
+
+
+
+      <div class="col-md p-0">
+
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>IV Curve</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Start voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_startV_IV"
+              id="sweep_param_startV_IV_id" value=-200 min=-500 max=500>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">End voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_endV_IV"
+              id="sweep_param_endV_IV_id" value=200 min=-500 max=500>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Delay time (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_delayTime_ms_IV"
+              id="sweep_param_delayTime_ms_IV_id" value=50 min=1 max=1000000>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0"># of points</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_numPoints_IV"
+              id="sweep_param_numPoints_IV_id" value=701 min=1 max=2500>
+          </div>
+        </div>
+        <!-- NOISE -->
+
+
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>DC Noise</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Bias voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_biasV_noisetest"
+              id="sweep_param_biasV_noisetest_id" value=100 min=-500 max=500>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0"># of points</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_numPoints_noisetest"
+              id="sweep_param_numPoints_noisetest_id" value=100 min=1 max=100000>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Delay time (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary"
+              name="sweep_param_delayTime_ms_noisetest" id="sweep_param_delayTime_ms_noisetest_id" value=50 min=1
+              max=1000000>
+          </div>
+        </div>
+
+
+
+
+
+      </div>
+
+
+
+
+      <!-- NPV -->
+      <div class="col-md p-0">
+
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>Normal Pulse Voltammetry</h6>
+        </div>
+
+
+
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Start voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_startV_NPV"
+              id="sweep_param_startV_NPV_id" value=-200 min=-500 max=500>
+          </div>
+        </div>
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Pulse amp. (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_pulseAmp_NPV"
+              id="sweep_param_pulseAmp_NPV_id" value=20 min=1 max=1000>
+          </div>
+        </div>
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Pulse width (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_width_NPV"
+              id="sweep_param_width_NPV_id" value=50 min=1 max=1000>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">End voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_endV_NPV"
+              id="sweep_param_endV_NPV_id" value=200 min=-500 max=500>
+          </div>
+        </div>
+
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Pulse period (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_period_NPV"
+              id="sweep_param_period_NPV_id" value=200 min=1 max=1000>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Quiet time (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_quietTime_NPV"
+              id="sweep_param_quietTime_NPV_id" value=1000 min=1 max=100000>
+          </div>
+        </div>
+
+
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>Calibration</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Delay time (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_delayTime_ms_CAL"
+              id="sweep_param_delayTime_ms_CAL_id" value=50 min=1 max=1000000>
+          </div>
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <!-- CA -->
+      <div class="col-md p-0">
+
+        <div class="div mybox7 ps-1 pt-1 ">
+          <h6>Chronoamperometry</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Step voltage (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_pre_stepV_CA"
+              id="sweep_param_pre_stepV_CA_id" value=50 min=1 max=1000>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">Quiet time (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_quietTime_CA"
+              id="sweep_param_quietTime_CA_id" value=2000 min=1 max=100000>
+          </div>
+        </div>
+
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">1st step volt. (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_V2_CA"
+              id="sweep_param_V2_CA_id" value=50 min=-500 max=500>
+          </div>
+        </div>
+
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">1st step time (mS)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_t1_CA"
+              id="sweep_param_t1_CA_id" value=2000 min=1 max=100000>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">2nd step volt. (mV)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_V2_CA"
+              id="sweep_param_V2_CA_id" value=50 min=-500 max=500>
+          </div>
+        </div>
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">2nd step time (ms)</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_t2_CA"
+              id="sweep_param_t2_CA_id" value=2000 min=1 max=100000>
+          </div>
+        </div>
+
+
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0"># of samples</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_samples_CA"
+              id="sweep_param_samples_CA_id" value=100 min=1 max=500>
+          </div>
+        </div>
+
+
+
+
+      </div>
+
+
+
+      <!-- XYZ -->
+      <!-- <div class="col-md p-0">
+
+        <div class="div mybox7 ">
+          <h6>XYZ</h6>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+        <div class="div mybox6">
+          <div class="form-box">
+            <label class="form-label mb-0">xyz</label>
+            <input type="number" class="form-control p-0 border border-secondary" name="sweep_param_xyz_CV"
+              id="sweep_param_xyz_CV_id" value=xyz min=xyz max=xyz>
+          </div>
+        </div>
+
+      </div> -->
+
+
+    </div>
+    </form>
+  </div>
+
+
+  <!-- Page footer -->
+  <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
+  <footer class="container text-center  fs-6 fw-lighter pt-3 fst-italic">
+    <p>NanoStat Rev. 3.5 @ BurkeLab 2021</p>
+  </footer>
+
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"

@@ -19,8 +19,8 @@
   <!-- Google font: -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
-    <!-- Custom style: -->
-    <link rel="stylesheet" href="nanostatstyle.css">
+  <!-- Custom style: -->
+  <link rel="stylesheet" href="nanostatstyle.css">
 </head>
 
 
@@ -78,7 +78,85 @@
       </div>
   </nav>
 
-  <div class="container"><h1>Sweep</h1></div>
+  <div class="container">
+    <h1 class="text-center">Sweep</h1>
+
+    <p>Current sweep mode:
+    <span id="sweep_mode_id"> UNKNOWN</span>
+    </p>
+    <p><b>Please</b> <u>choose</u> from the following sweep <i>options</i>:</p>
+
+
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_1_pressed()">CV!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_2_pressed()">NPV!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_3_pressed()">SWV!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_4_pressed()">CA!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_5_pressed()">DC!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_6_pressed()">IV!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_7_pressed()">Cal!</button>
+    <button type="button" class="btn btn-primary my-2" onclick="on_Button_8_pressed()">Misc!</button>
+    <!-- <button onclick="on_Button_9_pressed()">9!</button>
+    <button onclick="on_Button_10_pressed()">10!</button> -->
+
+
+    <h3>Sweep modes:</h3>
+    <p>CV = Cyclic voltammetry.<br>
+      NPV = Normal pulsed voltammetry.<br>
+      SWV = Square wave voltammetry.<br>
+      CA = Chronoamperometry.<br>
+      DC = Fixed DC bias noise test.<br>
+      IV = IV curve.<br>
+      Cal = calibrate NanoStat.<br>
+      Misc = Debug to console (serial).</p>
+
+
+  </div>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-lg text-center">
+        Current vs. voltage
+        <div id="plotly-IV"></div>
+      </div>
+      <div class="col-lg text-center">
+        Current vs. time
+        <div id="plotly-IvsTime"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 
+
+<style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td,
+    th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+  </style>
+  <table>
+    <tr>
+      <th>
+        <div id="plotly-IV"></div>
+      </th>
+      <th>
+        <div id="plotly-IvsTime"></div>
+      </th>
+    </tr>
+
+  </table> -->
+
+<!-- Plotly JS -->
+  <script type="text/javascr" src="plotlyplot.js"></script>
+
+
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
