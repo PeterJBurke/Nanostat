@@ -1150,6 +1150,7 @@ void handleGetSavSecreteJsonNoReboot(AsyncWebServerRequest *request)
 
 // "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=wifi.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Credentials stored to flash on NanoStat. </h1>  </body>"
 
+
 void handleFileList(AsyncWebServerRequest *request)
 {
   Serial.println("handle fle list");
@@ -1186,7 +1187,8 @@ void handleFileList(AsyncWebServerRequest *request)
 
   path = String();
   output += "]";
-  Serial.println(output);
+  Serial.println("Sending file list to client.");
+  // Serial.println(output);
   request->send(200, "application/json", output);
 }
 
@@ -1324,7 +1326,7 @@ void runWifiPortal()
 
 void runWifiPortal_after_connected_to_WIFI()
 {
-// Don't run this after starting server or ESP32 will crash!!!
+  // Don't run this after starting server or ESP32 will crash!!!
   server.on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
     handleGetSavSecreteJsonNoReboot(request);
   });
@@ -3102,22 +3104,54 @@ void set_sweep_parameters_from_form_input(String form_id, String form_value)
   }
 }
 
-void getWifiScanJson(AsyncWebServerRequest * request)
+
+void handleFileDelete(AsyncWebServerRequest *request)
+{
+  Serial.println("in file delete");
+  if (request->params() == 0)
+  {
+    return request->send(500, "text/plain", "BAD ARGS");
+  }
+  AsyncWebParameter *p = request->getParam(0);
+  String path = p->value();
+  Serial.println("handleFileDelete: " + path);
+  if (path == "/")
+  {
+    return request->send(500, "text/plain", "BAD PATH");
+  }
+
+  if (!SPIFFS.exists(path))
+  {
+    return request->send(404, "text/plain", "FileNotFound");
+  }
+
+  SPIFFS.remove(path);
+  request->send(200, "text/plain", "");
+  path = String();
+}
+
+void getWifiScanJson(AsyncWebServerRequest *request)
 {
   String json = "{\"scan_result\":[";
   int n = WiFi.scanComplete();
-  if (n == -2) {
+  if (n == -2)
+  {
     WiFi.scanNetworks(true);
-  } else if (n) {
-    for (int i = 0; i < n; ++i) {
-      if (i) json += ",";
+  }
+  else if (n)
+  {
+    for (int i = 0; i < n; ++i)
+    {
+      if (i)
+        json += ",";
       json += "{";
       json += "\"RSSI\":" + String(WiFi.RSSI(i));
       json += ",\"SSID\":\"" + WiFi.SSID(i) + "\"";
       json += "}";
     }
     WiFi.scanDelete();
-    if (WiFi.scanComplete() == -2) {
+    if (WiFi.scanComplete() == -2)
+    {
       WiFi.scanNetworks(true);
     }
   }
@@ -3515,23 +3549,30 @@ void configureserver()
     // <meta http-equiv="Refresh" content="0; URL=https://example.com/">
   });
 
-// Wifitools stuff:
-// Save credentials:
+  // Wifitools stuff:
+  // Save credentials:
   server.on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request) {
     handleGetSavSecreteJsonNoReboot(request);
   });
 
-// Wifi scan:
+  // Wifi scan:
   server.on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
     getWifiScanJson(request);
   });
 
-// List directory:
+  // List directory:
   server.on("/list", HTTP_ANY, [](AsyncWebServerRequest *request) {
     handleFileList(request);
   });
 
+  // Delete file
+  // // spiff delete
+  server.on(
+      "/edit", HTTP_DELETE, [](AsyncWebServerRequest *request) {
+        handleFileDelete(request);
+      });
 
+  // Done with configuration, begin server:
   server.begin();
 }
 
@@ -3578,7 +3619,7 @@ void setup()
   // Serial.println(WiFi.localIP()); //print the local IP address
 
   //#############################  WIFITOOL CUSTOMIZED #####################################
-// Used this repo as a basis for ideas. https://github.com/oferzv/wifiTool
+  // Used this repo as a basis for ideas. https://github.com/oferzv/wifiTool
 
   bool m_autoconnected_attempt_succeeded = false;
   m_autoconnected_attempt_succeeded = connectAttempt("", ""); // uses SSID/PWD stored in ESP32 secret memory.....
@@ -3623,8 +3664,8 @@ void setup()
 
   server.reset(); // try putting this in setup
   configureserver();
-//  runWifiPortal_after_connected_to_WIFI(); // Allows some system level tools such as saving wifi credentials and scan, OTA firmware upgrade, file directory..
-// configureserver has the code in it little by little, can't do configuration after starting server which happens inside configureserver() method as of now...
+  //  runWifiPortal_after_connected_to_WIFI(); // Allows some system level tools such as saving wifi credentials and scan, OTA firmware upgrade, file directory..
+  // configureserver has the code in it little by little, can't do configuration after starting server which happens inside configureserver() method as of now...
 
   //############################# WEBSOCKET #####################################
 

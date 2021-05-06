@@ -103,19 +103,21 @@ function getFileList() {
       var obj = JSON.parse(this.responseText);
 
       if (obj.length) {
-        var htmlSrc = '<ul>';
+        // var htmlSrc = '<ul>';
+        var htmlSrc = '<ul class="list-group">';
         for (var i = 0; i < obj.length; i++) {
           if (obj[i].type == 'file') {
-            htmlSrc += '<li>' + obj[i].name + ' <a href="#" onclick="deleteFile(\'' + obj[i].name + '\')">X</a></li>';
+            // htmlSrc += '<li>' + obj[i].name + ' <a href="#" onclick="deleteFile(\'' + obj[i].name + '\')">X</a></li>';
+            htmlSrc += '<li class="list-group-item">' + obj[i].name + ' <a href="#" onclick="deleteFile(\'' + obj[i].name + '\')">X</a></li>';
           }
         }
         htmlSrc += '</ul>';
         document.getElementById("filelist").innerHTML = htmlSrc;
       }
       console.log(obj);
+      // console.log(htmlSrc);
     }
   };
   xhttp.open("GET", "/list?dir=/", true);
   xhttp.send();
 }
-
