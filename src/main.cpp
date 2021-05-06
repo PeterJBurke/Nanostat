@@ -3526,6 +3526,11 @@ void configureserver()
     getWifiScanJson(request);
   });
 
+// List directory:
+  server.on("/list", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    handleFileList(request);
+  });
+
 
   server.begin();
 }
