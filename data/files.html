@@ -7,6 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NanoStat
   </title>
+  <!-- Include jquery -->
+  <script src="https://code.jquery.com/jquery-2.2.4.js" integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI="
+    crossorigin="anonymous"></script>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
@@ -86,7 +89,7 @@
     <h2>NanoStat directory</h2>
   </header>
 
-  
+
 
   <main class="container ">
     <h6>Directory</h6>
@@ -97,12 +100,51 @@
     <script> getFileList();</script>
   </main>
 
+  <!-- Upload file -->
+  <div class="container bg-secondary">
+
+    <form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>
+      <input type='file' name='update'>
+      <input type='submit' value='Upload'>
+    </form>
+    <div id='prg'>progress: 0%</div>
+  </div>
+
+
+  <!-- Example from github https://github.com/G6EJD/ESP32-8266-File-Upload/blob/master/ESP_File_Download_Upload.ino -->
+  <div class="container bg-light">
+    <p>Example from github https://github.com/G6EJD/ESP32-8266-File-Upload/blob/master/ESP_File_Download_Upload.ino</p>
+    <h3>Select File to Upload</h3>
+    <FORM action='/fupload' method='post' enctype='multipart/form-data'>
+      <input class='buttons' type='file' name='fupload' id='fupload' value=''>
+      <button class='buttons' type='submit'>Upload File</button>
+  </div>
+
+
+  <!-- Example from github https://github.com/me-no-dev/ESPAsyncWebServer/issues/542: -->
+  <div class="container bg-secondary">
+    <p>Example from github https://github.com/me-no-dev/ESPAsyncWebServer/issues/542:</p>
+    <form method="POST" action=/upload>
+      <input type="file" name="data" data-multiple-caption="{count} files selected" multiple />
+      <input type="submit" name="upload" value="Upload" title="Upload Files">
+    </form>
+  </div>
+
+  <!-- Peter Burke custom code -->
+  <div class="container bg-light">
+    <p>Peter Burke custom code</p>
+    <FORM action='/m_fupload' method='post' enctype='multipart/form-data'>
+      <input class='button' type='file' name='m_fupload' id='m_fupload_id' value='m_value'>
+      <button class='button' type='submit'>Upload File</button>
+  </div>
 
   <!-- Page footer -->
   <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
   <footer class="container text-center  fs-6 fw-lighter pt-3 fst-italic">
     <p>NanoStat Rev. 3.5 @ BurkeLab 2021</p>
   </footer>
+
+
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"

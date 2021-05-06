@@ -5,9 +5,9 @@ function getWifiScanJson() {
         if (this.readyState == 4 && this.status == 200) {
             var obj = JSON.parse(this.responseText);
             if (obj.scan_result.length) {
-                var htmlSrc = '<ul>';
+                var htmlSrc = '<ul class="list-group">';
                 for (var i = 0; i < obj.scan_result.length; i++) {
-                    htmlSrc += '<li><strong>' + obj.scan_result[i].SSID + '</strong> ' + obj.scan_result[i].RSSI + ' dBm</li>';
+                    htmlSrc += '<li class="list-group-item"><strong>' + obj.scan_result[i].SSID + '</strong> ' + obj.scan_result[i].RSSI + ' dBm</li>';
                 }
                 htmlSrc += '</ul>';
                 document.getElementById("wifilist").innerHTML = htmlSrc;
@@ -48,34 +48,35 @@ function showPassword(id) {
 }
 
 
-// $('form').submit(function (e) {
-//   e.preventDefault();
-//   var form = $('#upload_form')[0];
-//   var data = new FormData(form);
-//   $.ajax({
-//     url: '/edit',
-//     type: 'POST',
-//     data: data,
-//     contentType: false,
-//     processData: false,
-//     xhr: function () {
-//       var xhr = new window.XMLHttpRequest();
-//       xhr.upload.addEventListener('progress', function (evt) {
-//         if (evt.lengthComputable) {
-//           var per = evt.loaded / evt.total;
-//           $('#prg').html('progress: ' + Math.round(per * 100) + '%');
-//         }
-//       }, false);
-//       return xhr;
-//     },
-//     success: function (d, s) {
-//       console.log('success!');
-//       getFileList();
-//     },
-//     error: function (a, b, c) {
-//     }
-//   });
-// });
+$('form').submit(function (e) {
+  e.preventDefault();
+  var form = $('#upload_form')[0];
+  var data = new FormData(form);
+  $.ajax({
+    url: '/edit',
+    type: 'POST',
+    data: data,
+    contentType: false,
+    processData: false,
+    xhr: function () {
+      var xhr = new window.XMLHttpRequest();
+      xhr.upload.addEventListener('progress', function (evt) {
+        if (evt.lengthComputable) {
+          var per = evt.loaded / evt.total;
+          $('#prg').html('progress: ' + Math.round(per * 100) + '%');
+        }
+      }, false);
+      return xhr;
+    },
+    success: function (d, s) {
+      console.log('success!');
+      getFileList();
+    },
+    error: function (a, b, c) {
+    }
+  });
+});
+
 
 
 function deleteFile(fileName) {

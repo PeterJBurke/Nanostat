@@ -1150,7 +1150,6 @@ void handleGetSavSecreteJsonNoReboot(AsyncWebServerRequest *request)
 
 // "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=wifi.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Credentials stored to flash on NanoStat. </h1>  </body>"
 
-
 void handleFileList(AsyncWebServerRequest *request)
 {
   Serial.println("handle fle list");
@@ -1191,6 +1190,48 @@ void handleFileList(AsyncWebServerRequest *request)
   // Serial.println(output);
   request->send(200, "application/json", output);
 }
+
+void handleUpload(AsyncWebServerRequest *request, String filename, String redirect, size_t index, uint8_t *data, size_t len, bool final)
+{
+  Serial.println("handleUpload called");
+  Serial.println(filename);
+  Serial.println(redirect);
+  File fsUploadFile;
+  if (!index)
+  {
+    if (!filename.startsWith("/"))
+      filename = "/" + filename;
+    Serial.println((String) "UploadStart: " + filename);
+    fsUploadFile = SPIFFS.open(filename, "w"); // Open the file for writing in SPIFFS (create if it doesn't exist)
+  }
+  for (size_t i = 0; i < len; i++)
+  {
+    fsUploadFile.write(data[i]);
+    Serial.write(data[i]);
+  }
+  if (final)
+  {
+    Serial.println((String) "UploadEnd: " + filename);
+    fsUploadFile.close();
+
+    request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=files.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> File uploaded! </h1> <p> Returning to file page. </p> </body>");
+
+    // request->redirect(redirect);
+  }
+}
+
+// void handleUpload_from_asyncRepo(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+// // https://github.com/me-no-dev/ESPAsyncWebServer#file-upload-handling
+//   if(!index){
+//     Serial.printf("UploadStart: %s\n", filename.c_str());
+//   }
+//   for(size_t i=0; i<len; i++){
+//     Serial.write(data[i]);
+//   }
+//   if(final){
+//     Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
+//   }
+// }
 
 void runWifiPortal()
 {
@@ -3104,7 +3145,6 @@ void set_sweep_parameters_from_form_input(String form_id, String form_value)
   }
 }
 
-
 void handleFileDelete(AsyncWebServerRequest *request)
 {
   Serial.println("in file delete");
@@ -3566,11 +3606,29 @@ void configureserver()
   });
 
   // Delete file
-  // // spiff delete
   server.on(
       "/edit", HTTP_DELETE, [](AsyncWebServerRequest *request) {
         handleFileDelete(request);
       });
+
+  // Upload file:
+  server.on(
+      "/edit", HTTP_POST, [](AsyncWebServerRequest *request) {},
+      [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+         size_t len, bool final) {
+        handleUpload(request, filename, "/files.html", index, data, len, final);
+      });
+
+  // Example upload handler from xyz
+  //  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
+  //         request->send(200);
+  //       }, handleUpload);
+
+  // Peter Burke custom code:
+  server.on(
+      "/m_fupload", HTTP_POST, [](AsyncWebServerRequest *request) {},
+      [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+         size_t len, bool final) { handleUpload(request, filename, "files.html", index, data, len, final); });
 
   // Done with configuration, begin server:
   server.begin();
