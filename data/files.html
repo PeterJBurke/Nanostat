@@ -89,10 +89,17 @@
     <h2>NanoStat directory</h2>
   </header>
 
+  <!-- Peter Burke custom code -->
+  <div class="container">
+    <p>File upload</p>
+    <FORM action='/m_fupload' method='post' enctype='multipart/form-data'>
+      <input class='btn btn-outline-primary' type='file' name='m_fupload' id='m_fupload_id' value='m_value'>
+      <button class='btn btn-primary' type='submit'>Upload File</button>
+  </div>
 
 
   <main class="container ">
-    <h6>Directory</h6>
+    <h5>Directory</h5>
     <p>Click X to delete the file.</p>
 
     <div id="filelist"></div>
@@ -100,43 +107,9 @@
     <script> getFileList();</script>
   </main>
 
-  <!-- Upload file -->
-  <div class="container bg-secondary">
-
-    <form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>
-      <input type='file' name='update'>
-      <input type='submit' value='Upload'>
-    </form>
-    <div id='prg'>progress: 0%</div>
-  </div>
 
 
-  <!-- Example from github https://github.com/G6EJD/ESP32-8266-File-Upload/blob/master/ESP_File_Download_Upload.ino -->
-  <div class="container bg-light">
-    <p>Example from github https://github.com/G6EJD/ESP32-8266-File-Upload/blob/master/ESP_File_Download_Upload.ino</p>
-    <h3>Select File to Upload</h3>
-    <FORM action='/fupload' method='post' enctype='multipart/form-data'>
-      <input class='buttons' type='file' name='fupload' id='fupload' value=''>
-      <button class='buttons' type='submit'>Upload File</button>
-  </div>
 
-
-  <!-- Example from github https://github.com/me-no-dev/ESPAsyncWebServer/issues/542: -->
-  <div class="container bg-secondary">
-    <p>Example from github https://github.com/me-no-dev/ESPAsyncWebServer/issues/542:</p>
-    <form method="POST" action=/upload>
-      <input type="file" name="data" data-multiple-caption="{count} files selected" multiple />
-      <input type="submit" name="upload" value="Upload" title="Upload Files">
-    </form>
-  </div>
-
-  <!-- Peter Burke custom code -->
-  <div class="container bg-light">
-    <p>Peter Burke custom code</p>
-    <FORM action='/m_fupload' method='post' enctype='multipart/form-data'>
-      <input class='button' type='file' name='m_fupload' id='m_fupload_id' value='m_value'>
-      <button class='button' type='submit'>Upload File</button>
-  </div>
 
   <!-- Page footer -->
   <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
