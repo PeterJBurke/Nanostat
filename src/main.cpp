@@ -1024,26 +1024,155 @@ void handleGetSavSecreteJson(AsyncWebServerRequest *request)
   restartSystem = millis();
 }
 
+void handleGetSavSecreteJsonNoReboot(AsyncWebServerRequest *request)
+{
+  String message;
 
+  String m_SSID1_name;
+  String m_SSID2_name;
+  String m_SSID3_name;
+  String m_PWD1_name;
+  String m_PWD2_name;
+  String m_PWD3_name;
+  String m_temp_string;
+  int params = request->params();
+  for (int i = 0; i < params; i++)
+  {
+    AsyncWebParameter *p = request->getParam(i);
+    if (p->isPost())
+    {
+      Serial.print(i);
+      Serial.print(F("\t"));
+      Serial.print(p->name().c_str());
+      Serial.print(F("\t"));
+      Serial.println(p->value().c_str());
+      m_temp_string = p->name().c_str();
+      if (m_temp_string == "ssid1")
+      {
+        m_SSID1_name = p->value().c_str();
+      }
+      else if (m_temp_string == "pass1")
+      {
+        m_PWD1_name = p->value().c_str();
+      }
+      else if (m_temp_string == "ssid2")
+      {
+        m_SSID2_name = p->value().c_str();
+      }
+      else if (m_temp_string == "pass2")
+      {
+        m_PWD2_name = p->value().c_str();
+      }
+      else if (m_temp_string == "ssid3")
+      {
+        m_SSID3_name = p->value().c_str();
+      }
+      else if (m_temp_string == "pass3")
+      {
+        m_PWD3_name = p->value().c_str();
+      }
+    }
+  }
+  if (request->hasParam(PARAM_MESSAGE, true))
+  {
+    message = request->getParam(PARAM_MESSAGE, true)->value();
+    Serial.println(message);
+  }
+  else
+  {
+    message = "No message sent";
+  }
+  // request->send(200, "text/HTML", "bla bla bla bla bla xyz xyz xyz xyz xyz ");
 
-void handleFileList(AsyncWebServerRequest *request) {
+  // {"SSID1":"myssid1xyz","PWD1":"mypwd1xyz",
+  //     "SSID2":"myssid2xyz","PWD2":"mypwd2xyz",
+  //     "SSID3":"myssid3xyz","PWD3":"mypwd3xyz"}
+
+  String SSID_and_pwd_JSON = "";
+  SSID_and_pwd_JSON += "{\"SSID1\":\"";
+  SSID_and_pwd_JSON += m_SSID1_name;
+  SSID_and_pwd_JSON += "\",\"PWD1\":\"";
+  SSID_and_pwd_JSON += m_PWD1_name;
+
+  SSID_and_pwd_JSON += "\",\"SSID2\":\"";
+  SSID_and_pwd_JSON += m_SSID2_name;
+  SSID_and_pwd_JSON += "\",\"PWD2\":\"";
+  SSID_and_pwd_JSON += m_PWD2_name;
+
+  SSID_and_pwd_JSON += "\",\"SSID3\":\"";
+  SSID_and_pwd_JSON += m_SSID3_name;
+  SSID_and_pwd_JSON += "\",\"PWD3\":\"";
+  SSID_and_pwd_JSON += m_PWD3_name;
+
+  SSID_and_pwd_JSON += "\"}";
+
+  Serial.println("JSON string to write to file = ");
+  Serial.println(SSID_and_pwd_JSON);
+
+  Serial.print("m_SSID1_name = ");
+  Serial.print(m_SSID1_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_PWD1_name = ");
+  Serial.print(m_PWD1_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_SSID2_name = ");
+  Serial.print(m_SSID2_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_PWD2_name = ");
+  Serial.print(m_PWD2_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_SSID3_name = ");
+  Serial.print(m_SSID3_name);
+  Serial.print(F("\t")); // tab
+  Serial.print("m_PWD3_name = ");
+  Serial.println(m_PWD3_name);
+
+  File m_ssid_pwd_file_to_write_name = SPIFFS.open("/credentials.JSON", FILE_WRITE);
+
+  if (!m_ssid_pwd_file_to_write_name)
+  {
+    Serial.println("There was an error opening the pwd/ssid file for writing");
+    return;
+  }
+
+  Serial.println("Writing this JSON string to pwd/ssid file:");
+  Serial.println(SSID_and_pwd_JSON);
+
+  if (!m_ssid_pwd_file_to_write_name.println(SSID_and_pwd_JSON))
+  {
+    Serial.println("File write failed");
+  }
+  m_ssid_pwd_file_to_write_name.close();
+
+  request->send(200, "text/html", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=wifi.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Credentials stored to flash on NanoStat. </h1>  </body>");
+  restartSystem = millis();
+}
+
+// "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=wifi.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Credentials stored to flash on NanoStat. </h1>  </body>"
+
+void handleFileList(AsyncWebServerRequest *request)
+{
   Serial.println("handle fle list");
-  if (!request -> hasParam("dir")) {
+  if (!request->hasParam("dir"))
+  {
     request->send(500, "text/plain", "BAD ARGS");
     return;
   }
 
-  AsyncWebParameter* p = request->getParam("dir");
+  AsyncWebParameter *p = request->getParam("dir");
   String path = p->value().c_str();
   Serial.println("handleFileList: " + path);
   String output = "[";
 
   File root = SPIFFS.open("/", "r");
-  if (root.isDirectory()) {
+  if (root.isDirectory())
+  {
     Serial.println("here ??");
     File file = root.openNextFile();
-    while (file) {
-      if (output != "[") {
+    while (file)
+    {
+      if (output != "[")
+      {
         output += ',';
       }
       output += "{\"type\":\"";
@@ -1060,10 +1189,6 @@ void handleFileList(AsyncWebServerRequest *request) {
   Serial.println(output);
   request->send(200, "application/json", output);
 }
-
-
-
-
 
 void runWifiPortal()
 {
@@ -1095,6 +1220,114 @@ void runWifiPortal()
     handleFileList(request);
   });
 
+  //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
+
+  // m_wifitools_server->on("/saveSecret/", HTTP_ANY, [&, this](AsyncWebServerRequest *request) {
+  //   handleGetSavSecreteJson(request);
+  // });
+
+  // m_wifitools_server->on("/list", HTTP_ANY, [&, this](AsyncWebServerRequest *request) {
+  //   handleFileList(request);
+  // });
+
+  // // spiff delete
+  // m_wifitools_server->on("/edit", HTTP_DELETE, [&, this](AsyncWebServerRequest *request) {
+  //   handleFileDelete(request);
+  // });
+
+  // // spiff upload
+  // m_wifitools_server->on(
+  //     "/edit", HTTP_POST, [&, this](AsyncWebServerRequest *request) {},
+  //     [&, this](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+  //               size_t len, bool final) {
+  //       handleUpload(request, filename, "/wifi_spiffs_admin.html", index, data, len, final);
+  //     });
+
+  // m_wifitools_server->on("/wifiScan.json", HTTP_GET, [&, this](AsyncWebServerRequest *request) {
+  //   getWifiScanJson(request);
+  // });
+
+  // // Simple Firmware Update Form
+  // m_wifitools_server->on("/update", HTTP_GET, [&, this](AsyncWebServerRequest *request) {
+  //   request->send(SPIFFS, "/wifi_upload.html");
+  // });
+  // m_wifitools_server->on(
+  //     "/update", HTTP_POST, [&, this](AsyncWebServerRequest *request) {
+  //       uint8_t isSuccess = !Update.hasError();
+  //       if (isSuccess)
+  //         restartSystem = millis();
+  //       AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", isSuccess ? "OK" : "FAIL");
+  //       response->addHeader("Connection", "close");
+  //       request->send(response); },
+  //     [&, this](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+  //       if (!index)
+  //       {
+  //         Serial.printf("Update Start: %s\n", filename.c_str());
+
+  //         if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+  //         {
+  //           Update.printError(Serial);
+  //         }
+  //       }
+  //       if (!Update.hasError())
+  //       {
+  //         if (Update.write(data, len) != len)
+  //         {
+  //           Update.printError(Serial);
+  //         }
+  //       }
+  //       if (final)
+  //       {
+  //         if (Update.end(true))
+  //         {
+  //           Serial.printf("Update Success: %uB\n", index + len);
+  //         }
+  //         else
+  //         {
+  //           Update.printError(Serial);
+  //         }
+  //       }
+  //     });
+
+  // m_wifitools_server->on("/restart", HTTP_GET, [&, this](AsyncWebServerRequest *request) {
+  //   request->send(200, "text/html", "OK");
+  //   restartSystem = millis();
+  // });
+
+  // m_wifitools_server->onNotFound([](AsyncWebServerRequest *request) {
+  //   Serial.println("handle not found");
+  //   request->send(404);
+  // });
+
+  // m_wifitools_server->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); //only when requested from AP
+
+  //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
+
+  Serial.println(F("HTTP server started"));
+  m_wifitools_server->begin();
+  if (!MDNS.begin("nanostat")) // see https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
+  {
+    Serial.println("Error setting up MDNS responder !");
+    while (1)
+      ;
+    {
+      delay(1000);
+    }
+  }
+  Serial.println("MDNS started.");
+  // MDNS.begin("nanostat");
+  while (1) // loop until user hits restart... Once credentials saved, won't end up here again unless wifi not connecting!
+  {
+    process();
+  }
+}
+
+void runWifiPortal_after_connected_to_WIFI()
+{
+// Don't run this after starting server or ESP32 will crash!!!
+  server.on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
+    handleGetSavSecreteJsonNoReboot(request);
+  });
 
   //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
 
@@ -2869,6 +3102,30 @@ void set_sweep_parameters_from_form_input(String form_id, String form_value)
   }
 }
 
+void getWifiScanJson(AsyncWebServerRequest * request)
+{
+  String json = "{\"scan_result\":[";
+  int n = WiFi.scanComplete();
+  if (n == -2) {
+    WiFi.scanNetworks(true);
+  } else if (n) {
+    for (int i = 0; i < n; ++i) {
+      if (i) json += ",";
+      json += "{";
+      json += "\"RSSI\":" + String(WiFi.RSSI(i));
+      json += ",\"SSID\":\"" + WiFi.SSID(i) + "\"";
+      json += "}";
+    }
+    WiFi.scanDelete();
+    if (WiFi.scanComplete() == -2) {
+      WiFi.scanNetworks(true);
+    }
+  }
+  json += "]}";
+  request->send(200, "application/json", json);
+  json = String();
+}
+
 void handle_websocket_text(uint8_t *payload)
 {
   // do something...
@@ -3243,22 +3500,32 @@ void configureserver()
     }
     // request->send(200, "text/HTML", "Hello, POST: " + message);
     // request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
-     request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Settings saved! </h1> <p> Returning to main page. </p> </body>");
+    request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Settings saved! </h1> <p> Returning to main page. </p> </body>");
     // request->send(200, "OK");
 
-
-//   <head>
-//   <meta http-equiv="refresh" content="5; URL=https://www.bitdegree.org/" />
-// </head>
-// <body>
-//   <p>If you are not redirected in five seconds, <a href="https://www.bitdegree.org/">click here</a>.</p>
-// </body>
-
+    //   <head>
+    //   <meta http-equiv="refresh" content="5; URL=https://www.bitdegree.org/" />
+    // </head>
+    // <body>
+    //   <p>If you are not redirected in five seconds, <a href="https://www.bitdegree.org/">click here</a>.</p>
+    // </body>
 
     // request->send(200, "text/URL", "www.google.com");
     // request->send(200, "text/URL", "<meta http-equiv=\"Refresh\" content=\"0; URL=https://google.com/\">");
     // <meta http-equiv="Refresh" content="0; URL=https://example.com/">
   });
+
+// Wifitools stuff:
+// Save credentials:
+  server.on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request) {
+    handleGetSavSecreteJsonNoReboot(request);
+  });
+
+// Wifi scan:
+  server.on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+    getWifiScanJson(request);
+  });
+
 
   server.begin();
 }
@@ -3306,6 +3573,7 @@ void setup()
   // Serial.println(WiFi.localIP()); //print the local IP address
 
   //#############################  WIFITOOL CUSTOMIZED #####################################
+// Used this repo as a basis for ideas. https://github.com/oferzv/wifiTool
 
   bool m_autoconnected_attempt_succeeded = false;
   m_autoconnected_attempt_succeeded = connectAttempt("", ""); // uses SSID/PWD stored in ESP32 secret memory.....
@@ -3350,6 +3618,8 @@ void setup()
 
   server.reset(); // try putting this in setup
   configureserver();
+//  runWifiPortal_after_connected_to_WIFI(); // Allows some system level tools such as saving wifi credentials and scan, OTA firmware upgrade, file directory..
+// configureserver has the code in it little by little, can't do configuration after starting server which happens inside configureserver() method as of now...
 
   //############################# WEBSOCKET #####################################
 
