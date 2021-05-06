@@ -87,20 +87,15 @@
   </header>
 
 
-  <main class="container mbox1">
+  <!-- Peter Burke custom code -->
+  <div class="container ">
+    <p>File upload</p>
+    <FORM action='/m_firmware_update' method='post' enctype='multipart/form-data'>
+      <input class='btn btn-outline-primary' type='file' name='m_fupload' id='m_fupload_id' value='m_value'>
+      <button class='btn btn-primary' type='submit'>Upload firmware & update</button>
+  </div>
 
  
-    <div>
-
-      <form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>
-        <input type='file' name='update'>
-        <input type='submit' value='Upload'>
-      </form>
-      <div id='prg'>progress: 0%</div>
-    </div>
-
-
-  </main>
 
 
   <!-- Page footer -->
