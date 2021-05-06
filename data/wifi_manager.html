@@ -68,6 +68,7 @@
 	<h1><b>NanoStat Wifi Management Portal</b></h1><BR>
 
 	<form action="/saveSecret/" method="POST">
+		
 		<label>ssid1:</label>
 		<input type="text" id="ssid1" name="ssid1" maxlength="32" size="16">
 		<label>password1:</label>
@@ -75,23 +76,28 @@
 		<!-- An element to toggle between password visibility -->
 		<input type="checkbox" onclick="showPassword('pass1')">Show Password
 		<BR>
-		<label>ssid2:</label>
+		
+			<label>ssid2:</label>
 		<input type="text" id="ssid2" name="ssid2" maxlength="32" size="16">
 		<label>password2:</label>
 		<input type="password" id="pass2" name="pass2" maxlength="64" size="16">
 		<!-- An element to toggle between password visibility -->
 		<input type="checkbox" onclick="showPassword('pass2')">Show Password
 		<BR>
-		<label>ssid3:</label>
+		
+			<label>ssid3:</label>
 		<input type="text" id="ssid3" name="ssid3" maxlength="32" size="16">
 		<label>password3:</label>
 		<input type="password" id="pass3" name="pass3" maxlength="64" size="16">
 		<input type="checkbox" onclick="showPassword('pass3')">Show Password
 		<BR>
-		<!-- Clear form -->
+		
+			<!-- Clear form -->
 		<input type="reset" value="Clear" />
 		<input type="submit" value="Save" />
+
 	</form>
+	
 	<button onClick="getWifiScanJson()">Wifi Scan</button>
 	<div id="wifilist"></div>
 	<script>

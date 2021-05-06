@@ -11,16 +11,19 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
   <script src='https://cdn.jsdelivr.net/npm/chart.js@3.1.1/dist/chart.min.js'></script>
-  <script type="text/javascript" src="websocketcode.js"></script>
-  <script type="text/javascript" src="button_handle_JS.js"></script>
+  <!-- <script type="text/javascript" src="websocketcode.js"></script> -->
+  <!-- <script type="text/javascript" src="button_handle_JS.js"></script> -->
+  <!-- Wifi handling JS -->
+  <script type="text/javascript" src="wifimanager.js"></script>
+
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <!-- <link rel="stylesheet" href="menubarstyle.css"> -->
   <!-- <link rel="stylesheet" href="CSS-Reset.css"> -->
   <!-- Google font: -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Leckerli+One&display=swap" rel="stylesheet">
-    <!-- Custom style: -->
-    <link rel="stylesheet" href="nanostatstyle.css">
+  <!-- Custom style: -->
+  <link rel="stylesheet" href="nanostatstyle.css">
 </head>
 
 
@@ -54,8 +57,8 @@
           </li>
 
           <li class="nav-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle active" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-              aria-expanded="false">System</a>
+            <a href="#" class="nav-link dropdown-toggle active" id="navbarDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">System</a>
             <ul class="dropdown-menu" aria-labeledby="navbarDropdown">
               <li><a href="files.html" class="dropdown-item">Files</a></li>
               <li><a href="wifi.html" class="dropdown-item active">Wifi</a></li>
@@ -78,8 +81,92 @@
       </div>
   </nav>
 
-  <div class="container"><h1>Wifi</h1></div>
+  <!-- Page title -->
+  <!-- <header class="container text-center mybox1"> -->
+  <header class="container text-center ">
+    <h1>Wifi</h1>
+    <h2>NanoStat Wifi Management Portal</h2>
+  </header>
 
+  <main class="container mybox1">
+
+    <form action="/saveSecret/" method="POST">
+
+      <div class="row">
+        <div class="col-sm ">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">SSID 1</label>
+            <input type="text" class="form-control p-0 border border-secondary" name="ssid1" id="ssid1" maxlength="32"
+              size="16">
+          </div>
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">Password 1</label>
+            <input type="text" class="form-control p-0 border border-secondary" name="pass1" id="pass1" maxlength="32"
+              size="16">
+          </div>
+        </div>
+        <div class="col-sm ">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">SSID 2</label>
+            <input type="text" class="form-control p-0 border border-secondary" name="ssid2" id="ssid2" maxlength="32"
+              size="16">
+          </div>
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">Password 2</label>
+            <input type="text" class="form-control p-0 border border-secondary" name="pass2" id="pass2" maxlength="32"
+              size="16">
+          </div>
+        </div>
+        <div class="col-sm ">
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">SSID 3</label>
+            <input type="text" class="form-control p-0 border border-secondary" name="ssid3" id="ssid3" maxlength="32"
+              size="16">
+          </div>
+          <div class="form-box ms-5 ms-md-0">
+            <label class="form-label mb-0">Password 3</label>
+            <input type="text" class="form-control p-0 border border-secondary" name="pass3" id="pass3" maxlength="32"
+              size="16">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Clear form -->
+      <!-- <input type="reset" value="Clear" /> -->
+      <!-- <input type="submit" value="Save" /> -->
+      <button type="reset" class="btn btn-primary my-2">Clear</button>
+      <button type="submit" class="btn btn-primary my-2">Save</button>
+
+    </form>
+
+
+    <!-- <div class="form-box ms-5 ms-md-0">
+      <label class="form-label mb-0">xyz</label>
+      <input type="text" class="form-control p-0 border border-secondary" name="xyz" id="xyz_id" maxlength="32" size="16">
+    </div> -->
+
+    <!-- Load wifi credentials from NanoStat to display. -->
+    <script>
+      getSecretJson();
+    </script>
+
+  </main>
+
+  <!-- Wifi scan -->
+
+
+  <div class="container mybox2">
+    <button class="btn btn-primary my-2" onClick="getWifiScanJson()">Wifi Scan</button>
+    <div id="wifilist"></div>
+
+  </div>
+
+
+  <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
+  <footer class="container text-center  fs-6 fw-lighter pt-3 fst-italic">
+    <p>NanoStat Rev. 3.5 @ BurkeLab 2021</p>
+  </footer>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
