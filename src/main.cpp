@@ -1254,6 +1254,42 @@ void handleFirmwareUpload(AsyncWebServerRequest *request, String filename, size_
   // https://github.com/me-no-dev/ESPAsyncWebServer/issues/542#issuecomment-508489206
 }
 
+// handle the upload of the firmware
+void handleFilesystemUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  // handle upload and update
+  if (!index)
+  {
+    Serial.printf("Update: %s\n", filename.c_str());
+    // if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+    if (!Update.begin(SPIFFS.totalBytes(),U_SPIFFS))
+    { //start with max available size
+      Update.printError(Serial);
+    }
+  }
+
+  /* flashing firmware to ESP*/
+  if (len)
+  {
+    Update.write(data, len);
+  }
+
+  if (final)
+  {
+    if (Update.end(true))
+    { //true to set the size to the current progress
+      Serial.printf("Update Success: %ub written\nRebooting...\n", index + len);
+    }
+    else
+    {
+      Update.printError(Serial);
+    }
+  }
+  // alternative approach
+  // https://github.com/me-no-dev/ESPAsyncWebServer/issues/542#issuecomment-508489206
+}
+
+
 void runWifiPortal()
 {
 
@@ -3653,6 +3689,21 @@ void configureserver()
             request->send(response);
         } }, handleFirmwareUpload);
 
+        // handling uploading filesystem file
+        // see https://github.com/espressif/arduino-esp32/blob/371f382db7dd36c470bb2669b222adf0a497600d/libraries/HTTPUpdateServer/src/HTTPUpdateServer.h
+  server.on(
+      "/m_filesystem_update", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (!Update.hasError()) {
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "OK");
+            response->addHeader("Connection", "close");
+            request->send(response);
+            ESP.restart();
+        } else {
+            AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", "ERROR");
+            response->addHeader("Connection", "close");
+            request->send(response);
+        } }, handleFilesystemUpload);
+
   // Done with configuration, begin server:
   server.begin();
 }
@@ -3668,7 +3719,7 @@ void setup()
   while (!Serial)
     ;
 
-  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1! (Test 2 OTA update)");
+  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1!");
 
   // initialize ADC:
   analogReadResolution(12);

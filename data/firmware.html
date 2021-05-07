@@ -89,14 +89,21 @@
 
   <!-- Peter Burke custom code -->
   <div class="container ">
-    <p>File upload</p>
+    <h3>Firmware update</h3>
+    <p>Upload firmware.bin</p>
     <FORM action='/m_firmware_update' method='post' enctype='multipart/form-data'>
       <input class='btn btn-outline-primary' type='file' name='m_fupload' id='m_fupload_id' value='m_value'>
-      <button class='btn btn-primary' type='submit'>Upload firmware & update</button>
+      <button class='btn btn-primary' type='submit'>Upload firmware & update</button></FORM>
   </div>
 
  
-
+  <div class="container my-5 ">
+    <h3>Filesystem update</h3>
+    <p>Upload spiffs.bin</p>
+    <FORM action='/m_filesystem_update' method='post' enctype='multipart/form-data'>
+      <input class='btn btn-outline-primary' type='file' name='m_filesystemupload' id='m_filesystemupload_id' value='m_value'>
+      <button class='btn btn-primary' type='submit'>Upload filesystem & update</button></FORM>
+  </div>
 
   <!-- Page footer -->
   <!-- <footer class="container text-center myfooter fs-6 fw-lighter pt-3 fst-italic"> -->
