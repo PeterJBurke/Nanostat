@@ -960,7 +960,7 @@ void handleGetSavSecreteJson(AsyncWebServerRequest *request)
   {
     message = "No message sent";
   }
-  request->send(200, "text/HTML", "bla bla bla bla bla xyz xyz xyz xyz xyz ");
+  request->send(200, "text/HTML", "Credentials saved. Rebooting...");
 
   // {"SSID1":"myssid1xyz","PWD1":"mypwd1xyz",
   //     "SSID2":"myssid2xyz","PWD2":"mypwd2xyz",
@@ -1290,6 +1290,36 @@ void handleFilesystemUpload(AsyncWebServerRequest *request, String filename, siz
 }
 
 
+void getWifiScanJson(AsyncWebServerRequest *request)
+{
+  String json = "{\"scan_result\":[";
+  int n = WiFi.scanComplete();
+  if (n == -2)
+  {
+    WiFi.scanNetworks(true);
+  }
+  else if (n)
+  {
+    for (int i = 0; i < n; ++i)
+    {
+      if (i)
+        json += ",";
+      json += "{";
+      json += "\"RSSI\":" + String(WiFi.RSSI(i));
+      json += ",\"SSID\":\"" + WiFi.SSID(i) + "\"";
+      json += "}";
+    }
+    WiFi.scanDelete();
+    if (WiFi.scanComplete() == -2)
+    {
+      WiFi.scanNetworks(true);
+    }
+  }
+  json += "]}";
+  request->send(200, "application/json", json);
+  json = String();
+}
+
 void runWifiPortal()
 {
 
@@ -1312,12 +1342,16 @@ void runWifiPortal()
   //   handleGetSavSecreteJson(request);
   // });
 
-  m_wifitools_server->on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
+  m_wifitools_server->on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request) {
     handleGetSavSecreteJson(request);
   });
 
   m_wifitools_server->on("/list", HTTP_ANY, [](AsyncWebServerRequest *request) {
     handleFileList(request);
+  });
+
+    m_wifitools_server->on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+    getWifiScanJson(request);
   });
 
   //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
@@ -3225,36 +3259,6 @@ void handleFileDelete(AsyncWebServerRequest *request)
   SPIFFS.remove(path);
   request->send(200, "text/plain", "");
   path = String();
-}
-
-void getWifiScanJson(AsyncWebServerRequest *request)
-{
-  String json = "{\"scan_result\":[";
-  int n = WiFi.scanComplete();
-  if (n == -2)
-  {
-    WiFi.scanNetworks(true);
-  }
-  else if (n)
-  {
-    for (int i = 0; i < n; ++i)
-    {
-      if (i)
-        json += ",";
-      json += "{";
-      json += "\"RSSI\":" + String(WiFi.RSSI(i));
-      json += ",\"SSID\":\"" + WiFi.SSID(i) + "\"";
-      json += "}";
-    }
-    WiFi.scanDelete();
-    if (WiFi.scanComplete() == -2)
-    {
-      WiFi.scanNetworks(true);
-    }
-  }
-  json += "]}";
-  request->send(200, "application/json", json);
-  json = String();
 }
 
 void handle_websocket_text(uint8_t *payload)
