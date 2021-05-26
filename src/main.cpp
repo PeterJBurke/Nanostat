@@ -1,7 +1,7 @@
 //https://github.com/PeterJBurke/Nanostat
 
-bool userpause = false;              // pauses for user to press input on serial between each point in sweep
-bool print_output_to_serial = false; // prints verbose output to serial
+bool userpause = false;             // pauses for user to press input on serial between each point in sweep
+bool print_output_to_serial = true; // prints verbose output to serial
 
 //Libraries
 #include <Wire.h>
@@ -121,13 +121,17 @@ int sweep_param_delayTime_ms_IV = 50;
 int sweep_param_delayTime_ms_CAL = 50;
 
 // Arrays of IV curves etc:
-const uint16_t arr_samples = 2500; //use 1000 for EIS, can use 2500 for other experiments
+const uint16_t arr_samples = 5000; //use 1000 for EIS, can use 2500 for other experiments (10k does not fit in DRAM)
 uint16_t arr_cur_index = 0;
 int16_t volts[arr_samples] = {0}; // single sweep IV curve "V"
 float amps[arr_samples] = {0};    // single sweep IV curve "I"
 int32_t time_Voltammaogram[arr_samples] = {0};
 int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
 
+// JSON string to sent over websockets to browswer client:
+// char Voltammogram_JSON_cstr[31000];
+// char Voltammogram_JSON_cstr[31000];
+//char Voltammogram_JSON_cstr2[31000];
 int16_t volts_temp = 0;
 float amps_temp = 0;
 float v1_temp = 0;
@@ -302,6 +306,7 @@ void send_is_sweeping_status_over_websocket(bool is_sweeping)
 
 void sendVoltammogramWebsocketJSON()
 {
+  // old version used String, had memory probs for large arrays
   // psuedo code:
   // 1) Convert voltammagram to JSON...
   // Voltammagram JSON format will be like this:
@@ -352,6 +357,16 @@ void sendVoltammogramWebsocketJSON()
   if (print_output_to_serial)
   {
     Serial.println("####################################");
+    Serial.println("Just created Voltammogram_JSON string.");
+    Serial.println("Ingredients of string:");
+    Serial.println("current_array_string:");
+    Serial.println(current_array_string);
+    Serial.println("voltage_array_string:");
+    Serial.println(voltage_array_string);
+    Serial.println("time_array_string:");
+    Serial.println(time_array_string);
+
+    Serial.println("####################################");
     Serial.println("Beginning sending Voltammogram_JSON over websocket.");
     if (print_output_to_serial)
     {
@@ -362,6 +377,132 @@ void sendVoltammogramWebsocketJSON()
   }
 
   m_websocketserver.broadcastTXT(Voltammogram_JSON.c_str(), Voltammogram_JSON.length());
+
+  if (print_output_to_serial)
+  {
+    Serial.println("Finished sending Voltammogram_JSON over websocket.");
+    Serial.println("####################################");
+  }
+}
+
+void sendVoltammogramWebsocketJSON_beta()
+{
+  // psuedo code:
+  // 1) Convert voltammagram to JSON...
+  // Voltammagram JSON format will be like this:
+  // { "Current" : [3,2,6,...], "Voltage": [8,6,7,....], "Time": [3,4,5,...]}
+  // 2) Send JSON over websocket...
+  // Version 2 tries to use char[] instead of String for memory management (String can't hold all the data)
+
+  Serial.println("sendVoltammogramWebsocketJSON called");
+  Serial.print("number_of_valid_points_in_volts_amps_array=");
+  Serial.println(number_of_valid_points_in_volts_amps_array);
+
+  int m_number_of_string_characters = 0;
+  int m_number_of_characters_per_current_point = 7; // comma, sign,xx.xx up to 99.99 microA
+  char m_current_point_cstr[m_number_of_characters_per_current_point - 1];
+
+  int m_number_of_characters_per_voltage_point = 6; // comma, sign,xxxx up to 9999 mV
+  char m_voltage_point_cstr[m_number_of_characters_per_voltage_point];
+
+  int m_number_of_characters_per_time_point = 6; // comma, xxxxx up to 99999 ms=99 seconds
+  char m_time_point_cstr[m_number_of_characters_per_time_point];
+
+  int m_number_of_characters_for_structure = 50; // name, brackets, etc. 12+13+8+2=35, make 50 for good measure
+  int m_number_of_characters_per_point = 0;
+  m_number_of_characters_per_point = m_number_of_characters_per_voltage_point + m_number_of_characters_per_current_point + m_number_of_characters_per_time_point;
+
+  m_number_of_string_characters = m_number_of_characters_for_structure + number_of_valid_points_in_volts_amps_array * m_number_of_characters_per_point;
+
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
+    Serial.println("xPortGetFreeHeapSize()=");
+  Serial.println(xPortGetFreeHeapSize());
+  Serial.println("ESP.getMaxAllocHeap()=");
+  Serial.println(ESP.getMaxAllocHeap());
+  Serial.println("ESP.getHeapSize()=");
+  Serial.println(ESP.getHeapSize());
+  Serial.println("ESP.getMinFreeHeap()=");
+  Serial.println(ESP.getMinFreeHeap());
+  Serial.println("ESP.getSketchSize()=");
+  Serial.println(ESP.getSketchSize());
+  // Serial.println("xyz=");
+  // Serial.println(xyz);
+  
+  Serial.println("Allocating memory for Voltammogram_JSON_cstr for m_number_of_string_characters=");
+  Serial.println(m_number_of_string_characters);
+  char Voltammogram_JSON_cstr[m_number_of_string_characters];
+  // make it a global variable is another option
+  Serial.println("Done");
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
+  Serial.println("sizeof(Voltammogram_JSON_cstr)=");
+  Serial.println(sizeof(Voltammogram_JSON_cstr));
+
+  strcpy(Voltammogram_JSON_cstr, "{ \"Current\" : [");
+
+  // file current array first
+  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+  {
+    //    current_array_string += amps[i];
+    dtostrf(amps[i], m_number_of_characters_per_current_point - 1, 2, m_current_point_cstr);
+    strcat(Voltammogram_JSON_cstr, m_current_point_cstr);
+    if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    {
+      //current_array_string += ",";
+      strcat(Voltammogram_JSON_cstr, ",");
+    }
+  }
+
+  strcat(Voltammogram_JSON_cstr, "], \"Voltage\": [");
+
+  // file voltage array next
+  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+  {
+    //voltage_array_string += volts[i];
+    //dtostrf(volts[i], m_number_of_characters_per_voltage_point - 1, 2, m_voltage_point_cstr);
+    itoa(volts[i], m_voltage_point_cstr, 10);
+    strcat(Voltammogram_JSON_cstr, m_voltage_point_cstr);
+    if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    {
+      //voltage_array_string += ",";
+      strcat(Voltammogram_JSON_cstr, ",");
+    }
+  }
+
+  strcat(Voltammogram_JSON_cstr, "], \"Time\": [");
+
+  // file time array last
+  for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+  {
+    //time_array_string += (time_Voltammaogram[i] - time_Voltammaogram[0]); // normalize to start of sweep time
+    //dtostrf(time_Voltammaogram[i] - time_Voltammaogram[0], m_number_of_characters_per_time_point - 1, 2, m_time_point_cstr);
+    itoa(time_Voltammaogram[i] - time_Voltammaogram[0], m_time_point_cstr, 10);
+    strcat(Voltammogram_JSON_cstr, m_time_point_cstr);
+    if (i != (number_of_valid_points_in_volts_amps_array - 1))
+    {
+      //time_array_string += ",";
+      strcat(Voltammogram_JSON_cstr, ",");
+    }
+  }
+  strcat(Voltammogram_JSON_cstr, "]}");
+
+  if (print_output_to_serial)
+  {
+    Serial.println("####################################");
+    Serial.println("Just created Voltammogram_JSON string.");
+
+    Serial.println("####################################");
+    Serial.println("Beginning sending Voltammogram_JSON over websocket.");
+    if (print_output_to_serial)
+    {
+      Serial.println(Voltammogram_JSON_cstr);
+    }
+    Serial.print("Heap free memory (in bytes)= ");
+    Serial.println(ESP.getFreeHeap());
+  }
+
+  m_websocketserver.broadcastTXT(Voltammogram_JSON_cstr, strlen(Voltammogram_JSON_cstr));
 
   if (print_output_to_serial)
   {
@@ -1262,7 +1403,7 @@ void handleFilesystemUpload(AsyncWebServerRequest *request, String filename, siz
   {
     Serial.printf("Update: %s\n", filename.c_str());
     // if (!Update.begin(UPDATE_SIZE_UNKNOWN))
-    if (!Update.begin(SPIFFS.totalBytes(),U_SPIFFS))
+    if (!Update.begin(SPIFFS.totalBytes(), U_SPIFFS))
     { //start with max available size
       Update.printError(Serial);
     }
@@ -1288,7 +1429,6 @@ void handleFilesystemUpload(AsyncWebServerRequest *request, String filename, siz
   // alternative approach
   // https://github.com/me-no-dev/ESPAsyncWebServer/issues/542#issuecomment-508489206
 }
-
 
 void getWifiScanJson(AsyncWebServerRequest *request)
 {
@@ -1350,7 +1490,7 @@ void runWifiPortal()
     handleFileList(request);
   });
 
-    m_wifitools_server->on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+  m_wifitools_server->on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
     getWifiScanJson(request);
   });
 
@@ -3693,8 +3833,8 @@ void configureserver()
             request->send(response);
         } }, handleFirmwareUpload);
 
-        // handling uploading filesystem file
-        // see https://github.com/espressif/arduino-esp32/blob/371f382db7dd36c470bb2669b222adf0a497600d/libraries/HTTPUpdateServer/src/HTTPUpdateServer.h
+  // handling uploading filesystem file
+  // see https://github.com/espressif/arduino-esp32/blob/371f382db7dd36c470bb2669b222adf0a497600d/libraries/HTTPUpdateServer/src/HTTPUpdateServer.h
   server.on(
       "/m_filesystem_update", HTTP_POST, [](AsyncWebServerRequest *request) {
         if (!Update.hasError()) {
@@ -3723,7 +3863,7 @@ void setup()
   while (!Serial)
     ;
 
-  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1!");
+  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1.1!");
 
   // initialize ADC:
   analogReadResolution(12);

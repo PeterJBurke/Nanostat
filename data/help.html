@@ -99,7 +99,7 @@
     <h3>Instructions:</h3>
     <p>On bootup, blue LED flashes until setup complete.</p>
     <p>To run a sweep, go to SWEEP page and click button for sweep type. (See below for sweep type explanations.) During
-      sweep, blue LED flashes.</p>
+      sweep, blue LED flashes (unless time per point less than 10 ms).</p>
     <p>To set sweep parameters, goto setup page. Click a button to run a sweep. Sweep is plotted on webpage at end of
       sweep, and automatically downloaded.</p>
     <p>To bias at a specific point and monitor voltages, goto panel page.</p>
@@ -114,6 +114,10 @@
     <p>To calibrate, run "Cal" with WE disconnected from RE/CE. (Short RE/CE). Calibrations saved to flash, persist
       after reboot.</p>
 
+
+      <h3>Choosing TIA resistance (Trans-Impedance Amplifier):</h3>
+      <p>Due to limits on the ADC of the ESP32, you need to ensure -0.75 V < VTIA < 1 V, where VTIA = RTIA * WE current.</p>
+  
     <h3>Sweep modes:</h3>
 
     <h6 class="mt-3">CV = Cyclic voltammetry.</h6>
