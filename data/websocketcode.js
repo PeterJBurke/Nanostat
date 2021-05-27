@@ -100,7 +100,8 @@ function addData(label, data) {
 
 // Called when a message is received from the server
 function onMessage(evt) {
-
+    console.log("onMessage called");
+    
     // Print out our received message
     console.log("Received: " + evt.data);
     var m_json_obj = JSON.parse(evt.data);
