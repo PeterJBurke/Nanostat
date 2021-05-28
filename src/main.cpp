@@ -3928,7 +3928,7 @@ void setup()
   while (!Serial)
     ;
 
-  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1.1!");
+  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1.1b!");
 
   // initialize ADC:
   analogReadResolution(12);

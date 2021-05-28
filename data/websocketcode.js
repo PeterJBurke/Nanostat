@@ -49,6 +49,7 @@ function wsConnect(m_url_JS) {
     m_url_JS = "ws://" + window.location.hostname + ":81/"
     // console.log(m_url_JS);
     m_websocket = new WebSocket(m_url_JS);
+    m_websocket.binaryType = "arraybuffer";
 
     // Assign callbacks
     m_websocket.onopen = function (evt) { onOpen(evt) };
@@ -98,189 +99,192 @@ function addData(label, data) {
     dataPlot.update();
 }
 
+
+
+
 // Called when a message is received from the server
 function onMessage(evt) {
     console.log("onMessage called");
-    
-    // Print out our received message
-    console.log("Received: " + evt.data);
-    var m_json_obj = JSON.parse(evt.data);
-    //    console.log(m_json_obj);
-    if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
-        // do something
-        if (m_json_obj.is_sweeping == true) { // mode is sweeping
+
+
+    if (typeof (evt.data) == "object") { // payload is binary, an ArrayBuffer 
+        console.log("OBJECT! parsing....");
+        const view = new DataView(evt.data);
+        console.log(view.getInt32(0,true));
+        console.log(evt.data);
+
+    }
+    if (typeof (evt.data) == "string") { // payload is string (JSON probably)
+        console.log("STRING! parsing....");
+
+
+        // Print out our received message
+        console.log("Received: " + evt.data);
+        var m_json_obj = JSON.parse(evt.data);
+        //    console.log(m_json_obj);
+        if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
             // do something
-            // document.getElementById('sweep_mode_id').innerHTML = "SWEEPING";
-            document.getElementById('sweep_mode_id').innerHTML = "<span style=\"color:red\">SWEEPING</span>";
-            console.log("need to update indicator to true...");
-        }
-        if (m_json_obj.is_sweeping == false) { // mode is sweeping
-            // do something
-            document.getElementById('sweep_mode_id').innerHTML = "<span style=\"color:green\">IDLE</span>";
-            console.log("need to update indicator to false...");
-        }
-    };
-
-    if ('Voltage' in m_json_obj) {// this is the voltamagram, parse and plot it...
-        var m_voltage_array = m_json_obj.Voltage;
-        var m_current_array = m_json_obj.Current;
-        var m_time_array = m_json_obj.Time;
-        console.log(m_voltage_array);
-        console.log(m_current_array);
-        console.log(m_time_array);
-
-
-        var trace_IV = {
-            x: m_voltage_array,
-            y: m_current_array,
-            mode: 'markers',
-            type: 'scatter'
+            if (m_json_obj.is_sweeping == true) { // mode is sweeping
+                // do something
+                // document.getElementById('sweep_mode_id').innerHTML = "SWEEPING";
+                document.getElementById('sweep_mode_id').innerHTML = "<span style=\"color:red\">SWEEPING</span>";
+                console.log("need to update indicator to true...");
+            }
+            if (m_json_obj.is_sweeping == false) { // mode is sweeping
+                // do something
+                document.getElementById('sweep_mode_id').innerHTML = "<span style=\"color:green\">IDLE</span>";
+                console.log("need to update indicator to false...");
+            }
         };
-        var data_IV = [trace_IV];
 
-        var m_IV_layout = {
-            // title: 'IV Curve',
-            showlegend: false,
-            margin: {
-                l: 50,
-                r: 5,
-                b: 50,
-                t: 1,
-                pad: 4
+        if ('Voltage' in m_json_obj) {// this is the voltamagram, parse and plot it...
+            var m_voltage_array = m_json_obj.Voltage;
+            var m_current_array = m_json_obj.Current;
+            var m_time_array = m_json_obj.Time;
+            console.log(m_voltage_array);
+            console.log(m_current_array);
+            console.log(m_time_array);
+
+
+            var trace_IV = {
+                x: m_voltage_array,
+                y: m_current_array,
+                mode: 'markers',
+                type: 'scatter'
+            };
+            var data_IV = [trace_IV];
+
+            var m_IV_layout = {
+                // title: 'IV Curve',
+                showlegend: false,
+                margin: {
+                    l: 50,
+                    r: 5,
+                    b: 50,
+                    t: 1,
+                    pad: 4
+                },
+                // title: {
+                //     text:'Plot Title',
+                //     font: {
+                //       family: 'Courier New, monospace',
+                //       size: 24
+                //     },
+                //     xref: 'paper',
+                //     x: 0.05,
+                //   },
+                xaxis: {
+                    title: { text: 'Voltage (mV)' }
+                },
+                yaxis: {
+                    title: { text: 'Current (microA)' }
+                }
+            };
+
+
+            // Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, {scrollZoom: true}, {editable: true}, {responsive: true});
+            Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, { scrollZoom: true, editable: true, responsive: true });
+
+
+            var trace_IvsTime = {
+                x: m_time_array,
+                y: m_current_array,
+                mode: 'markers',
+                type: 'scatter',
+                name: "Current"
+            };
+            var trace_VvsTime = {
+                x: m_time_array,
+                y: m_voltage_array,
+                mode: 'markers',
+                yaxis: 'y2',
+                type: 'scatter',
+                name: "Voltage"
+            };
+
+            var data_IVvsTime = [trace_IvsTime, trace_VvsTime];
+
+
+            var m_2yaxis_layout = {
+                margin: {
+                    l: 50,
+                    r: 5,
+                    b: 50,
+                    t: 1,
+                    pad: 4
+                },
+                // title: {
+                //     text:'Plot Title',
+                //     font: {
+                //       family: 'Courier New, monospace',
+                //       size: 24
+                //     },
+                //     xref: 'paper',
+                //     x: 0.05,
+                //   },
+                xaxis: {
+                    title: { text: 'Time (ms)' }
+                },
+                yaxis: { title: 'Current (microA)' },
+                yaxis2: {
+                    title: 'Voltage (mV)',
+                    titlefont: { color: 'rgb(148, 103, 189)' },
+                    tickfont: { color: 'rgb(148, 103, 189)' },
+                    overlaying: 'y',
+                    side: 'right'
+                }
+            };
+
+            Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+            // Since data is fresh, might as well force a download for user....
+            // if (download button is on) // not yet impelmented
+            // xxxyyyzzz       <li><a href="downloadfile">Download</a></li>
+            // window.open("http://nanostat.local/downloadfile");
+            window.open("/downloadfile");
+
+        };
+
+
+
+
+        // junk
+
+        var layout = {
+            title: {
+                text: 'Plot Title',
+                font: {
+                    family: 'Courier New, monospace',
+                    size: 24
+                },
+                xref: 'paper',
+                x: 0.05,
             },
-            // title: {
-            //     text:'Plot Title',
-            //     font: {
-            //       family: 'Courier New, monospace',
-            //       size: 24
-            //     },
-            //     xref: 'paper',
-            //     x: 0.05,
-            //   },
             xaxis: {
-                title: { text: 'Voltage (mV)' }
+                title: {
+                    text: 'x Axis',
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
             },
             yaxis: {
-                title: { text: 'Current (microA)' }
+                title: {
+                    text: 'y Axis',
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                }
             }
         };
 
 
-        // Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, {scrollZoom: true}, {editable: true}, {responsive: true});
-        Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, { scrollZoom: true, editable: true, responsive: true });
 
 
-        var trace_IvsTime = {
-            x: m_time_array,
-            y: m_current_array,
-            mode: 'markers',
-            type: 'scatter',
-            name: "Current"
-        };
-        var trace_VvsTime = {
-            x: m_time_array,
-            y: m_voltage_array,
-            mode: 'markers',
-            yaxis: 'y2',
-            type: 'scatter',
-            name: "Voltage"
-        };
-
-        var data_IVvsTime = [trace_IvsTime, trace_VvsTime];
-
-
-        var m_2yaxis_layout = {
-            margin: {
-                l: 50,
-                r: 5,
-                b: 50,
-                t: 1,
-                pad: 4
-            },
-            // title: {
-            //     text:'Plot Title',
-            //     font: {
-            //       family: 'Courier New, monospace',
-            //       size: 24
-            //     },
-            //     xref: 'paper',
-            //     x: 0.05,
-            //   },
-            xaxis: {
-                title: { text: 'Time (ms)' }
-            },
-            yaxis: { title: 'Current (microA)' },
-            yaxis2: {
-                title: 'Voltage (mV)',
-                titlefont: { color: 'rgb(148, 103, 189)' },
-                tickfont: { color: 'rgb(148, 103, 189)' },
-                overlaying: 'y',
-                side: 'right'
-            }
-        };
-
-        Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
-        // Since data is fresh, might as well force a download for user....
-        // if (download button is on) // not yet impelmented
-        // xxxyyyzzz       <li><a href="downloadfile">Download</a></li>
-        // window.open("http://nanostat.local/downloadfile");
-        window.open("/downloadfile");
-
-    };
-
-
-
-
-    // junk
-
-    var layout = {
-        title: {
-          text:'Plot Title',
-          font: {
-            family: 'Courier New, monospace',
-            size: 24
-          },
-          xref: 'paper',
-          x: 0.05,
-        },
-        xaxis: {
-          title: {
-            text: 'x Axis',
-            font: {
-              family: 'Courier New, monospace',
-              size: 18,
-              color: '#7f7f7f'
-            }
-          },
-        },
-        yaxis: {
-          title: {
-            text: 'y Axis',
-            font: {
-              family: 'Courier New, monospace',
-              size: 18,
-              color: '#7f7f7f'
-            }
-          }
-        }
-      };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    }
 
 }
 
