@@ -110,7 +110,13 @@ function onMessage(evt) {
     if (typeof (evt.data) == "object") { // payload is binary, an ArrayBuffer 
         console.log("OBJECT! parsing....");
         const view = new DataView(evt.data);
-        console.log(view.getInt32(0,true));
+        // console.log(view.getInt32(0,true));
+        console.log("view.getFloat32(0,true)=");
+        console.log(view.getFloat32(0,true));
+        console.log("view.getFloat32(1,true)=");
+        console.log(view.getFloat32(4,true));
+        //console.log(view.getFloat32(1,true));
+        console.log("evt.data=");
         console.log(evt.data);
 
     }

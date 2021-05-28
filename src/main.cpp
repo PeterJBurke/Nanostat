@@ -302,7 +302,6 @@ void send_is_sweeping_status_over_websocket(bool is_sweeping)
     temp_json_string = "{\"is_sweeping\":false}";
   };
   m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
-  
 }
 
 void sendVoltammogramWebsocketJSON()
@@ -537,18 +536,38 @@ void sendVoltammogramWebsocketBIN()
     Serial.println(test_array[i]);
   }
 
+  float m_test_float_array[10];
+  for (uint8_t i = 0; i < 10; i += 1)
+  {
+    m_test_float_array[i] = 3.1415+i;
+    Serial.print("m_test_float_array[i]=");
+    Serial.println(m_test_float_array[i]);
+  }
+
   bool m_headerToPayload = false;
   // pointer algebra example:
   int i = 1234;
+  float m_pi = 3.14159265359;
   uint8_t *buf = (uint8_t *)&i;
-  size_t buf_len = sizeof(i); // 4 byte
-                              // from https://github.com/Links2004/arduinoWebSockets/issues/213
+  uint8_t *m_pi_buf = (uint8_t *)&m_pi;
+  // uint8_t *m_test_float_array_buffer = (uint8_t *)&m_test_float_array;
+  size_t buf_len = sizeof(i);                                // 4 byte
+  size_t m_pi_buf_len = sizeof(m_pi);                        // 4 byte
+  size_t m_test_float_array_buffer_len = 10 * sizeof(float); // 4 byte
+  Serial.print("m_test_float_array_buffer_len=");
+  Serial.println(m_test_float_array_buffer_len);
+
+  // from https://github.com/Links2004/arduinoWebSockets/issues/213
   Serial.print("sizeof(i)=");
   Serial.println(sizeof(i));
+  Serial.print("sizeof(m_pi)=");
+  Serial.println(sizeof(m_pi));
 
   // bool sendBIN(uint8_t * payload, size_t length, bool headerToPayload = false);
   // bool sendBIN(const uint8_t * payload, size_t length);
-  m_websocketserver.broadcastBIN( buf, buf_len, m_headerToPayload);
+  //  m_websocketserver.broadcastBIN( buf, buf_len, m_headerToPayload);
+  //  m_websocketserver.broadcastBIN( m_pi_buf, m_pi_buf_len, m_headerToPayload);
+  m_websocketserver.broadcastBIN((uint8_t *)m_test_float_array, m_test_float_array_buffer_len, m_headerToPayload);
 
   if (print_output_to_serial)
   {
@@ -1547,17 +1566,14 @@ void runWifiPortal()
   //   handleGetSavSecreteJson(request);
   // });
 
-  m_wifitools_server->on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request) {
-    handleGetSavSecreteJson(request);
-  });
+  m_wifitools_server->on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request)
+                         { handleGetSavSecreteJson(request); });
 
-  m_wifitools_server->on("/list", HTTP_ANY, [](AsyncWebServerRequest *request) {
-    handleFileList(request);
-  });
+  m_wifitools_server->on("/list", HTTP_ANY, [](AsyncWebServerRequest *request)
+                         { handleFileList(request); });
 
-  m_wifitools_server->on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
-    getWifiScanJson(request);
-  });
+  m_wifitools_server->on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request)
+                         { getWifiScanJson(request); });
 
   //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
 
@@ -1664,9 +1680,8 @@ void runWifiPortal()
 void runWifiPortal_after_connected_to_WIFI()
 {
   // Don't run this after starting server or ESP32 will crash!!!
-  server.on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request) {
-    handleGetSavSecreteJsonNoReboot(request);
-  });
+  server.on("/saveSecret/", HTTP_POST, [](AsyncWebServerRequest *request)
+            { handleGetSavSecreteJsonNoReboot(request); });
 
   //xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
 
@@ -3652,266 +3667,287 @@ void configureserver()
   // }));
 
   // Button #1
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button1pressed", [](AsyncWebServerRequest *request1, JsonVariant &json1) {
-    const JsonObject &jsonObj1 = json1.as<JsonObject>();
-    if (jsonObj1["on"])
-    {
-      Serial.println("Button 1 pressed. Running CV sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = CV;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request1->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button1pressed", [](AsyncWebServerRequest *request1, JsonVariant &json1)
+                                                    {
+                                                      const JsonObject &jsonObj1 = json1.as<JsonObject>();
+                                                      if (jsonObj1["on"])
+                                                      {
+                                                        Serial.println("Button 1 pressed. Running CV sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = CV;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request1->send(200, "OK");
+                                                    }));
   // Button #2
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button2pressed", [](AsyncWebServerRequest *request2, JsonVariant &json2) {
-    const JsonObject &jsonObj2 = json2.as<JsonObject>();
-    if (jsonObj2["on"])
-    {
-      Serial.println("Button 2 pressed. Running NPV sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = NPV;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request2->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button2pressed", [](AsyncWebServerRequest *request2, JsonVariant &json2)
+                                                    {
+                                                      const JsonObject &jsonObj2 = json2.as<JsonObject>();
+                                                      if (jsonObj2["on"])
+                                                      {
+                                                        Serial.println("Button 2 pressed. Running NPV sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = NPV;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request2->send(200, "OK");
+                                                    }));
   // Button #3
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button3pressed", [](AsyncWebServerRequest *request3, JsonVariant &json3) {
-    const JsonObject &jsonObj3 = json3.as<JsonObject>();
-    if (jsonObj3["on"])
-    {
-      Serial.println("Button 3 pressed. Running SQV sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = SQV;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request3->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button3pressed", [](AsyncWebServerRequest *request3, JsonVariant &json3)
+                                                    {
+                                                      const JsonObject &jsonObj3 = json3.as<JsonObject>();
+                                                      if (jsonObj3["on"])
+                                                      {
+                                                        Serial.println("Button 3 pressed. Running SQV sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = SQV;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request3->send(200, "OK");
+                                                    }));
   // Button #4
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button4pressed", [](AsyncWebServerRequest *request4, JsonVariant &json4) {
-    const JsonObject &jsonObj4 = json4.as<JsonObject>();
-    if (jsonObj4["on"])
-    {
-      Serial.println("Button 4 pressed. Running CA sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = CA;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request4->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button4pressed", [](AsyncWebServerRequest *request4, JsonVariant &json4)
+                                                    {
+                                                      const JsonObject &jsonObj4 = json4.as<JsonObject>();
+                                                      if (jsonObj4["on"])
+                                                      {
+                                                        Serial.println("Button 4 pressed. Running CA sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = CA;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request4->send(200, "OK");
+                                                    }));
   // Button #5
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button5pressed", [](AsyncWebServerRequest *request5, JsonVariant &json5) {
-    const JsonObject &jsonObj5 = json5.as<JsonObject>();
-    if (jsonObj5["on"])
-    {
-      Serial.println("Button 5 pressed. Running DC sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = DCBIAS;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request5->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button5pressed", [](AsyncWebServerRequest *request5, JsonVariant &json5)
+                                                    {
+                                                      const JsonObject &jsonObj5 = json5.as<JsonObject>();
+                                                      if (jsonObj5["on"])
+                                                      {
+                                                        Serial.println("Button 5 pressed. Running DC sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = DCBIAS;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request5->send(200, "OK");
+                                                    }));
   // Button #6
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button6pressed", [](AsyncWebServerRequest *request6, JsonVariant &json6) {
-    const JsonObject &jsonObj6 = json6.as<JsonObject>();
-    if (jsonObj6["on"])
-    {
-      Serial.println("Button 6 pressed. Running IV sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = IV;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request6->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button6pressed", [](AsyncWebServerRequest *request6, JsonVariant &json6)
+                                                    {
+                                                      const JsonObject &jsonObj6 = json6.as<JsonObject>();
+                                                      if (jsonObj6["on"])
+                                                      {
+                                                        Serial.println("Button 6 pressed. Running IV sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = IV;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request6->send(200, "OK");
+                                                    }));
 
   // Button #7
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button7pressed", [](AsyncWebServerRequest *request7, JsonVariant &json7) {
-    const JsonObject &jsonObj7 = json7.as<JsonObject>();
-    if (jsonObj7["on"])
-    {
-      Serial.println("Button 7 pressed. Running CAL sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = CAL;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request7->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button7pressed", [](AsyncWebServerRequest *request7, JsonVariant &json7)
+                                                    {
+                                                      const JsonObject &jsonObj7 = json7.as<JsonObject>();
+                                                      if (jsonObj7["on"])
+                                                      {
+                                                        Serial.println("Button 7 pressed. Running CAL sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = CAL;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request7->send(200, "OK");
+                                                    }));
   // Button #8
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button8pressed", [](AsyncWebServerRequest *request8, JsonVariant &json8) {
-    const JsonObject &jsonObj8 = json8.as<JsonObject>();
-    if (jsonObj8["on"])
-    {
-      Serial.println("Button 8 pressed. Running MISC_MODE sweep.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = MISC_MODE;
-      send_is_sweeping_status_over_websocket(true);
-    }
-    request8->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button8pressed", [](AsyncWebServerRequest *request8, JsonVariant &json8)
+                                                    {
+                                                      const JsonObject &jsonObj8 = json8.as<JsonObject>();
+                                                      if (jsonObj8["on"])
+                                                      {
+                                                        Serial.println("Button 8 pressed. Running MISC_MODE sweep.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = MISC_MODE;
+                                                        send_is_sweeping_status_over_websocket(true);
+                                                      }
+                                                      request8->send(200, "OK");
+                                                    }));
   // Button #9
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button9pressed", [](AsyncWebServerRequest *request9, JsonVariant &json9) {
-    const JsonObject &jsonObj9 = json9.as<JsonObject>();
-    if (jsonObj9["on"])
-    {
-      Serial.println("Button 9 pressed.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = dormant;
-      send_is_sweeping_status_over_websocket(false);
-    }
-    request9->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button9pressed", [](AsyncWebServerRequest *request9, JsonVariant &json9)
+                                                    {
+                                                      const JsonObject &jsonObj9 = json9.as<JsonObject>();
+                                                      if (jsonObj9["on"])
+                                                      {
+                                                        Serial.println("Button 9 pressed.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = dormant;
+                                                        send_is_sweeping_status_over_websocket(false);
+                                                      }
+                                                      request9->send(200, "OK");
+                                                    }));
   // Button #10
-  server.addHandler(new AsyncCallbackJsonWebHandler("/button10pressed", [](AsyncWebServerRequest *request10, JsonVariant &json10) {
-    const JsonObject &jsonObj10 = json10.as<JsonObject>();
-    if (jsonObj10["on"])
-    {
-      Serial.println("Button 10 pressed.");
-      // digitalWrite(LEDPIN, HIGH);
-      Sweep_Mode = dormant;
-      send_is_sweeping_status_over_websocket(false);
-    }
-    request10->send(200, "OK");
-  }));
+  server.addHandler(new AsyncCallbackJsonWebHandler("/button10pressed", [](AsyncWebServerRequest *request10, JsonVariant &json10)
+                                                    {
+                                                      const JsonObject &jsonObj10 = json10.as<JsonObject>();
+                                                      if (jsonObj10["on"])
+                                                      {
+                                                        Serial.println("Button 10 pressed.");
+                                                        // digitalWrite(LEDPIN, HIGH);
+                                                        Sweep_Mode = dormant;
+                                                        send_is_sweeping_status_over_websocket(false);
+                                                      }
+                                                      request10->send(200, "OK");
+                                                    }));
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 
-  server.on("/downloadfile", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/data.txt", "text/plain", true);
-  });
+  server.on("/downloadfile", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/data.txt", "text/plain", true); });
 
-  server.on("/rebootnanostat", HTTP_GET, [](AsyncWebServerRequest *request) {
-    // reboot the ESP32
-    request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"5; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Rebooting! </h1>  </body>");
-    delay(500);
-    ESP.restart();
-  });
+  server.on("/rebootnanostat", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+              // reboot the ESP32
+              request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"5; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Rebooting! </h1>  </body>");
+              delay(500);
+              ESP.restart();
+            });
 
-  server.onNotFound([](AsyncWebServerRequest *request) {
-    if (request->method() == HTTP_OPTIONS)
-    {
-      request->send(200); // options request typically sent by client at beginning to make sure server can handle request
-    }
-    else
-    {
-      Serial.println("Not found");
-      request->send(404, "Not found");
-    }
-  });
+  server.onNotFound([](AsyncWebServerRequest *request)
+                    {
+                      if (request->method() == HTTP_OPTIONS)
+                      {
+                        request->send(200); // options request typically sent by client at beginning to make sure server can handle request
+                      }
+                      else
+                      {
+                        Serial.println("Not found");
+                        request->send(404, "Not found");
+                      }
+                    });
 
   // Send a POST request to <IP>/actionpage with a form field message set to <message>
-  server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request) {
-    String message;
-    Serial.println("actionpage.html, HTTP_POST actionpage received , processing....");
+  server.on("/actionpage.html", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+              String message;
+              Serial.println("actionpage.html, HTTP_POST actionpage received , processing....");
 
-    //**********************************************
+              //**********************************************
 
-    // List all parameters int params = request->params();
-    int params = request->params();
-    for (int i = 0; i < params; i++)
-    {
-      AsyncWebParameter *p = request->getParam(i);
-      if (p->isPost())
-      {
-        Serial.print(i);
-        Serial.print(F("\t"));
-        Serial.print(p->name().c_str());
-        Serial.print(F("\t"));
-        Serial.println(p->value().c_str());
-        //Serial.print(F("\t"))
+              // List all parameters int params = request->params();
+              int params = request->params();
+              for (int i = 0; i < params; i++)
+              {
+                AsyncWebParameter *p = request->getParam(i);
+                if (p->isPost())
+                {
+                  Serial.print(i);
+                  Serial.print(F("\t"));
+                  Serial.print(p->name().c_str());
+                  Serial.print(F("\t"));
+                  Serial.println(p->value().c_str());
+                  //Serial.print(F("\t"))
 
-        //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
-        // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
-        //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
-        //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-        set_sweep_parameters_from_form_input(p->name().c_str(), p->value().c_str());
-      }
-    }
+                  //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+                  // Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+                  //Serial.println(i,'/T',p->name().c_str(),'/T',p->value().c_str());
+                  //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+                  set_sweep_parameters_from_form_input(p->name().c_str(), p->value().c_str());
+                }
+              }
 
-    //**********************************************
+              //**********************************************
 
-    if (request->hasParam(PARAM_MESSAGE, true))
-    {
-      message = request->getParam(PARAM_MESSAGE, true)->value();
-      Serial.println(message);
-    }
-    else
-    {
-      message = "No message sent";
-    }
-    // request->send(200, "text/HTML", "Hello, POST: " + message);
-    // request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
-    request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Settings saved! </h1> <p> Returning to main page. </p> </body>");
-    // request->send(200, "OK");
+              if (request->hasParam(PARAM_MESSAGE, true))
+              {
+                message = request->getParam(PARAM_MESSAGE, true)->value();
+                Serial.println(message);
+              }
+              else
+              {
+                message = "No message sent";
+              }
+              // request->send(200, "text/HTML", "Hello, POST: " + message);
+              // request->send(200, "text/HTML", "Sweep data saved. Click <a href=\"/index.html\">here</a> to return to main page.");
+              request->send(200, "text/HTML", "  <head> <meta http-equiv=\"refresh\" content=\"2; URL=index.html\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> </head> <body> <h1> Settings saved! </h1> <p> Returning to main page. </p> </body>");
+              // request->send(200, "OK");
 
-    //   <head>
-    //   <meta http-equiv="refresh" content="5; URL=https://www.bitdegree.org/" />
-    // </head>
-    // <body>
-    //   <p>If you are not redirected in five seconds, <a href="https://www.bitdegree.org/">click here</a>.</p>
-    // </body>
+              //   <head>
+              //   <meta http-equiv="refresh" content="5; URL=https://www.bitdegree.org/" />
+              // </head>
+              // <body>
+              //   <p>If you are not redirected in five seconds, <a href="https://www.bitdegree.org/">click here</a>.</p>
+              // </body>
 
-    // request->send(200, "text/URL", "www.google.com");
-    // request->send(200, "text/URL", "<meta http-equiv=\"Refresh\" content=\"0; URL=https://google.com/\">");
-    // <meta http-equiv="Refresh" content="0; URL=https://example.com/">
-  });
+              // request->send(200, "text/URL", "www.google.com");
+              // request->send(200, "text/URL", "<meta http-equiv=\"Refresh\" content=\"0; URL=https://google.com/\">");
+              // <meta http-equiv="Refresh" content="0; URL=https://example.com/">
+            });
 
   // Wifitools stuff:
   // Save credentials:
-  server.on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request) {
-    handleGetSavSecreteJsonNoReboot(request);
-  });
+  server.on("/saveSecret", HTTP_POST, [](AsyncWebServerRequest *request)
+            { handleGetSavSecreteJsonNoReboot(request); });
 
   // Wifi scan:
-  server.on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request) {
-    getWifiScanJson(request);
-  });
+  server.on("/wifiScan.json", HTTP_GET, [](AsyncWebServerRequest *request)
+            { getWifiScanJson(request); });
 
   // List directory:
-  server.on("/list", HTTP_ANY, [](AsyncWebServerRequest *request) {
-    handleFileList(request);
-  });
+  server.on("/list", HTTP_ANY, [](AsyncWebServerRequest *request)
+            { handleFileList(request); });
 
   // Delete file
   server.on(
-      "/edit", HTTP_DELETE, [](AsyncWebServerRequest *request) {
-        handleFileDelete(request);
-      });
+      "/edit", HTTP_DELETE, [](AsyncWebServerRequest *request)
+      { handleFileDelete(request); });
 
   // Peter Burke custom code:
   server.on(
       "/m_fupload", HTTP_POST, [](AsyncWebServerRequest *request) {},
       [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
-         size_t len, bool final) { handleUpload(request, filename, "files.html", index, data, len, final); });
+         size_t len, bool final)
+      { handleUpload(request, filename, "files.html", index, data, len, final); });
 
   // From https://github.com/me-no-dev/ESPAsyncWebServer/issues/542#issuecomment-573445113
   // handling uploading firmware file
   server.on(
-      "/m_firmware_update", HTTP_POST, [](AsyncWebServerRequest *request) {
-        if (!Update.hasError()) {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "OK");
-            response->addHeader("Connection", "close");
-            request->send(response);
-            ESP.restart();
-        } else {
-            AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", "ERROR");
-            response->addHeader("Connection", "close");
-            request->send(response);
-        } }, handleFirmwareUpload);
+      "/m_firmware_update", HTTP_POST, [](AsyncWebServerRequest *request)
+      {
+        if (!Update.hasError())
+        {
+          AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "OK");
+          response->addHeader("Connection", "close");
+          request->send(response);
+          ESP.restart();
+        }
+        else
+        {
+          AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", "ERROR");
+          response->addHeader("Connection", "close");
+          request->send(response);
+        }
+      },
+      handleFirmwareUpload);
 
   // handling uploading filesystem file
   // see https://github.com/espressif/arduino-esp32/blob/371f382db7dd36c470bb2669b222adf0a497600d/libraries/HTTPUpdateServer/src/HTTPUpdateServer.h
   server.on(
-      "/m_filesystem_update", HTTP_POST, [](AsyncWebServerRequest *request) {
-        if (!Update.hasError()) {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "OK");
-            response->addHeader("Connection", "close");
-            request->send(response);
-            ESP.restart();
-        } else {
-            AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", "ERROR");
-            response->addHeader("Connection", "close");
-            request->send(response);
-        } }, handleFilesystemUpload);
+      "/m_filesystem_update", HTTP_POST, [](AsyncWebServerRequest *request)
+      {
+        if (!Update.hasError())
+        {
+          AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "OK");
+          response->addHeader("Connection", "close");
+          request->send(response);
+          ESP.restart();
+        }
+        else
+        {
+          AsyncWebServerResponse *response = request->beginResponse(500, "text/plain", "ERROR");
+          response->addHeader("Connection", "close");
+          request->send(response);
+        }
+      },
+      handleFilesystemUpload);
 
   // Done with configuration, begin server:
   server.begin();
