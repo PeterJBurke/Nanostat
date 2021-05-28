@@ -302,6 +302,7 @@ void send_is_sweeping_status_over_websocket(bool is_sweeping)
     temp_json_string = "{\"is_sweeping\":false}";
   };
   m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
+  
 }
 
 void sendVoltammogramWebsocketJSON()
@@ -416,7 +417,7 @@ void sendVoltammogramWebsocketJSON_beta()
 
   Serial.print("Heap free memory (in bytes)= ");
   Serial.println(ESP.getFreeHeap());
-    Serial.println("xPortGetFreeHeapSize()=");
+  Serial.println("xPortGetFreeHeapSize()=");
   Serial.println(xPortGetFreeHeapSize());
   Serial.println("ESP.getMaxAllocHeap()=");
   Serial.println(ESP.getMaxAllocHeap());
@@ -428,7 +429,7 @@ void sendVoltammogramWebsocketJSON_beta()
   Serial.println(ESP.getSketchSize());
   // Serial.println("xyz=");
   // Serial.println(xyz);
-  
+
   Serial.println("Allocating memory for Voltammogram_JSON_cstr for m_number_of_string_characters=");
   Serial.println(m_number_of_string_characters);
   char Voltammogram_JSON_cstr[m_number_of_string_characters];
@@ -509,6 +510,70 @@ void sendVoltammogramWebsocketJSON_beta()
     Serial.println("Finished sending Voltammogram_JSON over websocket.");
     Serial.println("####################################");
   }
+}
+
+void sendVoltammogramWebsocketBIN()
+{
+  // send data over websocket binary
+  // psuedo code:
+  // 1) Convert voltammagram to JSON...
+  // Voltammagram JSON format will be like this:
+  // { "Current" : [3,2,6,...], "Voltage": [8,6,7,....], "Time": [3,4,5,...]}
+  // 2) Send JSON over websocket...
+  // Version 2 tries to use char[] instead of String for memory management (String can't hold all the data)
+
+  Serial.println("sendVoltammogramWebsocketBIN called");
+  Serial.print("number_of_valid_points_in_volts_amps_array=");
+  Serial.println(number_of_valid_points_in_volts_amps_array);
+
+  // bool sendBIN(uint8_t * payload, size_t length, bool headerToPayload = false);
+  // bool sendBIN(const uint8_t *payload, size_t length);
+
+  uint8_t test_array[10];
+  for (uint8_t i = 0; i < 10; i += 1)
+  {
+    test_array[i] = i;
+    Serial.print("test_array[i]=");
+    Serial.println(test_array[i]);
+  }
+
+  bool m_headerToPayload = false;
+  // pointer algebra example:
+  int i = 1234;
+  uint8_t *buf = (uint8_t *)&i;
+  size_t buf_len = sizeof(i); // 4 byte
+                              // from https://github.com/Links2004/arduinoWebSockets/issues/213
+  Serial.print("sizeof(i)=");
+  Serial.println(sizeof(i));
+
+  // bool sendBIN(uint8_t * payload, size_t length, bool headerToPayload = false);
+  // bool sendBIN(const uint8_t * payload, size_t length);
+  m_websocketserver.broadcastBIN( buf, buf_len, m_headerToPayload);
+
+  if (print_output_to_serial)
+  {
+    Serial.println("Finished sending sendVoltammogramWebsocketBIN over websocket.");
+    Serial.println("####################################");
+  }
+
+  // junk code start
+
+  // void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
+
+  //     switch(type) {
+
+  //         case WStype_BIN:
+  //             USE_SERIAL.printf("[%u] get binary lenght: %u\n", num, lenght);
+  //             hexdump(payload, lenght);
+
+  //             // echo data back to browser
+  //             webSocket.sendBIN(num, payload, lenght);
+  //             break;
+  //     }
+
+  // }
+
+  // junk code end
 }
 
 void blinkLED(int pin, int blinkFrequency_Hz, int duration_ms)
@@ -4102,6 +4167,8 @@ void loop()
     // readFileAndPrintToSerial();
     Sweep_Mode = dormant;
     send_is_sweeping_status_over_websocket(false);
+
+    sendVoltammogramWebsocketBIN();
   }
   else
   {
