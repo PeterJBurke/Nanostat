@@ -9,6 +9,13 @@ var m_canvas_JS;
 var context;
 var dataPlot;
 var maxDataPoints = 20; // max points in browser cache
+var new_binary_data_is_incoming = false; // if true, reset counters, will recieve 3 binary messages with arrays for current voltage time
+var amps_array_has_been_received = false;
+var volts_array_has_been_received = false;
+var time_array_has_been_received = false;
+var amps_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+var current_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+var time_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
 
 // This is called when the page finishes loading
 function init() {
@@ -110,16 +117,49 @@ function onMessage(evt) {
     if (typeof (evt.data) == "object") { // payload is binary, an ArrayBuffer 
         console.log("OBJECT! parsing....");
         const view = new DataView(evt.data);
-        // console.log(view.getInt32(0,true));
-        console.log("view.getFloat32(0,true)=");
-        console.log(view.getFloat32(0,true));
-        console.log("view.getFloat32(1,true)=");
-        console.log(view.getFloat32(4,true));
-        //console.log(view.getFloat32(1,true));
+        var m_num_points;
+        if (amps_array_has_been_received == false) {// this is the amps array
+            console.log("this is the amps array");
+            m_num_points = evt.data.byteLength / 4;
+            console.log(" m_num_points=evt.data.byteLength/4=");
+            console.log(m_num_points);
+            for (i = 0; i < m_num_points; i++) {
+                console.log(i, view.getFloat32(i * 4, true));
+            }
+            amps_array_has_been_received =true;
+            return;
+        }
+        if ((amps_array_has_been_received == true)&(volts_array_has_been_received == false)){// this is the volts array
+            console.log("this is the volts array");
+            m_num_points = evt.data.byteLength / 2;
+            console.log(" m_num_points=evt.data.byteLength/2=");
+            console.log(m_num_points);
+            for (i = 0; i < m_num_points; i++) {
+                console.log(i, view.getInt16(i * 2, true));
+            }
+            volts_array_has_been_received = true;
+            return;
+        }
+        if ((amps_array_has_been_received == true)&(volts_array_has_been_received == true)){// this is the time array
+            console.log("this is the time array");
+            m_num_points = evt.data.byteLength / 4;
+            console.log(" m_num_points=evt.data.byteLength/4=");
+            console.log(m_num_points);
+            for (i = 0; i < m_num_points; i++) {
+                console.log(i, view.getInt32(i * 4, true));
+            }
+            time_array_has_been_received =true;
+            new_binary_data_is_incoming=false;
+            return;
+
+        }
+
         console.log("evt.data=");
         console.log(evt.data);
 
     }
+
+
     if (typeof (evt.data) == "string") { // payload is string (JSON probably)
         console.log("STRING! parsing....");
 
@@ -128,6 +168,27 @@ function onMessage(evt) {
         console.log("Received: " + evt.data);
         var m_json_obj = JSON.parse(evt.data);
         //    console.log(m_json_obj);
+        if ('expect_binary_data' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
+            // do something
+            if (m_json_obj.expect_binary_data == true) { // expect binary data
+                // set expect data, set amps volts others to invalid, erase them
+                new_binary_data_is_incoming = true; // if true, reset counters, will recieve 3 binary messages with arrays for current voltage time
+                amps_array_has_been_received = false;
+                volts_array_has_been_received = false;
+                time_array_has_been_received = false;
+                // erase arrays (not sure how in Javascript just yet.... xyz)
+                // amps_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+                // current_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+                // time_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+                console.log("(m_json_obj.expect_binary_data == true recieved...");
+            }
+            if (m_json_obj.expect_binary_data == false) { // mode is sweeping
+                // do something
+                // actually do nothing, just log to console
+                console.log("m_json_obj.expect_binary_data == false recieved...");
+            }
+        };
+
         if ('is_sweeping' in m_json_obj) {// changin in is sweeping status, update indicator on browswer page...
             // do something
             if (m_json_obj.is_sweeping == true) { // mode is sweeping
@@ -142,6 +203,8 @@ function onMessage(evt) {
                 console.log("need to update indicator to false...");
             }
         };
+
+
 
         if ('Voltage' in m_json_obj) {// this is the voltamagram, parse and plot it...
             var m_voltage_array = m_json_obj.Voltage;

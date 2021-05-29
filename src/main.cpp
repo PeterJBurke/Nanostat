@@ -304,6 +304,21 @@ void send_is_sweeping_status_over_websocket(bool is_sweeping)
   m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
 }
 
+void send_expect_binary_data_over_websocket(bool expect_binary_data)
+{
+  if (expect_binary_data)
+  {
+    // send is sweeping
+    temp_json_string = "{\"expect_binary_data\":true}";
+  };
+  if (!expect_binary_data)
+  {
+    // send is not sweeping
+    temp_json_string = "{\"expect_binary_data\":false}";
+  };
+  m_websocketserver.broadcastTXT(temp_json_string.c_str(), temp_json_string.length());
+}
+
 void sendVoltammogramWebsocketJSON()
 {
   // old version used String, had memory probs for large arrays
@@ -521,78 +536,76 @@ void sendVoltammogramWebsocketBIN()
   // 2) Send JSON over websocket...
   // Version 2 tries to use char[] instead of String for memory management (String can't hold all the data)
 
+  // Refernce arrays we are going to use to write:
+  // Arrays of IV curves etc:
+  // const uint16_t arr_samples = 5000; //use 1000 for EIS, can use 2500 for other experiments (10k does not fit in DRAM)
+  // uint16_t arr_cur_index = 0;
+  // int16_t volts[arr_samples] = {0}; // single sweep IV curve "V"
+  // float amps[arr_samples] = {0};    // single sweep IV curve "I"
+  // int32_t time_Voltammaogram[arr_samples] = {0};
+  // int number_of_valid_points_in_volts_amps_array = 0; // rest of them are all zeros...
+
   Serial.println("sendVoltammogramWebsocketBIN called");
+  Serial.print("Heap free memory (in bytes)= ");
+  Serial.println(ESP.getFreeHeap());
+  Serial.println("Creating binary array to send to browswer");
   Serial.print("number_of_valid_points_in_volts_amps_array=");
   Serial.println(number_of_valid_points_in_volts_amps_array);
 
-  // bool sendBIN(uint8_t * payload, size_t length, bool headerToPayload = false);
-  // bool sendBIN(const uint8_t *payload, size_t length);
-
-  uint8_t test_array[10];
-  for (uint8_t i = 0; i < 10; i += 1)
+  // reset time to zero for 1st point: (unless it's already been done!)
+  if (time_Voltammaogram[0] != 0)
   {
-    test_array[i] = i;
-    Serial.print("test_array[i]=");
-    Serial.println(test_array[i]);
-  }
-
-  float m_test_float_array[10];
-  for (uint8_t i = 0; i < 10; i += 1)
-  {
-    m_test_float_array[i] = 3.1415+i;
-    Serial.print("m_test_float_array[i]=");
-    Serial.println(m_test_float_array[i]);
+    int32_t temp_time, temp_start_time;
+    temp_start_time = time_Voltammaogram[0];
+    for (uint16_t i = 0; i < number_of_valid_points_in_volts_amps_array; i++)
+    {
+      temp_time = time_Voltammaogram[i];
+      time_Voltammaogram[i] = temp_time - temp_start_time;
+    }
   }
 
   bool m_headerToPayload = false;
-  // pointer algebra example:
-  int i = 1234;
-  float m_pi = 3.14159265359;
-  uint8_t *buf = (uint8_t *)&i;
-  uint8_t *m_pi_buf = (uint8_t *)&m_pi;
-  // uint8_t *m_test_float_array_buffer = (uint8_t *)&m_test_float_array;
-  size_t buf_len = sizeof(i);                                // 4 byte
-  size_t m_pi_buf_len = sizeof(m_pi);                        // 4 byte
-  size_t m_test_float_array_buffer_len = 10 * sizeof(float); // 4 byte
-  Serial.print("m_test_float_array_buffer_len=");
-  Serial.println(m_test_float_array_buffer_len);
 
-  // from https://github.com/Links2004/arduinoWebSockets/issues/213
-  Serial.print("sizeof(i)=");
-  Serial.println(sizeof(i));
-  Serial.print("sizeof(m_pi)=");
-  Serial.println(sizeof(m_pi));
+  //  *********BEGIN Websocket sample code for sending binary array of floats*****************
+  // int m_num_in_test_array = 10;
+  // float m_test_float_array[m_num_in_test_array];
+  // for (uint8_t i = 0; i < m_num_in_test_array; i += 1)
+  // {
+  //   m_test_float_array[i] = 3.1415 + i;
+  //   Serial.print("m_test_float_array[i]=");
+  //   Serial.println(m_test_float_array[i]);
+  // }
+  // size_t m_test_float_array_buffer_len = m_num_in_test_array * sizeof(float); // 4 byte
+  // Serial.print("m_test_float_array_buffer_len=");
+  // Serial.println(m_test_float_array_buffer_len);
+  // m_websocketserver.broadcastBIN((uint8_t *)m_test_float_array, m_test_float_array_buffer_len, m_headerToPayload);
+  //  *********END Websocket sample code for sending binary array of floats*****************
 
-  // bool sendBIN(uint8_t * payload, size_t length, bool headerToPayload = false);
-  // bool sendBIN(const uint8_t * payload, size_t length);
-  //  m_websocketserver.broadcastBIN( buf, buf_len, m_headerToPayload);
-  //  m_websocketserver.broadcastBIN( m_pi_buf, m_pi_buf_len, m_headerToPayload);
-  m_websocketserver.broadcastBIN((uint8_t *)m_test_float_array, m_test_float_array_buffer_len, m_headerToPayload);
+  //  *********BEGIN Websocket  code for sending  arrays*****************
+  int m_amps_array_buffer_len = sizeof(float) * number_of_valid_points_in_volts_amps_array;
+  int m_volts_array_buffer_len = sizeof(int16_t) * number_of_valid_points_in_volts_amps_array;
+  int m_time_array_buffer_len = sizeof(int32_t) * number_of_valid_points_in_volts_amps_array;
+  Serial.print("m_amps_array_buffer_len=");
+  Serial.println(m_amps_array_buffer_len);
+  Serial.print("m_volts_array_buffer_len=");
+  Serial.println(m_volts_array_buffer_len);
+  Serial.print("m_time_array_buffer_len=");
+  Serial.println(m_time_array_buffer_len);
+
+  // Tell browswer to get ready for 3 new binary array messages:
+  send_expect_binary_data_over_websocket(true);
+  // Arrays are aleady in memory, no need to use more memory, just send them directly:
+  m_websocketserver.broadcastBIN((uint8_t *)amps, m_amps_array_buffer_len, m_headerToPayload);
+  m_websocketserver.broadcastBIN((uint8_t *)volts, m_volts_array_buffer_len, m_headerToPayload);
+  m_websocketserver.broadcastBIN((uint8_t *)time_Voltammaogram, m_time_array_buffer_len, m_headerToPayload);
+
+  //  *********END Websocket  code for sending  arrays*****************
 
   if (print_output_to_serial)
   {
     Serial.println("Finished sending sendVoltammogramWebsocketBIN over websocket.");
     Serial.println("####################################");
   }
-
-  // junk code start
-
-  // void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
-
-  //     switch(type) {
-
-  //         case WStype_BIN:
-  //             USE_SERIAL.printf("[%u] get binary lenght: %u\n", num, lenght);
-  //             hexdump(payload, lenght);
-
-  //             // echo data back to browser
-  //             webSocket.sendBIN(num, payload, lenght);
-  //             break;
-  //     }
-
-  // }
-
-  // junk code end
 }
 
 void blinkLED(int pin, int blinkFrequency_Hz, int duration_ms)
