@@ -13,9 +13,9 @@ var new_binary_data_is_incoming = false; // if true, reset counters, will reciev
 var amps_array_has_been_received = false;
 var volts_array_has_been_received = false;
 var time_array_has_been_received = false;
-var amps_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
-var current_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
-var time_array; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+var amps_array = []; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+var volts_array = []; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
+var time_array = []; // these have to be global and filled one by one, assume browswer has infinite processing power and memory
 
 // This is called when the page finishes loading
 function init() {
@@ -123,39 +123,49 @@ function onMessage(evt) {
             m_num_points = evt.data.byteLength / 4;
             console.log(" m_num_points=evt.data.byteLength/4=");
             console.log(m_num_points);
+            amps_array.splice(0, amps_array.length); // empty old amps array
             for (i = 0; i < m_num_points; i++) {
-                console.log(i, view.getFloat32(i * 4, true));
+                // console.log(i, view.getFloat32(i * 4, true));
+                amps_array.push(view.getFloat32(i * 4, true)); // Add element to array
             }
-            amps_array_has_been_received =true;
+            amps_array_has_been_received = true;
             return;
         }
-        if ((amps_array_has_been_received == true)&(volts_array_has_been_received == false)){// this is the volts array
+        if ((amps_array_has_been_received == true) & (volts_array_has_been_received == false)) {// this is the volts array
             console.log("this is the volts array");
             m_num_points = evt.data.byteLength / 2;
             console.log(" m_num_points=evt.data.byteLength/2=");
             console.log(m_num_points);
+            volts_array.splice(0, amps_array.length); // empty old amps array
             for (i = 0; i < m_num_points; i++) {
-                console.log(i, view.getInt16(i * 2, true));
+                // console.log(i, view.getInt16(i * 2, true));
+                volts_array.push(view.getInt16(i * 2, true)); // Add element to array
             }
             volts_array_has_been_received = true;
             return;
         }
-        if ((amps_array_has_been_received == true)&(volts_array_has_been_received == true)){// this is the time array
+        if ((amps_array_has_been_received == true) & (volts_array_has_been_received == true)) {// this is the time array
             console.log("this is the time array");
             m_num_points = evt.data.byteLength / 4;
             console.log(" m_num_points=evt.data.byteLength/4=");
             console.log(m_num_points);
+            time_array.splice(0, time_array.length); // empty old amps array
             for (i = 0; i < m_num_points; i++) {
-                console.log(i, view.getInt32(i * 4, true));
+                // console.log(i, view.getInt32(i * 4, true));
+                time_array.push(view.getInt32(i * 4, true)); // Add element to array
             }
-            time_array_has_been_received =true;
-            new_binary_data_is_incoming=false;
+            time_array_has_been_received = true;
+            new_binary_data_is_incoming = false;
+            console.log("Received all 3 arrays binary websocket (I,V,t):");
+            console.log(volts_array);
+            console.log(amps_array);
+            console.log(time_array);
+            //  call the graph function now...
+            plotGlobalArrays();
             return;
 
         }
 
-        console.log("evt.data=");
-        console.log(evt.data);
 
     }
 
@@ -206,7 +216,7 @@ function onMessage(evt) {
 
 
 
-        if ('Voltage' in m_json_obj) {// this is the voltamagram, parse and plot it...
+        if ('Voltage' in m_json_obj) {// this is the voltamagram (sent as string in JSON over websocket), parse and plot it...
             var m_voltage_array = m_json_obj.Voltage;
             var m_current_array = m_json_obj.Current;
             var m_time_array = m_json_obj.Time;
@@ -316,42 +326,6 @@ function onMessage(evt) {
 
 
 
-        // junk
-
-        var layout = {
-            title: {
-                text: 'Plot Title',
-                font: {
-                    family: 'Courier New, monospace',
-                    size: 24
-                },
-                xref: 'paper',
-                x: 0.05,
-            },
-            xaxis: {
-                title: {
-                    text: 'x Axis',
-                    font: {
-                        family: 'Courier New, monospace',
-                        size: 18,
-                        color: '#7f7f7f'
-                    }
-                },
-            },
-            yaxis: {
-                title: {
-                    text: 'y Axis',
-                    font: {
-                        family: 'Courier New, monospace',
-                        size: 18,
-                        color: '#7f7f7f'
-                    }
-                }
-            }
-        };
-
-
-
 
     }
 
@@ -382,6 +356,95 @@ function sendDataRate() {
     dataRate = 1.0 * dataRate;
     document.getElementById("dataRateLabel").innerHTML = "Rate: " + dataRate.toFixed(2) + "Hz";
 }
+
+
+function plotGlobalArrays() {// plot global arrays that have been filled by the websocket data received as binary
+
+    // console.log(volts_array);
+    // console.log(amps_array);
+    // console.log(time_array);
+
+    var trace_IV = {
+        x: volts_array,
+        y: amps_array,
+        mode: 'markers',
+        type: 'scatter'
+    };
+    var data_IV = [trace_IV];
+
+    var m_IV_layout = {
+        // title: 'IV Curve',
+        showlegend: false,
+        margin: {
+            l: 50,
+            r: 5,
+            b: 50,
+            t: 1,
+            pad: 4
+        },
+        xaxis: {
+            title: { text: 'Voltage (mV)' }
+        },
+        yaxis: {
+            title: { text: 'Current (microA)' }
+        }
+    };
+
+    Plotly.newPlot('plotly-IV', data_IV, m_IV_layout, { scrollZoom: true, editable: true, responsive: true });
+
+    var trace_IvsTime = {
+        x: time_array,
+        y: amps_array,
+        mode: 'markers',
+        type: 'scatter',
+        name: "Current"
+    };
+    var trace_VvsTime = {
+        x: time_array,
+        y: volts_array,
+        mode: 'markers',
+        yaxis: 'y2',
+        type: 'scatter',
+        name: "Voltage"
+    };
+
+    var data_IVvsTime = [trace_IvsTime, trace_VvsTime];
+
+    var m_2yaxis_layout = {
+        margin: {
+            l: 50,
+            r: 5,
+            b: 50,
+            t: 1,
+            pad: 4
+        },
+        
+        xaxis: {
+            title: { text: 'Time (ms)' }
+        },
+        yaxis: { title: 'Current (microA)' },
+        yaxis2: {
+            title: 'Voltage (mV)',
+            titlefont: { color: 'rgb(148, 103, 189)' },
+            tickfont: { color: 'rgb(148, 103, 189)' },
+            overlaying: 'y',
+            side: 'right'
+        }
+    };
+
+    Plotly.newPlot('plotly-IvsTime', data_IVvsTime, m_2yaxis_layout, { scrollZoom: true, editable: true, responsive: true });
+    // Since data is fresh, might as well force a download for user....
+    // if (download button is on) // not yet impelmented
+    // xxxyyyzzz       <li><a href="downloadfile">Download</a></li>
+    // window.open("http://nanostat.local/downloadfile");
+    window.open("/downloadfile");
+
+
+
+
+
+}
+
 
 // Call the init function as soon as the page loads
 window.addEventListener("load", init, false);
