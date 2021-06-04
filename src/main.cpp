@@ -1,7 +1,7 @@
 //https://github.com/PeterJBurke/Nanostat
 
 bool userpause = false;             // pauses for user to press input on serial between each point in sweep
-bool print_output_to_serial = false; // prints verbose output to serial
+bool print_output_to_serial = true; // prints verbose output to serial
 
 //Libraries
 #include <Wire.h>
@@ -2925,11 +2925,10 @@ void runAmp(uint8_t lmpGain, int16_t pre_stepV, uint32_t quietTime,
 
   // default samples=100
   //  if (samples > arr_samples / 3){ // max 2500/3=833; default 100
-  if (samples > 500) // somewhat arbitrary limit for memory management of JSON obejct,
-  //could be larger of JSON voltammogram was delivered in binary.
+  if (samples > (arr_samples/3)) //  arr_samples is max size of amps,volts array
   { // max 2500/3=833; default 100
     // samples = (float)arr_samples / 3.0;
-    samples = 500;
+    samples = arr_samples/3;
     Serial.print("Samples>arr_samples, adjusting accordingly to samples = ");
     Serial.println(samples);
   }
@@ -3851,7 +3850,7 @@ void setup()
   while (!Serial)
     ;
 
-  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1.1c!");
+  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1.2!");
 
   // initialize ADC:
   analogReadResolution(12);

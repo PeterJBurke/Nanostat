@@ -122,6 +122,10 @@
       <h3>Maximum # of points:</h3>
       <p>5000. Do not exceed. </p>
 
+      <h3>Maximum cell voltage:</h3>
+      <p>The LMP91000 can bias the cell up to 20% of the DAC output of the ESP32. The ESP32 DAC is very non-linear above 3 V, and cannot go above 3.3 V which is the power supply voltage. Therefore the cell voltage is limited to 3 V * 20% = 600 mV, in either direction. </p>
+
+
     <h3>Sweep modes:</h3>
 
     <h6 class="mt-3">CV = Cyclic voltammetry.</h6>

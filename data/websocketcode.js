@@ -136,7 +136,7 @@ function onMessage(evt) {
             m_num_points = evt.data.byteLength / 2;
             console.log(" m_num_points=evt.data.byteLength/2=");
             console.log(m_num_points);
-            volts_array.splice(0, amps_array.length); // empty old amps array
+            volts_array.splice(0, volts_array.length); // empty old amps array
             for (i = 0; i < m_num_points; i++) {
                 // console.log(i, view.getInt16(i * 2, true));
                 volts_array.push(view.getInt16(i * 2, true)); // Add element to array
