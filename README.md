@@ -1,2 +1,2 @@
-# ESP32Stat_Rev_3_5_PIO
-ESP32Stat_Rev_3_5_PIO
+Nanostat.
+PJ Burke, et al, manuscript in preparation (2021)
