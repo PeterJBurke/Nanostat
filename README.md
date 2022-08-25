@@ -1,3 +1,5 @@
+![Overview](https://github.com/PeterJBurke/Nanostat/blob/master/GerberFiles/NanostatPictures.png)
+
 ## Instructions for a fully functional nanostat system:
 
 ## Hardware order:
@@ -38,6 +40,7 @@ https://www.youtube.com/watch?v=MsuR6W-jN5M&list=PLbKMtvtYbdPMZfzGuVTdc0MWKrFvU4
 Online gerber viewer:
 https://www.pcbway.com/project/OnlineGerberViewer.html
 
+![3d model](https://github.com/PeterJBurke/Nanostat/blob/master/GerberFiles/3dmodel.png)
 
 ## After receiving hardware:
 
@@ -48,6 +51,8 @@ Choose the correct battery size as desired. Without battery, the NanoStat can be
 
 ### Case:
 3d print as desired. STL are on the github repo. (https://github.com/PeterJBurke/Nanostat)
+
+![Lab hardware](https://github.com/PeterJBurke/Nanostat/blob/master/GerberFiles/NanostatCartoon.png)
 
 ## Software/firmware installation:
 
