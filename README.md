@@ -4,6 +4,8 @@
 
 ## Hardware order:
 You can order the board basically fully assembled from JLCPBC, or other vendors/manufacturers. 
+Here is a tutorial video showing how to order the hardware, from start to finish, using the github files:
+https://www.youtube.com/watch?v=MpEoAoR6BOA
 
 ### Description of gerber and cad files:
 
