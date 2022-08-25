@@ -1,6 +1,6 @@
 ## Instructions for a fully functional nanostat system:
 
-### Hardware order:
+## Hardware order:
 You can order the board basically fully assembled from JLCPBC, or other vendors/manufacturers. 
 
 ### Description of gerber and cad files:
