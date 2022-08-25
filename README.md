@@ -37,7 +37,7 @@ https://support.jlcpcb.com/article/192-how-to-use-jlcpcb-global-sourcing-parts-s
 
 Some useful tutorials:
 
-Tutorial EasyEDA has their own YT channel: 
+EasyEDA online editor has their own YT channel: 
 https://www.youtube.com/watch?v=MsuR6W-jN5M&list=PLbKMtvtYbdPMZfzGuVTdc0MWKrFvU4nsu
 
 Online gerber viewer:
