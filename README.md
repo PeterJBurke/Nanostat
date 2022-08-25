@@ -47,9 +47,12 @@ https://www.pcbway.com/project/OnlineGerberViewer.html
 
 ## After receiving hardware
 
-You will have 3 for the control, reference, and working electrode. The electrochemical cell is up to you. I use alligator clips, as shown in the paper, search “0.1" female to alligator clip”.
+You will have 3 pins for the control, reference, and working electrode. The electrochemical cell is up to you. I use alligator clips, as shown in the paper, search “0.1" female to alligator clip”.
+
+There are also two pins for the battery, if you choose to use it. Make sure to get the correct polarity.
 
 ### Battery/power
+
 Choose the correct battery size as desired. Without battery, the NanoStat can be powered over the USB interface.
 
 ### Case
