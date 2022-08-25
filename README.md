@@ -1,6 +1,6 @@
 ![Overview](https://github.com/PeterJBurke/Nanostat/blob/master/GerberFiles/NanostatPictures.png)
 
-## Instructions for a fully functional nanostat system:
+## Instructions for a fully functional NanoStat system:
 
 ## Hardware order:
 You can order the board basically fully assembled from JLCPBC, or other vendors/manufacturers. 
@@ -21,7 +21,7 @@ Within the EasyEDA online cad program, it is possible to only choose components 
 
 
 For the published version (3.5), the files are included for historical purposes.
-Due to the supply chain issues and stock fluctuations, the parts were not in stock, so I have made a new version (3.5.1) which has parts in stock as of 8/22/2024. (Three capacitors were changed.)
+Due to the supply chain issues and stock fluctuations, the parts were not in stock, so I have made a new version (3.5.1) which has parts in stock as of 8/22/2024. (The USB connector and LDO were changed.)
 
 It seems the LMP91000, the analog front end and the heart of the system, is not in stock in the USA. Digikey has zero in stock. Mouser, Newark have it on order, expected availability in summer 2022. So the small numbers that JLCPBC in stock are $60 each, about ten times what they were in 2021 when I bought them. This brings the cost from $25 for the whole board, to about $80-$90/board, with a minimum order of 5.
 
