@@ -1,6 +1,6 @@
 ![Overview](https://github.com/PeterJBurke/Nanostat/blob/master/GerberFiles/NanostatPictures.png)
 
-## Instructions for a fully functional NanoStat system:
+## Instructions for a fully functional NanoStat system
 
 ## Hardware order:
 You can order the board basically fully assembled from JLCPBC, or other vendors/manufacturers. 
