@@ -68,7 +68,9 @@ The software is developed in Microsoft Visual Studio Code. It uses PlatformIO. T
 Instructions are on the website hosted on the nanostat. See the paper (reference below) for examples of use cases.
 
 ### Getting to the website interface
-On first use, a wifi hot spot will be created by the Nanostat. Log into it and enter the wifi credentials you want for your local wifi network, and reboot. Then you can log into the Nanostat from your local wifi network. Try nanostat.local as the address in any browser. If that does not work, find the local IP address from your router.
+On first use, a wifi hot spot will be created by the Nanostat. It is call "NanostatAP". Connect to it with your pc or smartphone. The default IP address is 192.168.4.1. Go to that address, and it should open up a configuration page for wifi access.
+
+Enter the wifi credentials you want for your local wifi network, and reboot. Then you can log into the Nanostat from your local wifi network. Try nanostat.local as the address in any browser. If that does not work, find the local IP address from your router.
 
 ### Firmware updates
 Can be done over wifi. Instructions on website.
