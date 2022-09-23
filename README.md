@@ -64,6 +64,11 @@ Choose the correct battery size as desired. Without battery, the NanoStat can be
 
 The software is developed in Microsoft Visual Studio Code. It uses PlatformIO. There are plenty of tutorials on this online. You will have to install this development environment, configure it, and download the source code as well as package configurations from github (https://github.com/PeterJBurke/Nanostat). After successful compilation, then you need to transfer the firmware hex code to the board using USB.
 
+You also need to transfer the website files in the data directory of this repo. This includes all the html files and js (javascript) files that serve up the website. ESP32 has a disk structure called "SPIFFS". For some tutorials on this see:
+https://www.youtube.com/watch?v=Pxpg9eZLoBI
+and
+https://www.youtube.com/watch?v=NVD46mRbVXM
+
 ## Use
 Instructions are on the website hosted on the nanostat. See the paper (reference below) for examples of use cases.
 
@@ -71,6 +76,21 @@ Instructions are on the website hosted on the nanostat. See the paper (reference
 On first use, a wifi hot spot will be created by the Nanostat. It is call "NanostatAP". Connect to it with your pc or smartphone. The default IP address is 192.168.4.1. Go to that address, and it should open up a configuration page for wifi access.
 
 Enter the wifi credentials you want for your local wifi network, and reboot. Then you can log into the Nanostat from your local wifi network. Try nanostat.local as the address in any browser. If that does not work, find the local IP address from your router.
+
+## Troubleshooting access point
+
+If you connect to the access point, make sure your computer has an ip address assigned:
+MAC:
+ifconfig
+LINUX:
+ifconfig
+MSDOS:
+ipconfig /all
+
+These show assigned IP address of your local computer.
+(Be sure you are reading it for the wifi adapter.)
+
+It should be 192.168.4.xxx, where xxx is a number between 2 and 256.
 
 ### Firmware updates
 Can be done over wifi. Instructions on website.
