@@ -92,10 +92,15 @@ If it complains about a python program that is missing, run:
 sudo apt-get install python3-venv
 
 Now clone the git repo to your local machine within VS code.
+
 https://github.com/PeterJBurke/Nanostat
+
 Connect your Nanostat device to the USB port.
+
 In Linux, it should auto-detect the device and you don't need to worry about drivers, etc.
+
 However, you have to give permission to it.
+
 Typically, it will called /dev/ttyUSB0 or something like that.
 
 ls /dev/ttyUSB*
@@ -107,8 +112,11 @@ Now give linux permission:
 sudo chmod a+rw /dev/ttyUSB0
 
 Now go back to VS Code.
+
 I recommend to erase the flash memory on the nanostat, so we are starting with a clean system.
+
 Compile and upload the firmware.
+
 Upload the "filesystem". This uploads the website files.
 
 Now power the nanostat on then off. You can power it from any USB power source (including the computer).
