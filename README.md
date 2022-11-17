@@ -62,12 +62,63 @@ Choose the correct battery size as desired. Without battery, the NanoStat can be
 
 ## Software/firmware installation
 
+For a tutorial on how to install the firmware, see:
+xyz.
+
 The software is developed in Microsoft Visual Studio Code. It uses PlatformIO. There are plenty of tutorials on this online. You will have to install this development environment, configure it, and download the source code as well as package configurations from github (https://github.com/PeterJBurke/Nanostat). After successful compilation, then you need to transfer the firmware hex code to the board using USB.
 
 You also need to transfer the website files in the data directory of this repo. This includes all the html files and js (javascript) files that serve up the website. ESP32 has a disk structure called "SPIFFS". For some tutorials on this see:
 https://www.youtube.com/watch?v=Pxpg9eZLoBI
 and
 https://www.youtube.com/watch?v=NVD46mRbVXM
+
+### Brief instructions starting from fresh linux OS
+Update OS:
+sudo apt-get update
+sudo apt-get upgrade
+Install git:
+sudo apt-get install git
+
+Install Visual studio code from website.
+Within Visual studio code, install PlatformIO and suggested packages (C++ etc).
+If it complains about a python program that is missing, run:
+sudo apt-get install python3-venv
+
+Now clone the git repo to your local machine within VS code.
+https://github.com/PeterJBurke/Nanostat
+Connect your Nanostat device to the USB port.
+In Linux, it should auto-detect the device and you don't need to worry about drivers, etc.
+However, you have to give permission to it.
+Typically, it will called /dev/ttyUSB0 or something like that.
+
+ls /dev/ttyUSB*
+tells you which is listed.
+
+Now give linux permission:
+
+sudo chmod a+rw /dev/ttyUSB0
+
+Now go back to VS Code.
+I recommend to erase the flash memory on the nanostat, so we are starting with a clean system.
+Compile and upload the firmware.
+Upload the "filesystem". This uploads the website files.
+
+Now power the nanostat on then off. You can power it from any USB power source (including the computer).
+You don't need the computer connection anymore.
+
+It will create a wifi hotspot called "nanostat".
+Go to it, connect, and then point your browers to:
+http://192.168.4.1
+
+Enter your wifi credentials, then press reboot.
+
+After reboot, rejoin your local wifi with your computer/smartphone/tablet, and browse to:
+http://nanostat.local
+If that fails, log into your router to find the locally assigned IP address.
+Usually it is something like 192.168.1.xxx or 192.168.2.xxx etc, where xxx is between 1 and 256.
+
+You should see the nanostat UI.
+
 
 ## Use
 Instructions are on the website hosted on the nanostat. See the paper (reference below) for examples of use cases.
