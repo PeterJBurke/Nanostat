@@ -63,7 +63,8 @@ Choose the correct battery size as desired. Without battery, the NanoStat can be
 ## Software/firmware installation
 
 For a tutorial on how to install the firmware, see:
-xyz.
+
+https://youtu.be/zEnHAq8oCHY
 
 The software is developed in Microsoft Visual Studio Code. It uses PlatformIO. There are plenty of tutorials on this online. You will have to install this development environment, configure it, and download the source code as well as package configurations from github (https://github.com/PeterJBurke/Nanostat). After successful compilation, then you need to transfer the firmware hex code to the board using USB.
 
