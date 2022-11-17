@@ -74,14 +74,21 @@ https://www.youtube.com/watch?v=NVD46mRbVXM
 
 ### Brief instructions starting from fresh linux OS
 Update OS:
+
 sudo apt-get update
+
 sudo apt-get upgrade
+
 Install git:
+
 sudo apt-get install git
 
 Install Visual studio code from website.
+
 Within Visual studio code, install PlatformIO and suggested packages (C++ etc).
+
 If it complains about a python program that is missing, run:
+
 sudo apt-get install python3-venv
 
 Now clone the git repo to your local machine within VS code.
@@ -92,6 +99,7 @@ However, you have to give permission to it.
 Typically, it will called /dev/ttyUSB0 or something like that.
 
 ls /dev/ttyUSB*
+
 tells you which is listed.
 
 Now give linux permission:
@@ -107,13 +115,17 @@ Now power the nanostat on then off. You can power it from any USB power source (
 You don't need the computer connection anymore.
 
 It will create a wifi hotspot called "nanostat".
+
 Go to it, connect, and then point your browers to:
+
 http://192.168.4.1
 
 Enter your wifi credentials, then press reboot.
 
 After reboot, rejoin your local wifi with your computer/smartphone/tablet, and browse to:
+
 http://nanostat.local
+
 If that fails, log into your router to find the locally assigned IP address.
 Usually it is something like 192.168.1.xxx or 192.168.2.xxx etc, where xxx is between 1 and 256.
 
