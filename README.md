@@ -120,7 +120,7 @@ Compile and upload the firmware.
 
 Upload the "filesystem". This uploads the website files.
 
-Now power the nanostat on then off. You can power it from any USB power source (including the computer).
+Now power the nanostat off then on. You can power it from any USB power source (including the computer).
 You don't need the computer connection anymore.
 
 It will create a wifi hotspot called "nanostat".
