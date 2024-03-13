@@ -1290,7 +1290,7 @@ void handleFileList(AsyncWebServerRequest *request)
       output += "{\"type\":\"";
       output += (file.isDirectory()) ? "dir" : "file";
       output += "\",\"name\":\"";
-      output += String(file.name()).substring(1);
+      output += String(file.name()).substring(0);
       output += "\"}";
       file = root.openNextFile();
     }
@@ -3850,7 +3850,7 @@ void setup()
   while (!Serial)
     ;
 
-  Serial.println("Welcome to NanoStat, Firmware Rev. 0.1.2!");
+  Serial.println("Welcome to NanoStat, Firmware Rev. 1.0!");
 
   // initialize ADC:
   analogReadResolution(12);
