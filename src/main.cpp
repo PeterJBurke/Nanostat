@@ -17,6 +17,10 @@ bool print_output_to_serial = true; // prints verbose output to serial
 #include "DNSServer.h"
 // #include <OTA.h>
 #include <Update.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+
+
 
 // Microcontroller specific info (pinouts, Vcc, etc)
 const uint16_t opVolt = 3300;                 //3300 mV
@@ -3841,6 +3845,7 @@ void configureserver()
 
 void setup()
 {
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable   detector
   // blinky pin for diagnostic:
   pinMode(LEDPIN, OUTPUT);
 
